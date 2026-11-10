@@ -8,28 +8,17 @@ const P1 := Players.P1
 const P2 := Players.P2
 const Lobby := preload("res://scenes/ui/lobby.gd")
 const THREE := "res://tests/fixtures/roster_three.json"
-const FILE := "user://test_chooser_players.json"
+const FILE := "user://test_chooser_players.json"   # SuiteSandbox.picks_for("chooser")
 
 var _main: Node
-var _real := {}
 
 
 func before() -> void:
-	_real = { "settings": Save.settings_path, "picks": Roster.picks_path, "data": Roster.data_path }
-	Save.settings_path = "user://test_settings_chooser.json"
-	Roster.picks_path = FILE
-	Roster.data_path = THREE
+	SuiteSandbox.enter("chooser", THREE)
 
 
 func after() -> void:
-	Save.wipe_settings()
-	Save.settings_path = _real.settings
-	Save.reload_settings()
-	DirAccess.remove_absolute(FILE)
-	Roster.picks_path = _real.picks
-	Roster.data_path = _real.data
-	Roster.args_override = PackedStringArray()
-	Roster.reload()
+	SuiteSandbox.leave()
 
 
 func before_test() -> void:
@@ -207,7 +196,7 @@ func test_pick_persists_across_a_relaunch() -> void:
 	var lobby := _boot()
 	_join_unready(lobby, P1)
 	lobby.choose(P1, 1)
-	assert_str(JSON.parse_string(FileAccess.get_file_as_string(FILE)).p1.P1).is_equal("pip")
+	assert_str(JSON.parse_string(FileAccess.get_file_as_string(FILE))[Save.profile].P1).is_equal("pip")
 	_main.free()
 	Players.reset()
 	Roster.reload()                                     # the game (or another one) starts again

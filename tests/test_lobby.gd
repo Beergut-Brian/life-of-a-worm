@@ -14,15 +14,10 @@ var _quits := 0
 var _readies: Array = []
 
 
-var _real_settings := ""
-var _real_picks := ""
 
 
 func before() -> void:
-	_real_settings = Save.settings_path
-	Save.settings_path = "user://test_settings.json"
-	_real_picks = Roster.picks_path
-	Roster.picks_path = "user://test_lobby_players.json"
+	SuiteSandbox.enter("lobby")
 	Game.quit_exits = false
 	Game.quit_requested.connect(_on_quit)
 	Game.lobby_ready.connect(_on_lobby_ready)
@@ -32,12 +27,7 @@ func after() -> void:
 	Game.quit_requested.disconnect(_on_quit)
 	Game.lobby_ready.disconnect(_on_lobby_ready)
 	Game.quit_exits = true
-	Save.wipe_settings()
-	Save.settings_path = _real_settings
-	Save.reload_settings()
-	DirAccess.remove_absolute(Roster.picks_path)
-	Roster.picks_path = _real_picks
-	Roster.reload()
+	SuiteSandbox.leave()
 
 
 func before_test() -> void:
