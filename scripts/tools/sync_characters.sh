@@ -9,8 +9,12 @@
 #                     (needs python3 + Pillow; skipped with a warning without them)
 #   voice/*.ogg       the voice barks, if any are recorded yet
 # then writes data/roster.json (roster order, names, defaults, player colours, res:// paths, the
-# tag) and the characters block in assets/CREDITS.md. Folders of ids no longer in the roster are
-# removed. Rerun it with a new tag to pick up new characters: no code change.
+# tag) and the characters block in assets/CREDITS.md. Each folder it writes gets a `.synced`
+# marker; a synced folder whose id left the roster is removed. Anything else in
+# assets/characters/ (a game's own gear, say) is never touched: it only warns. A roster id whose
+# folder exists without the marker (and was not in the last data/roster.json) stops the sync.
+# Rerun it with a new tag to pick up new characters: no code change.
+# SYNC_CHARACTERS_ROOT=<dir> writes into another project (the tests use it).
 # Reads the tag with `git show`, so the characters checkout can be on any branch.
 set -euo pipefail
 if [[ $# -ne 2 ]]; then
@@ -19,7 +23,7 @@ if [[ $# -ne 2 ]]; then
 fi
 LIB="$(cd "$1" && pwd)"
 TAG="$2"
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "${SYNC_CHARACTERS_ROOT:-$(dirname "${BASH_SOURCE[0]}")/../..}" && pwd)"
 git -C "$LIB" rev-parse -q --verify "refs/tags/$TAG" >/dev/null \
 	|| { echo "sync_characters: no tag $TAG in $LIB" >&2; exit 1; }
 WORK="$ROOT/.scratch/sync_characters.$$"
@@ -40,6 +44,19 @@ files = set(open(os.path.join(work, "files.txt")).read().split("\n"))
 by_id = {c["id"]: c for c in index["characters"]}
 out_dir = os.path.join(root, "assets", "characters")
 os.makedirs(out_dir, exist_ok=True)
+MARK = ".synced"
+# Folders this tool made: the marker, or (games synced before the marker) the last roster.json.
+prev = set()
+try:
+    old = json.load(open(os.path.join(root, "data", "roster.json")))
+    prev = {str(i) for i in old.get("roster", []) + old.get("synced", [])}
+except (OSError, ValueError, AttributeError, TypeError):
+    pass
+
+
+def ours(name):
+    p = os.path.join(out_dir, name)
+    return os.path.isfile(os.path.join(p, MARK)) or name in prev
 
 
 def show(path, dest):
@@ -79,9 +96,14 @@ for cid in index.get("roster", []):
         print(f"sync_characters: skipping {cid}: not a playable character", file=sys.stderr)
         continue
     d = os.path.join(out_dir, cid)
+    if os.path.lexists(d) and not (os.path.isdir(d) and ours(cid)):
+        sys.exit(f"sync_characters: assets/characters/{cid} is not a synced folder (no {MARK}); "
+                 f"move it out of assets/characters/ so the roster character {cid} can land there")
     if os.path.isdir(d):
         shutil.rmtree(d)
     os.makedirs(d)
+    with open(os.path.join(d, MARK), "w") as f:
+        f.write(f"openjar-characters {tag}: written by scripts/tools/sync_characters.sh, do not edit\n")
     res = f"res://assets/characters/{cid}/"
     entry = {"name": c["name"], "glb": "", "pixel": "", "voice": "", "barks": [],
              "default_for": c.get("default_for") or 0}
@@ -110,9 +132,14 @@ for cid in index.get("roster", []):
 
 for name in sorted(os.listdir(out_dir)):
     p = os.path.join(out_dir, name)
-    if os.path.isdir(p) and name not in roster:
+    if not os.path.isdir(p) or name in roster:
+        continue
+    if ours(name):
         shutil.rmtree(p)
         print(f"sync_characters: removed {name} (no longer in the roster)")
+    else:
+        print(f"sync_characters: warning: left assets/characters/{name} alone: not synced "
+              f"(no {MARK}); game files belong in their own folder, e.g. assets/gear/", file=sys.stderr)
 
 data = {
     "source": "openjar-characters",

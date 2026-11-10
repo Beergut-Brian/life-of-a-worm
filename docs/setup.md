@@ -14,6 +14,14 @@ Agents read the API from there instead of guessing.
 Install via the Asset Library or clone into `addons/gdUnit4/` (the folder is gitignored
 except for `tests/`). Enable the plugin in Project Settings → Plugins.
 
+**Test isolation.** Every suite that boots `main.tscn` or touches Save / Roster files calls
+`SuiteSandbox.enter("<suite>")` in `before()` and `SuiteSandbox.leave()` in `after()`
+(`tests/suite_sandbox.gd`). It gives the suite its own save profile (`gdunit_<suite>`), settings
+file, picks file, the real roster and no launch args, whatever ran before it, and restores it all
+after. Never the family's profile, `user://settings.json` or the launcher's `players.json`. Read
+the picks file as `file[Save.profile]`, never `file.p1`. Game suites should use it too (a game's
+own `SettingsSandbox` can call it).
+
 ## Shared addons
 
 ```

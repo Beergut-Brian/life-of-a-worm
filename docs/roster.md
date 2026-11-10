@@ -21,8 +21,15 @@ the Mole or the Dragon never appear) it copies into `assets/characters/<id>/`:
 
 and writes `data/roster.json` (roster order, names, defaults, player colours, `res://` paths, the
 tag) and the characters block in `assets/CREDITS.md`. It reads the tag with `git show` (Git LFS
-files are smudged), so the library checkout can be on any branch. Ids that left the roster are
-removed. **New characters: rerun with the new tag, import, commit. No code change.**
+files are smudged), so the library checkout can be on any branch. **New characters: rerun with
+the new tag, import, commit. No code change.**
+
+**Only its own folders.** Every folder it writes gets a `.synced` marker (commit it). On a rerun it
+removes a folder only if it has the marker (or its id was in the last `data/roster.json`, for games
+synced before the marker) and its id left the roster. Anything else in `assets/characters/` is left
+alone with a warning: game files (JYZ's gun belt) belong in their own folder, e.g. `assets/gear/`.
+If a roster id's folder exists without the marker, the sync stops instead of overwriting it.
+`SYNC_CHARACTERS_ROOT=<dir>` syncs into another project (`tests/test_sync_characters.gd` uses it).
 
 Current: `v0.3.0`, Jeff (P1 default) and Chuck (P2 default).
 

@@ -8,8 +8,6 @@ const Lobby := preload("res://scenes/ui/lobby.gd")
 const Backdrop := preload("res://scenes/ui/kit/menu_backdrop.gd")
 
 var _main: Node
-var _real_settings := ""
-var _real_picks := ""
 var _launched := 0
 var _covered := 0
 
@@ -23,19 +21,11 @@ func _on_cover() -> void:
 
 
 func before() -> void:
-	_real_settings = Save.settings_path
-	Save.settings_path = "user://test_settings_showtime.json"
-	_real_picks = Roster.picks_path
-	Roster.picks_path = "user://test_showtime_players.json"
+	SuiteSandbox.enter("showtime")
 
 
 func after() -> void:
-	Save.wipe_settings()
-	Save.settings_path = _real_settings
-	Save.reload_settings()
-	DirAccess.remove_absolute(Roster.picks_path)
-	Roster.picks_path = _real_picks
-	Roster.reload()
+	SuiteSandbox.leave()
 
 
 func before_test() -> void:

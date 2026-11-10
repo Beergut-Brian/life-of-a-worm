@@ -74,7 +74,7 @@ func _ready() -> void:
 	add_to_group("openjar_skinned")
 	UiStyle.skin()
 	_apply_title()
-	$Footer/Version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.0.0")
+	$Footer/Version.text = BuildInfo.label()   # the release tag CI stamped, or "dev"
 	_countdown.draw.connect(_draw_countdown)
 	Players.player_joined.connect(_on_player_joined)
 	Players.player_left.connect(_on_player_left)
@@ -86,7 +86,7 @@ func _ready() -> void:
 	visible = Game.state == Game.State.LOBBY
 	# Solo is playtest only: never on at boot from the saved setting (only --solo or Select + Start).
 	open()
-	UiPreview.run.call_deferred(self)
+	_preview.call_deferred()   # bound to the lobby: dropped if a test frees it first
 
 
 ## Fresh lobby: nobody ready, Play focused. Joined pads keep their panels; solo readies both.
@@ -555,3 +555,8 @@ func _draw_countdown() -> void:
 	UiStyle.draw_show(c, Vector2(110 + w + 30, 30), "GO!" if _launched else str(n), 84, UiStyle.CREAM, 0, 10)
 	UiStyle.draw_rich(c, Vector2(100, 78), "Starting in %d   [b] Cancel" % n if not _launched else "Here we go!",
 			UiStyle.Role.HINT, Color(UiStyle.CREAM, 0.82), 0, 30)
+
+
+## --ui=<state> screenshots (UiPreview), once the lobby is in the tree.
+func _preview() -> void:
+	UiPreview.run(self)
