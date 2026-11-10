@@ -60,10 +60,10 @@ func _tools_missing() -> bool:
 	return _sh("command -v git && command -v python3") != 0
 
 
-func _sync() -> Dictionary:
+func _sync(tag := "v9.0.0") -> Dictionary:
 	var out := []
 	var tool := ProjectSettings.globalize_path("res://scripts/tools/sync_characters.sh")
-	var code := _sh("SYNC_CHARACTERS_ROOT='%s' bash '%s' '%s' v9.0.0" % [_game, tool, _lib], out)
+	var code := _sh("SYNC_CHARACTERS_ROOT='%s' bash '%s' '%s' %s" % [_game, tool, _lib, tag], out)
 	return { "code": code, "log": "\n".join(out) }
 
 
@@ -103,3 +103,34 @@ func test_refuses_to_overwrite_an_unsynced_folder_with_a_roster_id() -> void:
 	assert_int(r.code).is_not_equal(0)
 	assert_str(r.log).contains("not a synced folder")
 	assert_bool(_has("assets/characters/sprocket/mine.txt")).is_true()
+
+
+## A character with voice/lib/catchphrase_big.ogg gets voice/catchphrase.ogg and a "catchphrase"
+## path (only that file from lib/, and it is not a bark); one without gets "".
+func test_vendors_the_catchphrase() -> void:
+	if _tools_missing():
+		push_warning("test_sync_characters: no git/python3 here, skipped")
+		return
+	for f in ["cheer.ogg", "lib/catchphrase_big.ogg", "lib/catchphrase_calm.ogg", "lib/sigh.ogg"]:
+		_put(_lib.path_join("voices/whistle/" + f), "ogg " + f)
+	_put(_lib.path_join("characters.json"), JSON.stringify({ "roster": ["sprocket", "whistle"],
+			"defaults": { "P1": "sprocket", "P2": "whistle" }, "player_colours": {},
+			"characters": [{ "id": "sprocket", "name": "Sprocket", "playable": true,
+				"model_3d": "models/sprocket.glb" },
+				{ "id": "whistle", "name": "Whistle", "playable": true, "voice": "voices/whistle/" }] }))
+	_sh("cd '%s' && git add -A && git -c user.name=t -c user.email=t@t.invalid " % _lib
+			+ "-c commit.gpgsign=false commit -qm voice && git tag v9.1.0")
+	var r := _sync("v9.1.0")
+	assert_int(r.code).override_failure_message(r.log).is_equal(0)
+	var d = JSON.parse_string(FileAccess.get_file_as_string(_game.path_join("data/roster.json")))
+	var w: Dictionary = d.characters.whistle
+	assert_str(w.catchphrase).is_equal("res://assets/characters/whistle/voice/catchphrase.ogg")
+	assert_array(w.barks).is_equal(["cheer"])
+	assert_str(d.characters.sprocket.catchphrase).is_equal("")
+	var phrase := _game.path_join("assets/characters/whistle/voice/catchphrase.ogg")
+	assert_str(FileAccess.get_file_as_string(phrase)).is_equal("ogg lib/catchphrase_big.ogg")
+	assert_bool(_has("assets/characters/whistle/voice/lib")).is_false()
+	assert_bool(_has("assets/characters/whistle/voice/sigh.ogg")).is_false()
+	assert_bool(_has("assets/characters/whistle/voice/catchphrase_calm.ogg")).is_false()
+	var credits := FileAccess.get_file_as_string(_game.path_join("assets/CREDITS.md"))
+	assert_str(credits).contains("characters/whistle/voice/catchphrase.ogg")
