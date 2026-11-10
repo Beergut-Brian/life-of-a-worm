@@ -41,6 +41,10 @@ var go := false:
 
 const PODIUM_Y := 560.0
 const PLATE_Y := 640.0
+## The name's font size on the plate, and the smallest a long name shrinks to.
+const NAME_SIZE := 62
+const NAME_MIN := 34
+const NAME_SQUEEZE_MIN := 0.6
 
 var _t := 0.0
 var _light := 0.0
@@ -172,8 +176,15 @@ func _draw() -> void:
 		UiStyle.draw_show(self, Vector2(nx + 64, cy), "JOIN", 58, Color(UiStyle.CREAM, pulse))
 	else:
 		var name_x := nx + (40.0 if can_change else 0.0)
-		var size_n := int(62 * (1.0 + 0.18 * _pop))
-		var w := UiStyle.draw_show(self, Vector2(name_x, cy), UiStyle.skin().player_name(player), size_n, Color.WHITE)
+		var who := UiStyle.skin().player_name(player)
+		# Long names shrink to fit between the arrows (the READY! stamp sits at the right end).
+		var room := name_room()
+		var size_n := int(name_size(who, room) * (1.0 + 0.18 * _pop))
+		# Still too long at NAME_MIN: narrow the letters (never below NAME_SQUEEZE_MIN wide).
+		var sq := name_squeeze(who, room)
+		draw_set_transform(Vector2(name_x, cy), 0.0, Vector2(sq, 1.0))
+		var w := UiStyle.draw_show(self, Vector2.ZERO, who, size_n, Color.WHITE) * sq
+		draw_set_transform_matrix(Transform2D.IDENTITY)
 		if can_change:
 			_arrow(Vector2(nx + 12, cy), -1, _kick[-1])
 			_arrow(Vector2(minf(name_x + w + 30, plate.end.x - 30), cy), 1, _kick[1])
@@ -184,6 +195,35 @@ func _draw() -> void:
 		_tag(Vector2(plate.end.x - UiStyle.rich_width(tag_text, UiStyle.Role.HINT, 28) - 50, PLATE_Y - 40), tag_text)
 	if readied:
 		_draw_stamp(Vector2(plate.end.x - 50, PLATE_Y - 14))
+
+
+## Room for the name on the plate, in px: from after the P1/P2 tag (and the left arrow) to the
+## right arrow (or the plate's end).
+func name_room() -> float:
+	var plate_end := size.x - 60.0
+	var name_x := 10.0 + 112.0 + 24.0 + (40.0 if can_change else 0.0)
+	return plate_end - name_x - (64.0 if can_change else 24.0)
+
+
+## The name plate's font size: NAME_SIZE, smaller for a name that would not fit in `room` px,
+## never below NAME_MIN (name_squeeze narrows what still does not fit).
+static func name_size(text: String, room: float) -> int:
+	var w := UiStyle.show_width(text, NAME_SIZE)
+	if w <= room or w <= 0.0:
+		return NAME_SIZE
+	var s := maxi(NAME_MIN, int(NAME_SIZE * room / w))
+	while s > NAME_MIN and UiStyle.show_width(text, s) > room:   # widths aren't exactly linear
+		s -= 1
+	return s
+
+
+## How wide the letters are drawn (1.0 normal): a name that does not fit even at NAME_MIN is
+## narrowed to fit `room`, down to NAME_SQUEEZE_MIN (12 letters fit beside the chooser arrows).
+static func name_squeeze(text: String, room: float) -> float:
+	var w := UiStyle.show_width(text, name_size(text, room))
+	if w <= room or w <= 0.0:
+		return 1.0
+	return maxf(NAME_SQUEEZE_MIN, room / w)
 
 
 ## A small dark tag above the plate.
