@@ -115,6 +115,11 @@ Solo (playtest only): the one pad drives one podium at a time. **Select** (tappe
 switches the pad to the other podium: A, B and left / right then act there. Solo readies both, so
 to change: B, left / right, A; Select, B, left / right, A for the other one.
 
+**Long names** shrink to fit the name plate between the arrows (`lobby_spot.gd` `name_size()`: 62 px down
+to `NAME_MIN` 34), and a name still too long at 34 is drawn narrower (`name_squeeze`, down to 60 %
+width), so a 12-letter name sits between the arrows. `tests/test_name_plate.gd` checks
+"Bartholomews" (`tests/fixtures/roster_long.json`).
+
 With only Jeff and Chuck in the roster (characters `v0.3.0`) and both players on the stage, there
 is nobody free to switch to: left / right gives the head-shake. New characters land with a
 `sync_characters.sh` rerun, no code change.
@@ -201,6 +206,14 @@ same name and it replaces the synth; no code change.
 Controller glyphs: write `[a]`, `[b]`, `[x]`, `[y]`, `[start]`, `[select]`, `[lr]`, `[ud]` in hint
 text; they draw as neutral Xbox-layout glyphs (no logos).
 
+## The version label
+
+The lobby footer shows `BuildInfo.label()` (`scripts/autoload/build_info.gd`): the release tag from
+`res://data/build.json`, which CI writes before exporting (`release.yml`, step **Stamp the version**:
+`{ "version": "$GITHUB_REF_NAME", "commit": "$GITHUB_SHA" }`). No file (editor, local run, local
+export) shows `dev`. `data/build.json` is git-ignored; `data/*.json` is already in the export
+filter. Never bump `application/config/version` by hand for the label: it is not read any more.
+
 ## How a game adopts it
 
 1. Merge the template (`dev`) into the game. Keep your `main.gd` and level.
@@ -265,7 +278,8 @@ Remove `p1_name` / `p2_name` from `data/menu_skin.tres` so the plates follow the
 `scripts/tools/shots.sh "" 1.5 /tmp/shots --ui=lobby-ready` (also `lobby`, `lobby-joined`,
 `lobby-hold`, `lobby-settings`, `lobby-confirm`, `lobby-pick` (P1 choosing, arrows), `lobby-swap`
 (P1 posed mid-swap, poof), `pause`, `pause-settings`, `pause-confirm`, and the
-motion strip `lobby-go1` .. `lobby-go6`: SETTINGS focused, up to PLAY, A + GO!, wipe, round card,
+motion strip `lobby-go1` .. `lobby-go6`; the `pause*` shots let the game run 1 s first, so the blur
+has the game behind it: SETTINGS focused, up to PLAY, A + GO!, wipe, round card,
 into the game). Add `--ui-pixel` for a `pixel_art` skin (pixel forms on the podiums).
 
 Performance: the sunburst is one full-screen shader; the `SCENE` backdrop renders at 1/16 of the
