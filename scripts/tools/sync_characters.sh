@@ -8,6 +8,8 @@
 #   pixel.png         the pixel form at native size, drawn by the library's own sprite code
 #                     (needs python3 + Pillow; skipped with a warning without them)
 #   voice/*.ogg       the voice barks, if any are recorded yet
+#   voice/catchphrase.ogg  the chooser's catchphrase: voice/lib/catchphrase_big.ogg only (nothing
+#                     else from lib/, to keep exports small); not a bark
 # then writes data/roster.json (roster order, names, defaults, player colours, res:// paths, the
 # tag) and the characters block in assets/CREDITS.md. Each folder it writes gets a `.synced`
 # marker; a synced folder whose id left the roster is removed. Anything else in
@@ -105,7 +107,7 @@ for cid in index.get("roster", []):
     with open(os.path.join(d, MARK), "w") as f:
         f.write(f"openjar-characters {tag}: written by scripts/tools/sync_characters.sh, do not edit\n")
     res = f"res://assets/characters/{cid}/"
-    entry = {"name": c["name"], "glb": "", "pixel": "", "voice": "", "barks": [],
+    entry = {"name": c["name"], "glb": "", "pixel": "", "voice": "", "barks": [], "catchphrase": "",
              "default_for": c.get("default_for") or 0}
     if c.get("model_3d") and c["model_3d"] in files:
         show(c["model_3d"], os.path.join(d, f"{cid}.glb"))
@@ -127,6 +129,12 @@ for cid in index.get("roster", []):
         entry["barks"] = [os.path.splitext(os.path.basename(f))[0] for f in oggs]
         credits.append((f"characters/{cid}/voice/*.ogg", f"`openjar-characters` `{tag}`, `{voice}`",
                         f"{c['name']} voice barks: {', '.join(entry['barks'])}; see the library's CREDITS.md"))
+    phrase = voice + "lib/catchphrase_big.ogg"
+    if voice != "/" and phrase in files:
+        show(phrase, os.path.join(d, "voice", "catchphrase.ogg"))
+        entry["catchphrase"] = res + "voice/catchphrase.ogg"
+        credits.append((f"characters/{cid}/voice/catchphrase.ogg", f"`openjar-characters` `{tag}`, `{phrase}`",
+                        f"{c['name']} catchphrase (the chooser says it); see the library's CREDITS.md"))
     roster.append(cid)
     chars[cid] = entry
 
