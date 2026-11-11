@@ -12,13 +12,15 @@ var _summaries: Array[Dictionary] = []
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
 
 func open() -> void:
+	position = Vector2.ZERO
+	size = get_viewport_rect().size
 	refresh()
 	visible = true
 	UiSound.play("ui_card")
@@ -73,7 +75,7 @@ func _draw() -> void:
 	var v := size
 	draw_rect(Rect2(Vector2.ZERO, v), Color("f2b880"))                                   # dawn
 	draw_rect(Rect2(0, v.y * 0.35, v.x, v.y * 0.15), Color("f7d2a0"))
-	draw_circle(Vector2(v.x * 0.78, v.y * 0.42), 90.0, Color("fff1c8"))                  # sun
+	draw_circle(Vector2(v.x * 0.9, v.y * 0.22), 90.0, Color("fff1c8"))                  # sun
 	draw_rect(Rect2(0, v.y * 0.5, v.x, v.y * 0.5), Color("3f6f8f"))                       # pond
 	for i in 6:
 		var y := v.y * 0.56 + i * 60.0

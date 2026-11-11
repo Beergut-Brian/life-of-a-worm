@@ -134,6 +134,8 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	_all.erase(self)
+	if _all.is_empty():
+		_faces.clear()   # static texture cache: drop it with the last worm (no leak line at exit)
 
 
 func _ready() -> void:

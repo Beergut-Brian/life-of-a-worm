@@ -43,6 +43,11 @@ static func recipe(cue: String) -> Array:
 	return [[f, f * 1.12, 0.12, 0.0]]
 
 
+## Drops the cached streams (Audio calls it on exit, so none is reported leaked).
+static func clear() -> void:
+	_cache.clear()
+
+
 static func stream(cue: String) -> AudioStreamWAV:
 	if _cache.has(cue):
 		return _cache[cue]

@@ -28,6 +28,10 @@ func _ready() -> void:
 		UiStyle.use_skin(worm_skin())
 	Game.select_restarts = template_only
 	lobby.chooser = template_only
+	if not template_only:
+		# A persistent planet has nothing to restart: the bar goes back to the start screen (and the
+		# tin is saved on the way), so it says so.
+		$UI/PauseMenu/Card/Buttons/Restart.text = "Main menu"
 	dock = Dock.new()
 	dock.name = "Dock"
 	$UI.add_child(dock)
@@ -41,8 +45,17 @@ func _ready() -> void:
 		(func() -> void:
 			Players.join_virtual(Players.P1)
 			Game.start_round()).call_deferred()
+	elif OS.get_cmdline_user_args().has("--preview-dock"):   # frames of the tin select (shots.sh)
+		(func() -> void:
+			Players.join_virtual(Players.P1)
+			Game.start_round()).call_deferred()
 	elif Game.state != Game.State.LOBBY:
 		Game.to_lobby()
+
+
+func _exit_tree() -> void:
+	if not template_only:
+		UiStyle.use_skin(null)   # the skin (texture, podium scenes) is static: release it on exit
 
 
 ## The lobby's look: Gulp and Burp on the podiums, the dock as the backdrop, no round card.

@@ -49,6 +49,12 @@ func get_volume(bus: String) -> float:
 	return db_to_linear(AudioServer.get_bus_volume_db(i))
 
 
+func _exit_tree() -> void:
+	for p in _pool:
+		p.stream = null
+	GreyBeep.clear()
+
+
 ## Every cue name that was played this session (tests and the report read it).
 var played: Dictionary = {}
 
