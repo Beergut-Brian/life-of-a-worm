@@ -83,7 +83,7 @@ func _hollow(at: Vector2, r := 40.0) -> void:
 				_level.world.dig(cell)
 
 
-class SecretSpot extends Node2D:
+class FakeSecretSpot extends Node2D:
 	signal secret_found(id: StringName)
 
 
@@ -122,7 +122,7 @@ func test_earning_a_trait_unlocks_it() -> void:
 
 func test_secret_found_from_any_node_unlocks_a_secret() -> void:
 	_open(0)
-	var spot := SecretSpot.new()
+	var spot := FakeSecretSpot.new()
 	_level.add_child(spot)
 	await _frames(1)
 	spot.secret_found.emit(&"ant_city")
