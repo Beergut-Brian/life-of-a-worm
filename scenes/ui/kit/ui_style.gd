@@ -252,7 +252,7 @@ static func glow(color: Color, radius: int = RADIUS, size := 26) -> StyleBoxFlat
 # --- text with controller glyphs -------------------------------------------------
 # "Press [a] to join": [a] [b] [x] [y] [start] [select] [lr] [ud] become drawn Xbox-layout glyphs.
 
-const GLYPHS := ["a", "b", "x", "y", "start", "select", "lr", "ud"]
+const GLYPHS := ["a", "b", "x", "y", "start", "select", "lr", "ud", "stick"]
 
 
 static func _parts(text: String) -> Array:
@@ -344,6 +344,10 @@ static func draw_glyph(ci: CanvasItem, c: Vector2, h: float, tok: String, alpha 
 				var back := Vector2(-s * k, 0) if tok == "lr" else Vector2(0, -s * k)
 				var side := Vector2(0, k) if tok == "lr" else Vector2(k, 0)
 				ci.draw_colored_polygon(PackedVector2Array([tip, tip + back + side, tip + back - side]), ink)
+		"stick":
+			ci.draw_circle(c, r, fill, true, -1.0, true)
+			ci.draw_circle(c, r * 0.55, ink, false, r * 0.14, true)
+			ci.draw_circle(c, r * 0.22, ink, true, -1.0, true)
 		"start":
 			ci.draw_circle(c, r, fill, true, -1.0, true)
 			for i in 3:

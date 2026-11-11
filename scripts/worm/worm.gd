@@ -15,6 +15,10 @@ signal carried(player: int, what: StringName)
 signal dropped(player: int, what: StringName)
 signal eaten_by(player: int, creature: StringName)
 signal booped(player: int, other: int)
+## Hold B (wiggle) for WARP_HOLD s: the level decides where to (home, or the far partner).
+signal warp_requested(player: int)
+## Y outside the burrow: the tackle box (a placeholder in the grey-box).
+signal tackle_pressed(player: int)
 
 const ART := "res://assets/proto/worm/"
 const SEGMENT_TEX := preload("res://assets/proto/worm/segment.png")
@@ -32,6 +36,11 @@ const CHOMP_CUES := 5
 ## Where a part of each slot sits. Slots are data names, not traits.
 const SLOT_OFFSET := { &"head": Vector2(2, -1), &"crown": Vector2(-2, -12), &"back": Vector2(0, -8), &"tail": Vector2(-7, 0) }
 const BACK_EVERY := 3
+const WARP_HOLD := 2.0
+## Seconds between chomp cues while tunnelling (the tunnel loop carries the rest).
+const TILE_CHOMP_EVERY := 0.3
+## Body size per stage (visual and collision): stage 1 = 1.0, each stage + SIZE_STEP.
+const SIZE_STEP := 0.18
 
 static var _all: Array[Worm] = []
 static var _faces := {}
@@ -44,6 +53,25 @@ var rules: WormRules
 var heading := 0.0
 var carrying: Node2D = null
 var wall_open := false
+## The polar world this worm tunnels through (null in the trait arena: no tiles).
+var world: PolarWorld
+## Y opens the trait wall anywhere (the arena prototype); false: only while in_burrow, else Y is
+## the tackle box (tackle_pressed).
+var wall_anywhere := true
+var in_burrow := false
+## Set by the level while the worm sleeps in its burrow: eyes shut, zzz.
+var asleep := false
+## Seconds the stick has been idle with nothing pressed (sleep needs 2 s in a hollow).
+var still_time := 0.0
+## 0..1 while B is held toward a warp.
+var warp_charge := 0.0
+## Edible food within reach: X would carry it (the blinking glyph).
+var carry_ready := false
+## Solid tiles eaten in the last physics frame (tunnelling).
+var tiles_this_frame := 0
+var tiles_total := 0
+## The shared camera's rotation: the stick is screen-relative (up on the stick = up on screen).
+var view_rotation := 0.0
 
 var _positions: Array[Vector2] = []
 var _seg_nodes: Array[Node2D] = []
@@ -59,6 +87,10 @@ var _sheen_mat: ShaderMaterial
 var _part_nodes := {}          # slot -> Sprite2D (head/crown on the head)
 var _parts_sig := ""
 var _wall: TraitWall
+var _tile_chomp := 0.0
+var _warp_fired := false
+var _ring_node: Node2D
+var _size := 1.0
 
 @onready var head: CharacterBody2D = $Head
 @onready var head_sprite: Sprite2D = $Head/Look/Sprite
@@ -102,6 +134,8 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	_all.erase(self)
+	if _all.is_empty():
+		_faces.clear()   # static texture cache: drop it with the last worm (no leak line at exit)
 
 
 func _ready() -> void:
@@ -122,20 +156,131 @@ func _ready() -> void:
 	face.texture = _face_tex(0)
 	light.texture = _light_texture()
 	dust.color = Color(0.85, 0.72, 0.55)
+	if has_meta("start_pos"):
+		head.position = get_meta("start_pos")
 	_positions.clear()
 	_positions.append(head.position)
 	for i in model.segments.size():
 		_positions.append(head.position - Vector2(spacing() * (i + 1), 0))
 		_add_segment_node(model.segments[i], false)
 	_refresh_parts(false)
+	_ring_node = Node2D.new()
+	_ring_node.z_index = 20
+	_ring_node.draw.connect(_draw_ring)
+	add_child(_ring_node)
+	model.stage_changed.connect(func(_f: int, _t: int) -> void: _apply_size())
+	_apply_size()
+
+
+## Tunnel through this world: eat_circle at the mouth every frame; World.tile_eaten for this player
+## feeds the worm the tile's ring flavour (the contract's "eat_tile calls Worm.feed").
+func set_world(w: PolarWorld) -> void:
+	world = w
+	if world and not world.tile_eaten.is_connected(_on_tile_eaten):
+		world.tile_eaten.connect(_on_tile_eaten)
+		world.set_stage(player, model.stage)
+
+
+func _on_tile_eaten(cell: Vector2i, _block: StringName, p: int) -> void:
+	if p != player:
+		return
+	bite_tile(world.ring_of(cell).flavour if world else &"")
+
+
+## One tile swallowed: a little growth in the ring's flavour, a share to the partner.
+func bite_tile(flavour: StringName) -> void:
+	var g := model.stats.value("tile_growth", 0.05)
+	model.add_growth(g, flavour)
+	tiles_this_frame += 1
+	tiles_total += 1
+	for w in Worm.all():
+		if w != self:
+			w.model.add_growth(g * rules.partner_share, &"")
+	if _tile_chomp <= 0.0:
+		_tile_chomp = TILE_CHOMP_EVERY
+		Audio.play("chomp_1")
+		crumbs.color = Color(0.55, 0.38, 0.2)
+		crumbs.restart()
+		crumbs.emitting = true
+
+
+## Body scale for the stage: bigger worm, bigger bite, wider tunnel.
+func size_factor() -> float:
+	return 1.0 + SIZE_STEP * (model.stage - 1)
+
+
+func _apply_size() -> void:
+	_size = size_factor()
+	look.scale = Vector2(_size, _size * signf(look.scale.y if look.scale.y != 0.0 else 1.0))
+	body.scale = Vector2.ONE
+	for n in _seg_nodes:
+		n.set_meta("size", _size)
+	var sh := $Head/Shape as CollisionShape2D
+	if sh and sh.shape is CircleShape2D:
+		sh.shape = sh.shape.duplicate()
+		(sh.shape as CircleShape2D).radius = 6.0 * _size
+	if world:
+		world.set_stage(player, model.stage)
+
+
+## Teleport (warp home / to the partner): the body folds up behind the head, a ring, the cue.
+func warp_to(pos: Vector2) -> void:
+	head.position = pos
+	for i in _positions.size():
+		_positions[i] = pos - Vector2.from_angle(heading) * spacing() * i * 0.3
+	_ring_fx(Players.COLOR[player])
+	_pop(look, 1.6)
+	Audio.play("warp")
+
+
+## Everything the shared camera should frame (the head and the tail), world space.
+func cam_position() -> Vector2:
+	return head.position + position
+
+
+func fit_points() -> Array:
+	var tail := _positions[_positions.size() - 1] if not _positions.is_empty() else head.position
+	return [head.position + position, tail + position]
+
+
+func to_dict() -> Dictionary:
+	var d := model.to_dict()
+	d["pos"] = [head.position.x, head.position.y]
+	d["heading"] = heading
+	return d
+
+
+## Restore body and place (before or after _ready; the node rebuilds its segments).
+func from_dict(d: Dictionary) -> void:
+	if model == null:
+		model = WormGrowth.new()
+	model.from_dict(d)
+	var p: Array = d.get("pos", [])
+	heading = float(d.get("heading", 0.0))
+	if is_inside_tree():
+		for n in _seg_nodes:
+			n.queue_free()
+		_seg_nodes.clear()
+		if p.size() == 2:
+			head.position = Vector2(p[0], p[1])
+		_positions = [head.position]
+		for i in model.segments.size():
+			_positions.append(head.position - Vector2.from_angle(heading) * spacing() * (i + 1))
+			_add_segment_node(model.segments[i], false)
+		_refresh_parts(false)
+		_apply_size()
+	elif p.size() == 2:
+		set_meta("start_pos", Vector2(p[0], p[1]))
 
 
 ## Drop-in: the body unfolds out of the head with a pop (visual only; physics never scales).
 func hatch() -> void:
 	Audio.play("hatch")
-	body.scale = Vector2.ZERO
-	var tw := create_tween()
-	tw.tween_property(body, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_BACK)
+	# Each segment pops from nothing in place (the body node stays put: segments are in world space).
+	for node in _seg_nodes:
+		node.set_meta("pop", 0.05)
+		var tw := create_tween()
+		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 0.05, 1.0, 0.4).set_trans(Tween.TRANS_BACK)
 	_pop(look, 1.8)
 	_ring_fx(Players.COLOR[player])
 
@@ -154,7 +299,7 @@ func set_wall_open(on: bool) -> void:
 
 
 func spacing() -> float:
-	return model.stats.value("segment_spacing", 9.0)
+	return model.stats.value("segment_spacing", 9.0) * _size
 
 
 ## Everything the camera should keep on screen: head and every segment, in global space.
@@ -170,7 +315,7 @@ func head_position() -> Vector2:
 
 
 func mouth_position() -> Vector2:
-	return head.global_position + Vector2.from_angle(heading) * 9.0
+	return head.global_position + Vector2.from_angle(heading) * 9.0 * _size
 
 
 ## Swallow a food: full growth and its flavour to me, a share (plain) to every partner.
@@ -196,7 +341,15 @@ func receive_share(amount: float) -> void:
 
 
 ## Gulped by a bigger thing: one segment shorter, dizzy; never a stage, never a trait.
-func get_eaten(creature: StringName) -> void:
+## out_at (world space, optional): where the worm pops out (the creature's far end).
+func get_eaten(creature: StringName, out_at = null) -> void:
+	if out_at is Vector2:
+		var p: Vector2 = out_at - position
+		head.position = p
+		for i in _positions.size():
+			_positions[i] = p - Vector2.from_angle(heading) * spacing() * i * 0.5
+		_pop(look, 1.7)
+		asleep = false
 	model.lose_segment()
 	_dizzy = 2.0
 	Audio.play("eaten")
@@ -212,8 +365,16 @@ func _physics_process(delta: float) -> void:
 	_time += delta
 	var stats := model.stats
 	var intent := _read_intent()
+	tiles_this_frame = 0
+	_tile_chomp = maxf(0.0, _tile_chomp - delta)
 	var wall_was := wall_open
-	if intent.tackle:
+	if wall_open and not wall_anywhere and not in_burrow:
+		set_wall_open(false)
+	if intent.tackle and not wall_anywhere and not in_burrow and not wall_open:
+		Audio.play("tackle_box")
+		_pop(look, 1.2)
+		tackle_pressed.emit(player)
+	elif intent.tackle:
 		set_wall_open(not wall_open)
 	elif wall_open:
 		_wall.handle(intent.nav, intent.confirm, intent.wiggle)
@@ -233,6 +394,11 @@ func _physics_process(delta: float) -> void:
 		_pop(look, 1.2)
 	if intent.wiggle:
 		_wiggle()
+	_warp_step(bool(intent.get("hold_b", false)) and not wall_open, delta)
+	var idle: bool = intent.move.length() <= 0.2 and not intent.burst and not intent.wiggle and not intent.carry and not intent.get("hold_b", false)
+	still_time = still_time + delta if idle else 0.0
+	if not idle:
+		asleep = false
 	var move: Vector2 = intent.move
 	var speed := 0.0
 	if move.length() > 0.2:
@@ -246,6 +412,13 @@ func _physics_process(delta: float) -> void:
 	if _dizzy > 0.0:
 		speed *= 0.5
 	speed *= _zone_factor(stats)
+	if world and speed > 0.0:
+		# The bite is centred just ahead of the head and wide enough to clear it, so the tunnel
+		# never snags the head on a tile corner (about 1.5 tiles wide at stage 1).
+		var bite_at := world.to_local(head.global_position + Vector2.from_angle(heading) * 6.0 * _size)
+		var n := world.eat_circle(bite_at, 12.0 * _size, player)
+		if n > 0 or tiles_this_frame > 0:
+			speed *= stats.value("dig_speed", 0.65)   # dirt is slower than an open tunnel
 	head.velocity = Vector2.from_angle(heading) * speed
 	head.move_and_slide()
 	dust.emitting = _burst_left > 0.0
@@ -259,7 +432,7 @@ func _physics_process(delta: float) -> void:
 func _read_intent() -> Dictionary:
 	if autopilot.is_valid():
 		var d: Dictionary = autopilot.call(self)
-		for k in ["move", "burst", "wiggle", "carry", "tackle", "nav", "confirm"]:
+		for k in ["move", "burst", "wiggle", "carry", "tackle", "nav", "confirm", "hold_b"]:
 			if not d.has(k):
 				d[k] = Vector2.ZERO if k == "move" else (0 if k == "nav" else false)
 		return d
@@ -269,10 +442,11 @@ func _read_intent() -> Dictionary:
 	elif Input.is_action_just_pressed(Players.action(player, "move_right")):
 		nav = 1
 	return {
-		"move": Players.move_vector(player),
+		"move": Players.move_vector(player).rotated(view_rotation),
 		"burst": Input.is_action_just_pressed(Players.action(player, "action")),
 		"wiggle": Input.is_action_just_pressed(Players.action(player, "jump")),
 		"carry": Input.is_action_pressed(Players.action(player, "carry")),
+		"hold_b": Input.is_action_pressed(Players.action(player, "jump")),
 		"tackle": Input.is_action_just_pressed(Players.action(player, "tackle")),
 		"nav": nav,
 		"confirm": Input.is_action_just_pressed(Players.action(player, "action")),
@@ -305,6 +479,7 @@ func _eat_and_carry(carry_held: bool, stats: WormStats, delta: float) -> void:
 	var reach := stats.value("mouth_radius", 8.0)
 	var pull_r := stats.value("pull_radius")
 	var nearest := INF
+	carry_ready = false
 	if carrying != null:
 		if not is_instance_valid(carrying):
 			carrying = null
@@ -325,6 +500,8 @@ func _eat_and_carry(carry_held: bool, stats: WormStats, delta: float) -> void:
 		var edible := can_eat(data)
 		if edible:
 			nearest = minf(nearest, d - data.radius)
+			if carrying == null and d < reach + data.radius + 18.0:
+				carry_ready = true
 		if pull_r > 0.0 and edible and d < pull_r and d > reach:
 			f.call("drift_toward", mouth, stats.value("pull_speed") * delta)
 		if d > reach + data.radius:
@@ -389,7 +566,9 @@ func _update_look(_delta: float, stats: WormStats) -> void:
 	var facing_left := cos(heading) < 0.0
 	look.rotation = heading
 	look.scale.y = -absf(look.scale.y) if facing_left else absf(look.scale.y)
-	face.texture = _face_tex(_mouth)
+	face.texture = _face_tex(0 if asleep else _mouth)
+	if asleep and int(_time * 2.0) != int((_time - _delta) * 2.0):
+		_float_fx(NOTE_TEX, head.position + Vector2(6, -12), Color(0.7, 0.8, 1.0), 1.2)
 	light.enabled = stats.value("light_radius") > 0.0
 	light.texture_scale = maxf(0.01, stats.value("light_radius"))
 	light.energy = 1.1 + 0.15 * sin(_time * 3.0)
@@ -409,7 +588,7 @@ func _update_look(_delta: float, stats: WormStats) -> void:
 			off = Vector2.from_angle(ang + PI / 2) * sin(_time * 6.0 - i * 0.5) * 1.5
 		node.position = p + off
 		node.rotation = ang
-		var base_scale: float = node.get_meta("pop", 1.0)
+		var base_scale: float = node.get_meta("pop", 1.0) * _size
 		node.scale = Vector2(base_scale * (0.75 if squash else 1.0), base_scale * (1.25 if squash else 1.0))
 	for slot in _part_nodes:
 		var s: Sprite2D = _part_nodes[slot]
@@ -605,3 +784,32 @@ func _ring_fx(c: Color) -> void:
 	ring.position = head.position
 	ring.z_index = 9
 	fx.add_child(ring)
+
+
+func _warp_step(held: bool, delta: float) -> void:
+	if not held:
+		if warp_charge > 0.0:
+			_ring_node.queue_redraw()
+		warp_charge = 0.0
+		_warp_fired = false
+		return
+	if _warp_fired:
+		return
+	if warp_charge == 0.0:
+		Audio.play("warp_charge")
+	warp_charge = minf(1.0, warp_charge + delta / WARP_HOLD)
+	_ring_node.queue_redraw()
+	if warp_charge >= 1.0:
+		_warp_fired = true
+		warp_charge = 0.0
+		warp_requested.emit(player)
+
+
+## The hold-B ring: fills round the head in the player's colour.
+func _draw_ring() -> void:
+	if warp_charge <= 0.0:
+		return
+	var c := head.position
+	var r := 16.0 * _size
+	_ring_node.draw_arc(c, r, 0, TAU, 32, Color(0, 0, 0, 0.45), 4.0)
+	_ring_node.draw_arc(c, r, -PI / 2, -PI / 2 + TAU * warp_charge, 32, Players.COLOR[player].lightened(0.3), 4.0)

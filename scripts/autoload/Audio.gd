@@ -49,10 +49,21 @@ func get_volume(bus: String) -> float:
 	return db_to_linear(AudioServer.get_bus_volume_db(i))
 
 
+func _exit_tree() -> void:
+	for p in _pool:
+		p.stream = null
+	GreyBeep.clear()
+
+
+## Every cue name that was played this session (tests and the report read it).
+var played: Dictionary = {}
+
+
 func play(cue: String, _position = null) -> void:
-	var stream := _resolve(SFX_DIR, cue)
+	played[cue] = int(played.get(cue, 0)) + 1
+	var stream := _resolve(SFX_DIR, cue, true)
 	if stream == null:
-		return
+		stream = GreyBeep.stream(cue)   # grey-box: no file yet, a placeholder beep
 	for p in _pool:
 		if not p.playing:
 			p.stream = stream
@@ -97,7 +108,19 @@ func bark(character: String, bark_name: String) -> void:
 			return
 
 
-func _resolve(dir: String, cue: String) -> AudioStream:
+## A looping player for a continuous cue (the tunnel scrunch): the file if there is one, else the
+## placeholder loop. The caller owns the node (add it to its scene, set volume and pitch).
+func loop_player(cue: String) -> AudioStreamPlayer:
+	var p := AudioStreamPlayer.new()
+	p.bus = "SFX"
+	var stream := _resolve(SFX_DIR, cue, true)
+	if stream is AudioStreamOggVorbis:
+		stream.loop = true
+	p.stream = stream if stream != null else GreyBeep.stream(cue)
+	return p
+
+
+func _resolve(dir: String, cue: String, quiet := false) -> AudioStream:
 	var key := dir + cue
 	if _cache.has(key):
 		var variants: Array = _cache[key]
@@ -112,7 +135,7 @@ func _resolve(dir: String, cue: String) -> AudioStream:
 			i += 1
 	_cache[key] = variants
 	if variants.is_empty():
-		if not _warned.has(key):
+		if not _warned.has(key) and not quiet:
 			_warned[key] = true
 			push_warning("Audio: no file for cue '%s' in %s" % [cue, dir])
 		return null

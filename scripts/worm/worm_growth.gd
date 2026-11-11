@@ -22,6 +22,11 @@ var earned: Array[StringName] = []
 ## Equipped traits, at most slots().
 var active: Array[StringName] = []
 var stats: WormStats
+## Grey-box rule (GAME.md "Stage up"): a stage needs enough segments AND that ring's apex creature
+## eaten. Off by default so the trait arena and its tests keep the segments-only prototype rule.
+var apex_gate := false
+## Stages whose apex creature this worm has eaten (eating the stage-1 apex opens stage 2).
+var apex_eaten: Array[int] = []
 
 
 func _init(r: WormRules = null) -> void:
@@ -93,6 +98,9 @@ func start_at_stage(s: int) -> void:
 	s = clampi(s, 1, rules.max_stage())
 	while segments.size() < rules.stage_segments[s]:
 		segments.append(&"")
+	for k in range(1, s):
+		if not k in apex_eaten:
+			apex_eaten.append(k)   # a hatchling starts past the apexes of the stages below it
 	_check_stage()
 
 
@@ -138,8 +146,70 @@ func _earn(id: StringName) -> void:
 		traits_changed.emit(active.duplicate())
 
 
+## The size the body has grown to (segments only, never below the stage). What creatures compare
+## against: the stage-1 apex is a threat until this reaches 2, then it is food.
+func size_stage() -> int:
+	return maxi(stage, rules.stage_for(segments.size()))
+
+
+## The highest stage the apex creatures eaten so far allow (no gate: the last stage).
+func apex_cap() -> int:
+	if not apex_gate:
+		return rules.max_stage()
+	var s := 1
+	while s in apex_eaten:
+		s += 1
+	return s
+
+
+## Ate the apex creature of the ring that belongs to `ring_stage`; returns true on a stage-up.
+func eat_apex(ring_stage: int) -> bool:
+	if not ring_stage in apex_eaten:
+		apex_eaten.append(ring_stage)
+	var before := stage
+	_check_stage()
+	return stage > before
+
+
+func to_dict() -> Dictionary:
+	var segs := []
+	for f in segments:
+		segs.append(String(f))
+	var pend := {}
+	for k in pending:
+		pend[String(k)] = pending[k]
+	return { "segments": segs, "growth": growth, "pending": pend, "stage": stage,
+		"earned": earned.map(func(t): return String(t)), "active": active.map(func(t): return String(t)),
+		"apex_eaten": apex_eaten.duplicate() }
+
+
+## Restores a body saved by to_dict(); signals are not emitted (the node rebuilds from the data).
+func from_dict(d: Dictionary) -> void:
+	segments.clear()
+	for f in d.get("segments", []):
+		segments.append(StringName(f))
+	growth = float(d.get("growth", 0.0))
+	pending = {}
+	var pend: Dictionary = d.get("pending", {})
+	for k in pend:
+		pending[StringName(k)] = float(pend[k])
+	stage = int(d.get("stage", 1))
+	earned.clear()
+	for t in d.get("earned", []):
+		if rules.find_trait(StringName(t)) != null:
+			earned.append(StringName(t))
+	active.clear()
+	for t in d.get("active", []):
+		if StringName(t) in earned and active.size() < slots():
+			active.append(StringName(t))
+	apex_eaten.clear()
+	for a in d.get("apex_eaten", []):
+		apex_eaten.append(int(a))
+	_resolve()
+
+
 func _check_stage() -> void:
-	var s := maxi(stage, rules.stage_for(segments.size()))
+	var s := maxi(stage, mini(rules.stage_for(segments.size()), apex_cap()))
 	if s == stage:
 		return
 	var from := stage

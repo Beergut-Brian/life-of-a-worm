@@ -8,6 +8,9 @@ signal saved()
 signal loaded()
 
 var profile: String = "p1"
+## Which save of this profile is open: "" = the profile's own file; a game with several saves per
+## profile (Worm's bait tins: "tin1".."tin3") opens one with use_slot(). Never restored at boot.
+var slot := ""
 var _data: Dictionary = {}
 var _dirty := false
 ## Tests point this somewhere else so they never touch the real settings.
@@ -88,7 +91,21 @@ func wipe_settings() -> void:
 func use_profile(id: String) -> void:
 	flush()
 	profile = id
+	slot = ""
 	_load()
+
+
+## Open another save of the same profile (flushes the current one first). "" = the profile's own.
+func use_slot(id: String) -> void:
+	flush()
+	slot = id if id.is_valid_identifier() else ""
+	_load()
+
+
+## Path of a profile's save, for tools that read a slot without opening it (the tin shelf).
+func path_for(p_slot: String, p_profile := "") -> String:
+	var who := p_profile if p_profile != "" else profile
+	return "user://saves/%s.json" % (who if p_slot == "" else "%s_%s" % [who, p_slot])
 
 
 func wipe() -> void:
@@ -98,7 +115,7 @@ func wipe() -> void:
 
 
 func _path() -> String:
-	return "user://saves/%s.json" % profile
+	return path_for(slot)
 
 
 func _load() -> void:

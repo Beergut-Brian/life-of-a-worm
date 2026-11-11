@@ -18,6 +18,9 @@ var round_index: int = 0
 var demo := false
 ## Tests turn this off so quit() does everything but exit.
 var quit_exits := true
+## Select (the restart action) restarts the round in the template. Worm turns it off: a persistent
+## planet has nothing to restart (GAME.md "Select"); Select alone then does nothing in play.
+var select_restarts := true
 
 
 func _ready() -> void:
@@ -37,7 +40,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			pause()
 		elif state == State.PAUSED:
 			resume()
-	elif event.is_action_pressed("restart") and state in [State.PLAYING, State.ROUND_END]:
+	elif event.is_action_pressed("restart") and select_restarts and state in [State.PLAYING, State.ROUND_END]:
 		restart()
 
 
