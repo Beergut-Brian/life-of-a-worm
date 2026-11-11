@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/proto/rings/part_leaf.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"green_thumb"
+requires = {"root": 5}
+add = {"castings_speed": 1.0, "garden_yield": 1.0}
+mul = {}
+part_slot = &"crown"
+part_textures = Array[Texture2D]([ExtResource("2")])
+part_priority = 0
+part_spin = 0.0
+cue = "trait_green_thumb"
+color = Color(0.4353, 0.749, 0.2902, 1)

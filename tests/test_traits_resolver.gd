@@ -45,7 +45,22 @@ func test_order_never_matters() -> void:
 	var rules := WormRules.default_rules()
 	var list: Array = rules.traits.duplicate()
 	var ref := WormStats.resolve(list, rules.base_stats, 6)
-	var orders := [[5, 4, 3, 2, 1, 0], [2, 0, 5, 1, 4, 3], [1, 3, 5, 0, 2, 4]]
+	# Every trait in the rules, in three orders (reversed and two seeded shuffles; any trait count).
+	var orders := []
+	var idx := range(list.size())
+	var rev := idx.duplicate()
+	rev.reverse()
+	orders.append(rev)
+	var rng := RandomNumberGenerator.new()
+	for seed_value in [3, 11]:
+		rng.seed = seed_value
+		var o := idx.duplicate()
+		for i in range(o.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp = o[i]
+			o[i] = o[j]
+			o[j] = tmp
+		orders.append(o)
 	for order in orders:
 		var shuffled: Array = []
 		for i in order:
