@@ -52,6 +52,12 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-11 (proto R-b): The chomp is 6 s of 14 bites that grow bigger, ~12 s from confirm to space in all (1.1 s jar beat, 6.4 s chomp, 3.6 s gulp-silence-burp, 1.25 s cross-fade). Tunable constants in `scripts/chomp/planet_chomp.gd`.
 - 2026-11-11 (proto R-b): In space, bumping a bigger planet knocks the worm back (a physical bounce, not steering) and the planet wakes up for a second. The demo's autopilot exists only under `--demo-chomp`.
 - 2026-11-11 (proto R-b): Bigger-eats-smaller lives in `scripts/space/stage_rule.gd` (`StageRule.relation`) until the worm lane's stage logic exists; the disk's `World.is_edible_by` should call the same rule.
+- 2026-11-11 (proto R-a): Polar chunks are 32-tile ring bands cut into sectors about 32 tiles of arc long, 5x5 live around each worm. 16-tile chunks need twice as many to cover a screen; 48-tile chunks double the cost of every load (numbers in the R-a report).
+- 2026-11-11 (proto R-a): Regrowth runs on the planet's own saved clock, not the wall clock: nothing regrows while the game is closed, and only chunks near a worm regrow (a far tunnel catches up the moment a worm comes back).
+- 2026-11-11 (proto R-a): Castings stay under a tile that grows back, so a tunnel eaten twice comes back fast twice and gardens can spread along old tunnels. Regrowth never fills a cell within 3 tiles of a worm.
+- 2026-11-11 (proto R-a): Starting regrow times in planet seconds (plain / in castings): surface 120 / 30, topsoil 180 / 45, dirt 240 / 60, deep rock 600 / 150, core 900 / 225. Tiles removed by anything but a worm regrow at the plain rate. Content lane tunes `data/rings/rings.tres`.
+- 2026-11-11 (proto R-a): A seed dropped in castings sprouts at once, then fills one cell every 4 planet seconds, spreading only through castings, up to 10 tiles from the seed; garden food that gets eaten grows back as garden.
+- 2026-11-11 (proto R-a): The planet shot steps the zoom down to 1/16 centred on the core and swaps the live tiles for a 1-px-per-2-tiles picture of the whole planet with every bite drawn in; that picture is also the stage-6 chomp's `planet_texture`.
 
 ---
 
