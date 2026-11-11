@@ -44,3 +44,8 @@ New characters are proposed in the design sprint and approved by Kaden before an
   final asset will be, so Gameplay never waits on Art.
 - Every asset gets a line in `assets/CREDITS.md`. Generated art must not depict or imitate
   recognisable characters, brands or artists.
+
+## Life of a Worm (Gary, 2026-11-10)
+- Technique: 2D pixel art, 16 px tiles, nearest-neighbour, whole-pixel camera zoom (GAME.md, Art direction). Not the smooth 3D Jarling look; Jarlings appear as pixel forms drawn over low-res renders of their 3D masters.
+- Palette: Kaden chose an options lane (Docket D87, 2026-11-10): three genuinely different looks, one of them a lit, Terraria-like style (dense textured tiles, light falloff, parallax), each as real frames of the disk world with every ring's dominant hue (dirt brown, rock grey-blue, core orange, topsoil green, sky blue, space navy) and both worms (P1 `#3cc24a`, P2 `#e4393c`) readable on every ring. He picks or edits. No final art before his pick.
+- The kid-friendly option must not read as "catered to kids"; at least one option is grown-up and adventurous.
