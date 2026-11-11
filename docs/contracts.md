@@ -201,7 +201,7 @@ to turn it off). Both players join on that pad; only `solo_focus`'s actions get 
 two-heads icon shows top-left while it is on. A keyboard key from a player's action joins that player.
 
 Input map actions (defined in `project.godot`, per player, prefix `p1_` / `p2_`):
-`move_left`, `move_right`, `move_up`, `move_down`, `action`, `jump`.
+`move_left`, `move_right`, `move_up`, `move_down`, `action`, `jump`, `carry` (X; keys Q / .), `tackle` (Y; keys E / /).
 Global: `pause`, `restart`, `debug_overlay`, `debug_screenshot`.
 
 ### `Save` (`scripts/autoload/Save.gd`)
@@ -304,3 +304,118 @@ signal ate(player: int, what: StringName, growth: float)   # same signal as the 
 static func StageRule.relation(eater_stage: int, other_stage: int) -> int  # FOOD | THREAT | IGNORE
 # Anything that can be eaten exposes `var size_stage: int`; bigger eats smaller, equal ignores.
 ```
+
+### World: the polar disk (risk prototype R-a, `feature/proto-polar-1`)
+
+The planet is a `PolarWorld` (`scripts/world/polar_world.gd`), a subclass of the addon's `TileWorld`
+(`addons/openjar/tileworld/`, vendored v0.2.0) on a `DiskShape`. In `scenes/levels/disk.tscn` it is
+the node named `World`, in group `&"world"`; find it with
+`get_tree().get_first_node_in_group(&"world")`. It is not an autoload. Cells are `Vector2i` on one
+Cartesian grid (16 px squares, y down, core at the origin); only chunk grouping is polar. Positions
+are local to the world node; the world is translated, never rotated (the camera rotates).
+
+Time is the world's own simulated clock (`clock`, seconds, saved), never the wall clock: regrowth and
+gardens run on it, tests drive it with `advance()`.
+
+```gdscript
+# PolarWorld ("World")
+signal tile_eaten(cell: Vector2i, block: StringName, player: int)   # after eat_tile removed it
+signal tile_regrown(cell: Vector2i, block: StringName)              # a regrowth pass put it back
+signal garden_planted(cell: Vector2i, flavour: StringName)          # a seed took in castings
+signal garden_grew(cell: Vector2i, flavour: StringName)             # the patch filled one more cell
+# inherited from TileWorld: chunk_loaded(key), chunk_freed(key), tile_dug, dig_blocked, ...
+
+var clock: float                                   # simulated planet seconds
+var rings: RingSet                                 # data/rings/rings.tres
+func setup_planet(rings: RingSet, radius: int, seed: int, band := 32) -> void   # before add_child is fine
+func advance(delta: float) -> void                 # clock += delta; regrowth and garden passes when due
+                                                   # (_physics_process calls it; tests call it directly)
+func set_stage(player: int, stage: int) -> void    # the worm lane tells the world each worm's stage
+func stage_of(player: int) -> int                  # 1 until set
+func is_edible_by(stage: int, thing) -> bool       # thing: a Vector2i cell, a StringName tile id, or any
+                                                   # Object with `size_stage` (StageRule.relation == FOOD).
+                                                   # Cells and tiles: breakable and ring.edible_from <= stage.
+                                                   # Strangestone is never edible.
+func eat_tile(cell: Vector2i, player: int) -> bool # true when eaten: air + timestamped edit + castings,
+                                                   # tile_eaten emitted. False (nothing changes) when air,
+                                                   # outside, or not edible by stage_of(player).
+func eat_circle(pos: Vector2, radius_px: float, player: int) -> int   # eat_tile on every cell centre in
+                                                   # the circle; returns how many were eaten
+func regrow_time(cell: Vector2i) -> float          # seconds from being eaten to regrowing: the ring's
+                                                   # regrow_time, x castings_factor in castings;
+                                                   # INF = never (the Green thumb trait will scale
+                                                   # castings_factor through WormStats, not here)
+func has_castings(cell: Vector2i) -> bool
+func plant_seed(cell: Vector2i, flavour: StringName) -> bool   # true only on an air cell with castings
+                                                   # whose flavour is in rings.garden_tiles
+func ring_of(cell: Vector2i) -> RingDef
+func eaten_at(cell: Vector2i) -> float             # clock time of the edit, -1 if none
+func track_eater(node: Node2D) -> void             # track() + regrowth never fills within
+                                                   # keep_clear_tiles of it; untrack_eater(node) undoes it
+func planet_texture() -> Texture2D                 # the whole disk, 1 px per 2 tiles, edits drawn in;
+                                                   # the planet shot and the stage-6 chomp use it
+
+# Chunks (the addon's WorldShape interface on DiskShape)
+#   key = Vector2i(ring_band, sector): ring_band = int(dist / band), sectors_in(band) = max(4,
+#   ceil(TAU * (band + 0.5))) so a sector is about `band` tiles of arc. band = 32 (R-a decision).
+#   shape.chunk_of(cell) -> Vector2i, shape.chunk_cells(key) -> Array[Vector2i],
+#   shape.neighbourhood(key, 2) -> the 5x5 kept live around each tracked node (chunk_radius = 2).
+#   loaded_chunks() -> Array[Vector2i]; two eaters on opposite sides = two separate neighbourhoods.
+#   Gravity: shape.gravity_at(pos) == -pos.normalized() * gravity; up for a body = pos.normalized().
+
+# Save (inside the tin's "planet" key once Systems wires it; PolarWorld.to_save() / load_save())
+#   {"seed": int, "radius": int, "band": int, "clock": float,
+#    "edits": [x, y, id, ...],                    # addon EditStore, only differences from the seed
+#    "times": [x, y, deciseconds, ...],           # when each still-edited cell was eaten
+#    "castings": [x, y, ...],
+#    "gardens": [[x, y, "flavour", planted_ds], ...], "water": [...]}
+```
+
+`RingSet` / `RingDef` (`scripts/world/ring_def.gd`, `ring_set.gd`; data in `data/rings/rings.tres`):
+per ring `id`, `outer` (fraction of the radius), `tile` / `alt_tile` names, `hue`, `edible_from`
+(stage), `regrow_time` (seconds, 0 = never), `flavour`. The set holds `castings_factor`,
+`garden_interval`, `garden_max_radius`, `garden_tiles` ({flavour: tile name}) and
+`strangestone_radius` (tiles). Regrow times are data; the Content lane tunes them there.
+### Worm and traits (`scenes/players/worm.tscn`, `scripts/worm/`; risk prototype R-c)
+
+One `Worm` node per player (class `Worm`, root of `worm.tscn`). Signals are on the worm node and
+always carry its player, so a listener can connect to both worms the same way
+(`Worm.of(Players.P1).ate.connect(...)`, or every node in group `worms`).
+
+```gdscript
+signal ate(player: int, what: StringName, growth: float)        # swallowed a FoodData (id)
+signal segment_added(player: int, flavour: StringName)         # &"" = a plain segment
+signal segment_lost(player: int)                               # eaten by a bigger thing
+signal trait_earned(player: int, trait_id: StringName)         # once per trait, never lost
+signal traits_changed(player: int, active: Array[StringName])  # equip / swap / slot growth
+signal stage_changed(player: int, from: int, to: int)          # only ever goes up
+signal carried(player: int, what: StringName)                  # hold X on food: in the mouth
+signal dropped(player: int, what: StringName)                  # X released: back in the world
+signal eaten_by(player: int, creature: StringName)
+signal booped(player: int, other: int)                         # worms pass through each other
+
+static func stats(player: int) -> WormStats   # resolved stats of that player's worm (base if none)
+static func of(player: int) -> Worm            # null if that player has no worm
+func feed(food: FoodData) -> void              # swallow: growth + flavour, partner gets the share
+func get_eaten(creature: StringName) -> void   # one segment shorter, dizzy; never a stage
+var player: int
+var model: WormGrowth                          # segments, flavours, stage, earned/active traits
+```
+
+**Data.** `FoodData` (`data/foods/*.tres`): `id`, `flavour`, `growth`, `size_stage`, `color`.
+`TraitData` (`data/traits/*.tres`): `id`, `requires` (flavour -> filled segments), `add` and `mul`
+(stat -> number), `part_slot`, `part_textures` (one per stage, last one repeats), `part_priority`,
+`cue`, `color`. A trait whose `requires` names two flavours is a hybrid; no other rule.
+`WormRules` (`data/traits/worm_rules.tres`): `growth_per_segment`, `stage_segments`,
+`slots_per_stage`, `partner_share` (0.25), `base_stats`, flavour colours.
+
+**`WormStats`** (`scripts/worm/worm_stats.gd`). The only place trait modifiers meet:
+`value(stat) = (base + sum of add) * product of mul` over the active traits, order-independent.
+`parts` is slot -> the highest-priority active trait's part. Worm code reads stats by name
+(`speed`, `burst_speed`, `burst_time`, `light_radius`, `pull_radius`, `sheen`, `bite_bonus/<flavour>`,
+`drag/<zone kind>`, ...) and never names a trait.
+
+**What the tile world must provide** (later, `openjar-addons` tileworld): food nodes in group
+`food` with `data: FoodData` and `take()`; `World.is_edible_by(stage, thing)` honouring
+`stage + stats.value("bite_bonus/" + flavour)`; `World.eat_tile(cell, player)` that calls
+`Worm.of(player).feed(food_for_tile)`; slow zones in group `slow_zone` with `kind` and `drag`.

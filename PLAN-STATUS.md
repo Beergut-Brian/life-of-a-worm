@@ -93,11 +93,11 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 
 | ID | Source | Item | Status | Proof | Notes |
 | --- | --- | --- | --- | --- | --- |
-| G-01 | S1 Depth 2 | Where a worm eats it leaves castings (dark rich soil), a second tile layer | missing | ∅code | R-01 |
-| G-02 | S1 Depth 2 | Food regrows faster and bigger in castings | missing | ∅code | R-01 |
-| G-03 | S1 Depth 2 | Drop a carried seed in castings and a patch of that flavour grows and keeps growing; farming with no farm screen | missing | ∅code | Grey-box has carry (R-04); garden comes in the vertical slice |
-| G-04 | S1 Depth 2 | The whole world regrows slowly on its own; a ring is never exhausted until outgrown | missing | ∅code | |
-| G-05 | S1 Tech | Low-frequency regrowth pass over live chunks restores food tiles whose edit is older than the ring's regrow time; edits carry timestamps | missing | ∅code | Adapts addons `tileworld` (W-18) |
+| G-01 | S1 Depth 2 | Where a worm eats it leaves castings (dark rich soil), a second tile layer | partial | `scripts/world/polar_world.gd`; `tests/test_world_regrowth.gd::test_castings_regrow_faster_than_plain_digging`; `handoff/shots/` (R-a) | R-a: every `World.eat_tile` writes castings, a second layer drawn under the tiles and saved. Placeholder look |
+| G-02 | S1 Depth 2 | Food regrows faster and bigger in castings | partial | `tests/test_world_regrowth.gd::test_castings_regrow_faster_than_plain_digging` | Faster done (`castings_factor` 0.25 in `data/rings/rings.tres`). "Bigger" not built: food sizes come with `data/foods/` |
+| G-03 | S1 Depth 2 | Drop a carried seed in castings and a patch of that flavour grows and keeps growing; farming with no farm screen | partial | `tests/test_world_regrowth.gd::test_garden_grows_in_castings_and_keeps_growing` | World side built (R-a): `plant_seed(cell, flavour)` in castings grows a patch that refills and spreads through castings. Carrying a real seed comes with R-04 |
+| G-04 | S1 Depth 2 | The whole world regrows slowly on its own; a ring is never exhausted until outgrown | partial | `tests/test_world_regrowth.gd::test_castings_regrow_faster_than_plain_digging` | Every ring has a `regrow_time` in data; tiles removed by anything but a worm regrow at the plain rate. Values untuned |
+| G-05 | S1 Tech | Low-frequency regrowth pass over live chunks restores food tiles whose edit is older than the ring's regrow time; edits carry timestamps | built | `tests/test_world_regrowth.gd::test_eaten_dirt_regrows_on_the_simulated_clock`; `scenes/levels/polar_stress.tscn` | R-a: round robin over live chunks, at most 48 cells a frame, idle chunks skipped; worst regrowth frame < 2 ms in the 10-minute stress run |
 | G-06 | S1 Art | Rain soaks into the topsoil and makes castings sprout (cosmetic first, light garden bonus second) | missing | ∅code | Pairs with A-04 |
 
 ## B Burrow and carrying
@@ -164,7 +164,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 
 | ID | Source | Item | Status | Proof | Notes |
 | --- | --- | --- | --- | --- | --- |
-| W-01 | S1 World | The planet is a disk of tiles, gravity toward the centre, "down" is always toward the core | missing | ∅code | `tileworld/disk_shape.gd` in addons v0.2.0 is the base |
+| W-01 | S1 World | The planet is a disk of tiles, gravity toward the centre, "down" is always toward the core | partial | `tests/test_world_polar.gd::test_gravity_points_at_the_core`; `scenes/levels/disk.tscn` | R-a disk, gravity and rotating camera. The game's disk level is Gameplay's |
 | W-02 | S1 Rings | Core: glowing rock, crystals, unbreakable Strangestone seam; lava blobs bounce you; edible from 5 | missing | ∅data | |
 | W-03 | S1 Rings | Deep rock: stone, ore; ore nuggets, fossils; rock beetles; edible from 4 | missing | ∅data | |
 | W-04 | S1 Rings | Dirt: dirt, clay, roots; seeds, roots, grubs, pebbles; beetles, centipedes, moles; 1 to 3 | missing | ∅data | Mole listed as a threat here contradicts L-09 (see REPORT) |
@@ -172,26 +172,26 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | W-06 | S1 Rings | Surface: trees, fences, houses, cars, cows, hills, water tower; the lawnmower; 4 to 5 | missing | ∅data | |
 | W-07 | S1 Rings | Sky: clouds, birds, planes, balloons; no threats; 5 to 6 | missing | ∅data | |
 | W-08 | S1 Rings | Space: moons, planets, comets, the sun; big planets bump; 7 | missing | ∅data | |
-| W-09 | S1 World | About 1,000 tiles across at 16 px (~785,000 tiles), streamed in polar chunks (ring x sector) | missing | ∅code | Size set by R-01 |
+| W-09 | S1 World | About 1,000 tiles across at 16 px (~785,000 tiles), streamed in polar chunks (ring x sector) | partial | `scenes/levels/polar_stress.tscn` (785,456 tiles) | R-a kept radius 500 and measured it on the software renderer; the GTX 1060 check is still to do |
 | W-10 | S1 World | Every tile destructible; eaten tiles become air; loose things (pebbles, a cow) fall toward the core | missing | ∅code | |
 | W-11 | S1 World | Surface props are multi-tile objects that break into edible chunks when a big enough worm bites | missing | ∅code, ∅data | `scenes/props/`, `data/props/*.tres` |
 | W-12 | S1 World | The disk radius shrinks as it's eaten; stage-6 planet shot shows a lumpy bitten planet | missing | ∅code | |
 | W-13 | S1 World | Generic small-town props: water tower, diner, basketball court, Old Reel's dock and shed by the pond; no real places | missing | ∅data | Also P-22 |
-| W-14 | S1 Decided | Nothing is indestructible except the Strangestone seam at the core | missing | ∅code | |
-| W-15 | S1 Disk tech | Cartesian coords, core at origin, gravity `-position.normalized() * g`; worms cling to dirt while tunnelling | missing | ∅code | |
-| W-16 | S1 Disk tech | Chunk = ring band x angular sector (~32x32); 5x5 live per worm; only edits saved, base disk from a seed | missing | ∅code | R-01 |
-| W-17 | S1 Disk tech | Eating a tile: set to air, record edit, chomp particle, add growth | missing | ∅code | |
-| W-18 | S1 Inherited | Take `tileworld` from `openjar-addons`: chunk key becomes ring/sector, gravity to core, edits get timestamps | partial | `openjar-addons` tag `v0.2.0` (`b074b4c`): `tileworld/disk_shape.gd` | Addon is tagged but **not vendored** here (`addons/` = gdUnit4 only). Polar key, timestamps and core gravity still to add |
+| W-14 | S1 Decided | Nothing is indestructible except the Strangestone seam at the core | built | `tests/test_world_regrowth.gd::test_strangestone_is_never_eaten` | Unbreakable seam at the centre (R-a) |
+| W-15 | S1 Disk tech | Cartesian coords, core at origin, gravity `-position.normalized() * g`; worms cling to dirt while tunnelling | partial | `tests/test_world_polar.gd::test_gravity_points_at_the_core` | World side done. The worm's clinging is the worm lane's |
+| W-16 | S1 Disk tech | Chunk = ring band x angular sector (~32x32); 5x5 live per worm; only edits saved, base disk from a seed | built | `tests/test_world_polar.gd::test_two_eaters_two_neighbourhoods`, `test_cell_chunk_round_trip_every_quadrant`, `tests/test_world_regrowth.gd::test_save_holds_only_edits_and_round_trips` | Band 32 chosen by R-a (see handoff report) |
+| W-17 | S1 Disk tech | Eating a tile: set to air, record edit, chomp particle, add growth | partial | `scripts/world/polar_world.gd` `eat_tile` | Air, timestamped edit, castings, `tile_eaten`. Chomp particle is the stand-in's crumbs; growth belongs to the worm lane |
+| W-18 | S1 Inherited | Take `tileworld` from `openjar-addons`: chunk key becomes ring/sector, gravity to core, edits get timestamps | built | `addons/openjar/VENDORED.md` (v0.2.0, `b074b4c`); `scripts/world/polar_world.gd` | R-a vendored the addon. The polar key was already in it; timestamps and castings are game-side; the upstream asks are in the R-a report |
 | W-19 | S1 Inherited / S2 Stale | Split director available; try per-view rotation, decide by playtest | superseded | GAME.md:34 (S2) | S2: experiment only; the default is one shared rotating camera. `split_screen/` is in addons v0.2.0 |
 | W-20 | S1 Out of scope | One hand-tuned disk layout with seeded variation; no procedural planets beyond one seed per run | missing | ∅data | |
 | W-21 | S1 Save | Per bait tin: seed, timestamped edits, castings, each worm's stage/segments/flavours/traits, burrow, populations, secrets, pages, cutscenes seen, jars | partial | `scripts/autoload/Save.gd`; `test_smoke::test_save_roundtrip` | Template key/value save with profiles only. Needs three tin slots and the planet schema |
 | W-22 | S1 Save | Autosave every 30 s and on sleep, pause, quit | partial | `Save.gd` `flush()`; `Game.gd` `quit()` and `to_lobby()` flush | Flushes on quit, round end and back-to-lobby. No 30 s timer and no flush on pause or sleep |
-| W-23 | S1 Perf | 25 live chunks (~25k tiles per worm) at 60 fps on a GTX 1060; ≤40 creatures; C# chunk serialiser only if streaming stutters | missing | ∅code | R-01 measures this |
+| W-23 | S1 Perf | 25 live chunks (~25k tiles per worm) at 60 fps on a GTX 1060; ≤40 creatures; C# chunk serialiser only if streaming stutters | partial | R-a report measurements | Software renderer only (llvmpipe). GTX 1060 run outstanding |
 | W-24 | S1 Data (2026-11-10) | `data/BALANCE.md` targets 2 to 4 h per stage, 15 to 25 h to the chomp, a segment every 2 min, something new every 15; shared-growth ratio 0.25 | missing | ∅data | |
 | W-25 | S1 Data (2026-11-09 line) | `data/BALANCE.md`: 20 to 30 minute full run; one stage every 3 to 4 minutes | superseded | GAME.md:32 (S2 Stale lines) | Replaced by W-24 |
-| W-26 | S1 Data | `data/rings.tres` (order, radii, tile set, dominant hue, edible-from, populations), `data/creatures/`, `data/props/`, `data/stages.tres`, plus foods, traits, secrets, pets, trophies, planets, cutscenes | missing | ∅data | |
-| W-27 | S1 Contracts | `ate`, `stage_changed`, `eaten_by`, `breakthrough`, `planet_eaten`, `World.is_edible_by`, `World.eat_tile` in `docs/contracts.md` | missing | ∅contract | Per CLAUDE.md rule 6 this doc PR comes before the code |
-| W-28 | S1 Contracts (2026-11-10) | `segment_added`, `trait_earned`, `traits_changed`, `carried`, `brought_home`, `garden_planted`, `secret_found`, `page_completed`, `cutscene_finished`, `planet_jarred`, `Worm.stats`, `World.regrow_time` | missing | ∅contract | |
+| W-26 | S1 Data | `data/rings.tres` (order, radii, tile set, dominant hue, edible-from, populations), `data/creatures/`, `data/props/`, `data/stages.tres`, plus foods, traits, secrets, pets, trophies, planets, cutscenes | partial | `data/rings/rings.tres` | R-a: ring order, radii, tiles, hue, edible-from, regrow time, flavour. Populations, creatures, props, stages still to come |
+| W-27 | S1 Contracts | `ate`, `stage_changed`, `eaten_by`, `breakthrough`, `planet_eaten`, `World.is_edible_by`, `World.eat_tile` in `docs/contracts.md` | partial | `docs/contracts.md` "World: the polar disk" | `World.is_edible_by` and `World.eat_tile` documented (R-a); the worm signals belong to the worm lane |
+| W-28 | S1 Contracts (2026-11-10) | `segment_added`, `trait_earned`, `traits_changed`, `carried`, `brought_home`, `garden_planted`, `secret_found`, `page_completed`, `cutscene_finished`, `planet_jarred`, `Worm.stats`, `World.regrow_time` | partial | `docs/contracts.md` "World: the polar disk" | `garden_planted` and `World.regrow_time` documented (R-a); the rest belongs to other lanes |
 | W-29 | S1 Scenes | `scenes/levels/disk.tscn`, `space.tscn`, `planet_chomp.tscn`, `scenes/players/worm.tscn`, `scenes/creatures/`, `scenes/props/`, `scenes/ui/hud.tscn` | missing | ∅code | |
 | W-30 | S1 Scenes | HUD: size stage as a growing worm icon, no numbers | missing | ∅code | |
 | W-31 | S1 Out of scope | A true 3D sphere | dropped | GAME.md "Out of scope for v1" | Kept out of v1 |
@@ -363,7 +363,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 
 | ID | Source | Item | Status | Proof | Notes |
 | --- | --- | --- | --- | --- | --- |
-| R-01 | S1 Phase 1a | Polar chunks with regrowth and castings at 60 fps on a 1,000-tile disk | missing | ∅code | Unblocked: addons v0.2.0 tagged. Vendor the addons first. Tag `v0.0.1-dev.N` |
+| R-01 | S1 Phase 1a | Polar chunks with regrowth and castings at 60 fps on a 1,000-tile disk | partial | R-a report; `tests/test_world_polar.gd`, `tests/test_world_regrowth.gd`; `scenes/levels/polar_stress.tscn` | Prototype built and measured on the software renderer. The GTX 1060 60 fps check is outstanding. Not tagged |
 | R-02 | S1 Phase 1b / S3 D86 | Stage-6 chomp, jar snapshot and cross-fade to space | missing | ∅code | Tile-free, can start now |
 | R-03 | S1 Phase 1c / S3 D86 | Segmented worm with five stacked traits and no special cases (`WormStats` resolver) | missing | ∅code | Tile-free, can start now |
 | R-04 | S1 Phase 2 | Grey-box: one worm, the dirt ring, eat and carry, segments, one trait, a sleepable burrow, every action beeps | missing | ∅code | Tag `v0.0.2-dev.N` |

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/proto/worm/part_glow_bulb.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"glow"
+requires = {"crystal": 4}
+add = {"light_radius": 1.8}
+mul = {}
+part_slot = &"crown"
+part_textures = Array[Texture2D]([ExtResource("2")])
+part_priority = 0
+part_spin = 0.0
+cue = "trait_glow"
+color = Color(0.4353, 0.9412, 1, 1)
