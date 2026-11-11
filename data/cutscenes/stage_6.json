@@ -1,0 +1,27 @@
+{
+	"id": "stage_6",
+	"scene": "dock",
+	"title": "The big one",
+	"when": "stage 6",
+	"time_of_day": "dusk",
+	"clue": "the hill is gone and the horizon bends: the planet is getting small",
+	"steps": [
+		{"do": "call", "fn": "time", "args": {"of": "dusk", "secs": 0}},
+		{"do": "camera", "to": "dock", "zoom": 4.0, "time": 0.05, "wait": 0.5},
+		{"do": "line", "who": "Reel", "line": "s6_reel_socks", "pics": ["socks", "worm_huge"]},
+		{"do": "call", "fn": "hands", "args": {"who": "Reel", "w": 220, "secs": 0.4}},
+		{"do": "camera", "to": "dock", "zoom": 2.3, "time": 1.4, "dx": -40, "dy": -30},
+		{"do": "line", "who": "Reel", "line": "s6_reel_biggest", "pics": ["worm_huge", "exclaim"]},
+		{"do": "call", "fn": "clue", "args": {"what": "hill", "to": 0.0, "secs": 3.0}},
+		{"do": "call", "fn": "clue", "args": {"what": "curve", "to": 1.0, "secs": 3.0}},
+		{"do": "sound", "cue": "story_rumble"},
+		{"do": "line", "who": "Reel", "line": "s6_reel_everything", "pics": ["planet_bite"]},
+		{"do": "wait", "time": 0.8},
+		{"do": "call", "fn": "hands", "args": {"who": "Reel", "w": 0, "secs": 0.4}},
+		{"do": "camera", "to": "dock", "zoom": 4.0, "time": 1.0, "wait": 0.4},
+		{"do": "call", "fn": "pose", "args": {"who": "Bobber", "pose": "squint"}},
+		{"do": "line", "who": "Bobber", "line": "s6_bobber_where", "pics": ["dock", "question"]},
+		{"do": "line", "who": "Reel", "line": "s6_reel_long_story", "pics": ["face_sheepish"]},
+		{"do": "wait", "time": 1.0}
+	]
+}
