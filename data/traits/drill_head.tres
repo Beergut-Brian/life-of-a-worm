@@ -11,6 +11,7 @@ add = {"bite_bonus/stone": 1}
 mul = {"burst_speed": 1.25}
 part_slot = &"head"
 part_textures = Array[Texture2D]([ExtResource("2")])
+part_offset = Vector2(9, 0)
 part_priority = 2
 part_spin = 3.0
 cue = "trait_drill_head"

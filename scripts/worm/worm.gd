@@ -30,7 +30,7 @@ const BONK_COOLDOWN := 0.5
 const DROP_BLOCK := 0.8
 const CHOMP_CUES := 5
 ## Where a part of each slot sits. Slots are data names, not traits.
-const SLOT_OFFSET := { &"head": Vector2(3, -1), &"crown": Vector2(-2, -12), &"back": Vector2(0, -8), &"tail": Vector2(-7, 0) }
+const SLOT_OFFSET := { &"head": Vector2(2, -1), &"crown": Vector2(-2, -12), &"back": Vector2(0, -8), &"tail": Vector2(-7, 0) }
 const BACK_EVERY := 3
 
 static var _all: Array[Worm] = []
@@ -130,6 +130,16 @@ func _ready() -> void:
 	_refresh_parts(false)
 
 
+## Drop-in: the body unfolds out of the head with a pop (visual only; physics never scales).
+func hatch() -> void:
+	Audio.play("hatch")
+	body.scale = Vector2.ZERO
+	var tw := create_tween()
+	tw.tween_property(body, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_BACK)
+	_pop(look, 1.8)
+	_ring_fx(Players.COLOR[player])
+
+
 ## The trait wall (pictures only): Y opens and closes it, left / right picks, A equips / unequips.
 func set_wall_open(on: bool) -> void:
 	if on == wall_open:
@@ -145,6 +155,14 @@ func set_wall_open(on: bool) -> void:
 
 func spacing() -> float:
 	return model.stats.value("segment_spacing", 9.0)
+
+
+## Everything the camera should keep on screen: head and every segment, in global space.
+func body_rect() -> Rect2:
+	var r := Rect2(head.global_position, Vector2.ZERO)
+	for p in _positions:
+		r = r.expand(to_global(p))
+	return r
 
 
 func head_position() -> Vector2:
@@ -544,7 +562,7 @@ func _refresh_parts(pop: bool) -> void:
 func _part_sprite(info: Dictionary, offset: Vector2) -> Sprite2D:
 	var s := Sprite2D.new()
 	s.texture = info.texture
-	s.position = offset
+	s.position = offset + info.get("offset", Vector2.ZERO)
 	s.set_meta("part", true)
 	s.set_meta("trait", info.trait)
 	s.set_meta("spin", info.spin)

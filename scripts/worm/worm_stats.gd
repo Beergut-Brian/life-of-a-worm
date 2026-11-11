@@ -6,7 +6,7 @@ class_name WormStats
 extends RefCounted
 
 var _values := {}
-## slot -> { "texture": Texture2D, "spin": float, "trait": StringName, "color": Color }
+## slot -> { "texture": Texture2D, "spin": float, "trait": StringName, "color": Color, "offset": Vector2 }
 var parts := {}
 ## Active trait ids, sorted.
 var active: Array[StringName] = []
@@ -41,7 +41,7 @@ static func resolve(traits: Array, base: Dictionary, stage := 1) -> WormStats:
 			best[t.part_slot] = t
 	for slot in best:
 		var t: TraitData = best[slot]
-		s.parts[slot] = { "texture": t.part_texture(stage), "spin": t.part_spin, "trait": t.id, "color": t.color }
+		s.parts[slot] = { "texture": t.part_texture(stage), "spin": t.part_spin, "trait": t.id, "color": t.color, "offset": t.part_offset }
 	return s
 
 

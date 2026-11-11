@@ -14,6 +14,8 @@ extends Resource
 @export var part_slot: StringName
 ## One texture per stage (index stage - 1); the last one repeats for later stages.
 @export var part_textures: Array[Texture2D] = []
+## Nudge from the slot's anchor, in pixels (the part faces +x like the head).
+@export var part_offset := Vector2.ZERO
 ## Two parts in one slot: the higher priority shows (a hybrid head beats its base head).
 @export var part_priority := 0
 ## Turns per second for a spinning part (0 = still).

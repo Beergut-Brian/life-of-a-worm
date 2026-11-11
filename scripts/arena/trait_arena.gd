@@ -92,14 +92,15 @@ func spawn(player: int) -> Worm:
 	if feeder != null:
 		w.autopilot = feeder.drive
 	worms_root.add_child(w)
-	w.trait_earned.connect(func(_p: int, _id: StringName) -> void: camera.punch(8.0))
+	w.trait_earned.connect(func(p: int, id: StringName) -> void:
+		camera.punch(8.0)
+		if feeder != null:
+			feeder.log_event("p%d earns %s" % [p + 1, id]))
 	w.stage_changed.connect(func(_p: int, _a: int, _b: int) -> void:
 		camera.flash()
 		camera.punch(5.0))
 	if first != null:
-		w.scale = Vector2.ZERO
-		create_tween().tween_property(w, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK)
-		Audio.play("hatch")
+		w.hatch()
 	return w
 
 
