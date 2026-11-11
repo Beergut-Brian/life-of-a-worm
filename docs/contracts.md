@@ -261,3 +261,46 @@ The launcher starts a game with `--profile=<id>` and expects the game to:
 ## Game-specific contracts
 
 Add this game's own signals and APIs below. Keep the same format.
+
+### Planet chomp and jars (stage 6 → 7; risk prototype R-b, `feature/proto-chomp-1`)
+
+Jars are per install, one file per eaten planet: `user://jars/<planet_id>.json`, a full copy of the
+tin's save taken just before the chomp (seed + edits, so a few KB). `planet_id` is
+`<profile>_<seed>`. The jar API lives in `scripts/jars/jars.gd` (class `JarStore`); it is meant to
+become the autoload `Jars` (requested from Systems). Until then a scene instances it as a node
+named `Jars`.
+
+```gdscript
+# JarStore (Jars)
+signal planet_jarred(planet_id: StringName)       # after the jar file is written
+var dir := "user://jars"                           # tests and the demo point this elsewhere
+func snapshot(planet_id: StringName) -> String     # flush Save, copy it to <dir>/<planet_id>.json,
+                                                   # add planet_id to Save "jars"; returns the path ("" on failure)
+func list() -> Array[StringName]                   # jar ids on the shelf, sorted
+func has_jar(planet_id: StringName) -> bool
+func open(planet_id: StringName) -> bool           # load the jar as profile "jar_<planet_id>" with
+                                                   # "jar": true and "stage6_disabled": true
+func close() -> void                               # write the jar profile back into the jar, return
+                                                   # to the tin that opened it
+func is_in_jar() -> bool
+static func stage6_allowed() -> bool               # false inside a jar (Save "stage6_disabled")
+
+# PlanetChomp (scenes/levels/planet_chomp.tscn, scripts/chomp/planet_chomp.gd)
+signal confirm_started()
+signal confirm_cancelled()                         # the hold was released before it filled
+signal planet_eaten()                              # exactly once, on the final gulp
+func begin() -> bool                               # shows the picture; false if stage 6 is disabled
+func advance(delta: float, held: bool) -> void     # the whole sequence; _process calls it with A held
+var planet_texture: Texture2D                      # the remaining planet; the tile world provides it
+
+# Save keys this section reads and writes (per tin)
+#   "planet": { "id": String, "seed": int, "bites": [[angle, radius, size], ...] }   # stand-in edits
+#   "stage": int          6 before the chomp, 7 after
+#   "jars": Array[String] planet ids jarred from this tin
+#   "jar": bool, "stage6_disabled": bool              # only inside a jar
+
+# Space (scenes/levels/space.tscn, scripts/space/)
+signal ate(player: int, what: StringName, growth: float)   # same signal as the disk worm
+static func StageRule.relation(eater_stage: int, other_stage: int) -> int  # FOOD | THREAT | IGNORE
+# Anything that can be eaten exposes `var size_stage: int`; bigger eats smaller, equal ignores.
+```
