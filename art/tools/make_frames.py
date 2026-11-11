@@ -200,7 +200,7 @@ def terrain(look):
                 c = pick(ramp[:4], v, px, py, st)
                 c = features(look, ring, px, py, c, min(da, 4))
                 if st["normals"] and da > 5:   # Terraria-style: solid ground darkens away from open air
-                    c = mix(c, mix(ramp[0], "#000000", 0.35), min(0.75, (da - 5) / 22.0))
+                    c = mix(c, ramp[0], min(0.5, (da - 5) / 22.0))
                 if st["terrain_outline"] and da <= st["terrain_outline"]:
                     c = ink
                 elif st["terrain_outline"] >= 2 and py > 0 and ring != "topsoil" and ring_at(px, py - 1) not in (ring, "sky") and ring_at(px, py - 2) not in (ring, "sky"):
@@ -626,7 +626,7 @@ def planet(look, out):
                     if abs(j) + (i - 3.5) ** 2 / 2 < 2.6:
                         sp.put(bx + ux * i - uy * j, by + uy * i + ux * j, look["grass"][0] if k % 3 else look["grass"][1])
     # the two worms, stage 6, mid-chomp on the big bite and curled by the small one
-    for colour, a0, n, rr, eyes in ((P1, -38, 16, 7.0, 1), (P2, 205, 12, 5.5, 2)):
+    for colour, a0, n, rr, eyes in ((P1, -38, 14, 8.5, 1), (P2, 205, 11, 7.0, 2)):
         base = math.radians(a0)
         segs = []
         dist = RP + rr + 3
@@ -644,9 +644,9 @@ def planet(look, out):
         tmp.outline(look["char_outline"])
         hx, hy = segs[0]
         if eyes == 1:
-            eye(tmp, hx, hy - 1, 2.4, -1, 0.2)
+            eye(tmp, hx, hy - 1.5, 3.4, -1, 0.2)
         else:
-            eye(tmp, hx - 1.5, hy - 1, 1.4, 1, 0); eye(tmp, hx + 1.5, hy - 1, 1.4, -1, 0)
+            eye(tmp, hx - 2.2, hy - 1.5, 1.9, 1, 0); eye(tmp, hx + 2.2, hy - 1.5, 1.9, -1, 0)
         sp.img.alpha_composite(tmp.img)
         sp.nrm.alpha_composite(tmp.nrm)
     sp.save(os.path.join(out, "planet.png"), normals=True)
@@ -812,7 +812,7 @@ def dock(look, out):
     d.ell(401, 202, 4.5, 6, ["#c07020", "#f0a030", "#ffd070", "#fff4c0"])
     d.outline(look["outline"], 2 if st["terrain_outline"] >= 2 else 1)
     # rod and line with the sandwich on the hook
-    d.line(294, 226, 372, 160, "#5a3a24")
+    d.line(291, 233, 372, 160, "#5a3a24")
     d.line(372, 160, 384, 276, mix("#ffffff", look["sky"][2], 0.4))
     d.rect(379, 276, 391, 279, "#e8c080"); d.rect(379, 279, 391, 280, "#7fbf5a"); d.rect(378, 280, 392, 283, "#e8c080")
     d.save(os.path.join(out, "dock.png"), normals=True)
@@ -915,7 +915,7 @@ def build(key):
     pl_layers = [{"layer": -10, "items": [{"t": "sprite", "tex": "space.png", "pos": [0, 0], "z": 0}]},
                  {"layer": 0, "items": [{"t": "sprite", "tex": "planet.png", "pos": list(pos["planet"]), "z": 0,
                                           "normal": "planet_n.png" if st["normals"] else None}]},
-                 {"layer": 5, "items": [{"t": "sprite", "tex": "halo.png", "pos": list(pos["halo"]), "z": 0,
+                 {"layer": -5, "items": [{"t": "sprite", "tex": "halo.png", "pos": list(pos["halo"]), "z": 0,
                                           "blend": "add" if st["lit"] else None}]}]
     if st["lit"]:
         pl_layers[1]["modulate"] = "#7a80a0"
@@ -944,7 +944,7 @@ def build(key):
     if st["paper"]:
         paper(os.path.join(out, "paper_dock.png"), 640, 360)
         dlayers.append({"layer": 10, "items": [{"t": "sprite", "tex": "paper_dock.png", "pos": [0, 0], "z": 0, "blend": "mul"}]})
-    write(out, "dock", {"zoom": 4, "offset": [80, 70], "layers": dlayers, "glow": False})
+    write(out, "dock", {"zoom": 5, "offset": [148, 92], "layers": dlayers, "glow": False})
 
 
 def write(out, name, data):
