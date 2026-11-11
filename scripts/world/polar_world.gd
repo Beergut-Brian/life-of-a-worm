@@ -32,6 +32,10 @@ var keep_zones: Array[Dictionary] = []
 ## At most this many cells regrow per physics frame (the rest wait a frame), so a big tunnel coming
 ## due at once never makes a spike. Tests pass budget -1 to regrow_pass, which has no cap.
 var max_regrow_per_frame := 48
+## Living-rings hooks (scripts/rings/rings_director.gd sets them every tick): Green thumb makes
+## castings regrow this many times faster; rain makes gardens grow this many times faster.
+var castings_speed := 1.0
+var garden_speed := 1.0
 var build_overview := true
 
 ## Measurements (stress scene reads them).
@@ -212,7 +216,7 @@ func regrow_time(cell: Vector2i) -> float:
 	var base := ring_of(cell).regrow_time
 	if base <= 0.0:
 		return INF
-	return base * (rings.castings_factor if has_castings(cell) else 1.0)
+	return base * (rings.castings_factor / castings_speed if has_castings(cell) else 1.0)
 
 
 func track_eater(node: Node2D) -> void:
@@ -267,7 +271,7 @@ func _regrow_some(budget: int) -> int:
 			var base := rings.rings[_gen.ring_index(cell)].regrow_time
 			if base <= 0.0 or _garden_of.has(cell):
 				continue
-			var at: float = d[cell] + base * (rings.castings_factor if cast.has(cell) else 1.0)
+			var at: float = d[cell] + base * (rings.castings_factor / castings_speed if cast.has(cell) else 1.0)
 			if clock >= at:
 				due.append(cell)
 			else:
@@ -451,7 +455,7 @@ func _grow_gardens() -> void:
 			continue
 		var steps := 0
 		while clock >= g.next and steps < 8:
-			g.next += rings.garden_interval
+			g.next += rings.garden_interval / maxf(garden_speed, 0.01)
 			steps += 1
 			var c := _garden_target(gi)
 			if c == Vector2i(1 << 30, 0):

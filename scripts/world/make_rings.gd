@@ -11,7 +11,7 @@ func _init() -> void:
 		[&"core", 0.12, &"core_rock", &"crystal", "d8642c", "6ae8ff", 0.22, 5, 900.0, &"crystal"],
 		[&"deep_rock", 0.45, &"stone", &"ore", "5a6378", "c9a24a", 0.10, 4, 600.0, &"stone"],
 		[&"dirt", 0.82, &"dirt", &"clay", "8a5a32", "b07850", 0.15, 1, 240.0, &"root"],
-		[&"topsoil", 0.95, &"topsoil", &"mushroom", "5e4426", "d9c2a0", 0.08, 2, 180.0, &"root"],
+		[&"topsoil", 0.988, &"topsoil", &"mushroom", "5e4426", "d9c2a0", 0.08, 2, 180.0, &"root"],
 		[&"surface", 1.0, &"grass", &"flower", "8bb04a", "e8d84a", 0.08, 4, 120.0, &"junk"],
 	]
 	for r in rows:
