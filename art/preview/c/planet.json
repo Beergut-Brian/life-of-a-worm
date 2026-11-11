@@ -1,0 +1,65 @@
+{
+ "zoom": 2,
+ "layers": [
+  {
+   "layer": -10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "space.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ]
+  },
+  {
+   "layer": 0,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "planet.png",
+     "pos": [
+      330,
+      122
+     ],
+     "z": 0,
+     "normal": null
+    }
+   ]
+  },
+  {
+   "layer": -5,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "halo.png",
+     "pos": [
+      300,
+      92
+     ],
+     "z": 0,
+     "blend": null
+    }
+   ]
+  },
+  {
+   "layer": 10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "paper.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "blend": "mul"
+    }
+   ]
+  }
+ ],
+ "glow": false
+}

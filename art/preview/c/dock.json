@@ -1,0 +1,99 @@
+{
+ "zoom": 5,
+ "offset": [
+  148,
+  92
+ ],
+ "layers": [
+  {
+   "layer": -10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "dock_sky.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ]
+  },
+  {
+   "layer": 0,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "dock.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "reel.png",
+     "pos": [
+      262,
+      216
+     ],
+     "z": 2
+    },
+    {
+     "t": "sprite",
+     "tex": "kid.png",
+     "pos": [
+      318,
+      220
+     ],
+     "z": 2
+    },
+    {
+     "t": "particles",
+     "pos": [
+      401,
+      196
+     ],
+     "colors": [
+      "#fff4c0",
+      "#ffd070"
+     ],
+     "amount": 6,
+     "dir": [
+      0,
+      -1
+     ],
+     "spread": 30,
+     "speed": [
+      4,
+      10
+     ],
+     "gravity": [
+      0,
+      -4
+     ],
+     "size": 1,
+     "lifetime": 1.5
+    }
+   ]
+  },
+  {
+   "layer": 10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "paper_dock.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "blend": "mul"
+    }
+   ]
+  }
+ ],
+ "glow": false
+}

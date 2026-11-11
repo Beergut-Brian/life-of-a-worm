@@ -1,0 +1,75 @@
+{
+ "zoom": 2,
+ "layers": [
+  {
+   "layer": -10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "space.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ]
+  },
+  {
+   "layer": 0,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "planet.png",
+     "pos": [
+      330,
+      122
+     ],
+     "z": 0,
+     "normal": "planet_n.png"
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      180,
+      90
+     ],
+     "color": "#ffe2a8",
+     "energy": 1.5,
+     "scale": 4.5,
+     "height": 140
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      480,
+      272
+     ],
+     "color": "#ff8a2a",
+     "energy": 1.8,
+     "scale": 0.55,
+     "height": 30
+    }
+   ],
+   "modulate": "#7a80a0"
+  },
+  {
+   "layer": -5,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "halo.png",
+     "pos": [
+      300,
+      92
+     ],
+     "z": 0,
+     "blend": "add"
+    }
+   ]
+  }
+ ],
+ "glow": false
+}

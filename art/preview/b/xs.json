@@ -1,0 +1,292 @@
+{
+ "zoom": 2,
+ "layers": [
+  {
+   "layer": -10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "xs_sky.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ]
+  },
+  {
+   "layer": 0,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "xs_back.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "t": "sprite",
+     "tex": "xs_terrain.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "normal": "xs_terrain_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "worm_p1.png",
+     "pos": [
+      409,
+      226
+     ],
+     "z": 4,
+     "normal": "worm_p1_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "grub.png",
+     "pos": [
+      569,
+      256
+     ],
+     "z": 3,
+     "normal": "grub_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "worm_p2.png",
+     "pos": [
+      472,
+      376
+     ],
+     "z": 4,
+     "normal": "worm_p2_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "nugget.png",
+     "pos": [
+      425,
+      410
+     ],
+     "z": 3,
+     "normal": "nugget_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "beetle.png",
+     "pos": [
+      798,
+      307
+     ],
+     "z": 3,
+     "normal": "beetle_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "mushroom.png",
+     "pos": [
+      211,
+      175
+     ],
+     "z": 3,
+     "normal": "mushroom_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "crystal0.png",
+     "pos": [
+      403,
+      491
+     ],
+     "z": 3,
+     "normal": "crystal0_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "crystal1.png",
+     "pos": [
+      473,
+      491
+     ],
+     "z": 3,
+     "normal": "crystal1_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "crystal2.png",
+     "pos": [
+      544,
+      491
+     ],
+     "z": 3,
+     "normal": "crystal2_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "tree.png",
+     "pos": [
+      284,
+      83
+     ],
+     "z": 1,
+     "normal": "tree_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "fence.png",
+     "pos": [
+      784,
+      151
+     ],
+     "z": 1,
+     "normal": "fence_n.png"
+    },
+    {
+     "t": "particles",
+     "pos": [
+      542.0,
+      255.7142857142857
+     ],
+     "colors": [
+      "#f3e2b0",
+      "#d8c690",
+      "#ffffff",
+      "#a8622c"
+     ],
+     "amount": 26,
+     "dir": [
+      -0.3,
+      -1
+     ],
+     "spread": 75,
+     "speed": [
+      35,
+      85
+     ],
+     "gravity": [
+      0,
+      160
+     ],
+     "size": 2,
+     "lifetime": 0.7
+    },
+    {
+     "t": "light",
+     "tex": "light_band.png",
+     "pos": [
+      480,
+      300
+     ],
+     "color": "#ffe2a8",
+     "energy": 1.0,
+     "scale": 3.75,
+     "height": 200
+    },
+    {
+     "t": "light",
+     "tex": "light_cone.png",
+     "pos": [
+      684.8,
+      278
+     ],
+     "color": "#ffe2a8",
+     "energy": 2.0,
+     "scale": 1.0,
+     "height": 60
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      528.0,
+      255.7142857142857
+     ],
+     "color": "#c8ffd0",
+     "energy": 1.3,
+     "scale": 1.1,
+     "height": 30
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      496.0,
+      407.6829419696158
+     ],
+     "color": "#ffe0c8",
+     "energy": 1.3,
+     "scale": 1.0,
+     "height": 30
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      227.2,
+      192.0
+     ],
+     "color": "#c89cff",
+     "energy": 1.2,
+     "scale": 0.6,
+     "height": 20
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      411.2,
+      511
+     ],
+     "color": "#59e6ff",
+     "energy": 1.6,
+     "scale": 0.9,
+     "height": 20
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      481.6,
+      511
+     ],
+     "color": "#d88af0",
+     "energy": 1.5,
+     "scale": 0.8,
+     "height": 20
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      552.0,
+      511
+     ],
+     "color": "#59e6ff",
+     "energy": 1.6,
+     "scale": 0.9,
+     "height": 20
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      480,
+      600
+     ],
+     "color": "#ff8a2a",
+     "energy": 1.5,
+     "scale": 2.6,
+     "height": 40
+    }
+   ],
+   "modulate": "#9088a8"
+  }
+ ],
+ "glow": false
+}

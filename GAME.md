@@ -39,7 +39,7 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - D87: palette by options lane: three different looks, one lit and Terraria-like; Kaden picks or edits.
 - D88: Gary proposes three name pairs for the green and red worms; Kaden picks.
 - D89: Bobber's bible and Old Reel's dock-scene revision approved as drafted (`openjar-characters`).
-- Worm names (D90, Kaden): green = Gulp, red = Burp
+- 2026-11-11: Worm names (D90, Kaden): green = Gulp, red = Burp.
 
 ## Decisions made without Kaden
 - 2026-11-10: Wormhole pull dropped (no forced movement); edge arrow + held-B warp instead.
@@ -146,10 +146,10 @@ One or two worms on the same disk, green and red. The game is complete solo: not
 
 **Saves are bait tins.** The title screen is Old Reel's dock with three bait tins on the rail; each tin is a planet. One can be the family planet and one Kaden's solo planet, and neither affects the other. The launcher's two-face profile picker still decides who is green.
 
-|  | Player 1 (green) | Player 2 (red) |
+|  | Gulp (green, Player 1) | Burp (red, Player 2) |
 | --- | --- | --- |
 | Worm | Green segments with a lighter belly stripe; big single eye with a lid for expressions | Red segments, darker stripe; two small eyes, always a little cross-eyed |
-| Named? | Proposal: universal characters from the library, named by Kaden. Not Jeff and Chuck, who are humans |  |
+| Name | Gulp (Kaden, D90) | Burp (Kaden, D90) |
 
 **Co-op rules that keep both players happy**
 
@@ -474,7 +474,7 @@ On top of the template checklist in `docs/kid-design.md`.
 **Open questions for Kaden**
 
 - [ ] The palette (you said you would specify this one).
-- [ ] Names and personalities for the two worms.
+- [ ] Names and personalities for the two worms. Names answered 2026-11-11 (D90): Gulp (green) and Burp (red); personalities still open.
 - [ ] Approve Bobber's bible once Hermes drafts it.
 
 **Decided 2026-11-10**

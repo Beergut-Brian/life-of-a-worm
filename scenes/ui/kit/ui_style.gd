@@ -209,13 +209,9 @@ static func player_color(player: int) -> Color:
 	return PLAYER_COLORS[player]
 
 
-## The skin's fixed name for that slot ("Gulp"), else "Player N".
+## Life of a Worm: the slot's worm name (Gulp / Burp, WormNames), not "Player 1".
 static func player_name(player: int) -> String:
-	var sk := skin()
-	var fixed := (sk.p1_name if player == 0 else sk.p2_name) if sk else ""
-	if fixed != "":
-		return fixed.capitalize()
-	return "Player %d" % (player + 1)
+	return WormNames.of(player)
 
 
 ## A rounded panel with a soft drop shadow.
