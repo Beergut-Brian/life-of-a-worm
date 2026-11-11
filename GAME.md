@@ -39,6 +39,7 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - D87: palette by options lane: three different looks, one lit and Terraria-like; Kaden picks or edits.
 - D88: Gary proposes three name pairs for the green and red worms; Kaden picks.
 - D89: Bobber's bible and Old Reel's dock-scene revision approved as drafted (`openjar-characters`).
+- 2026-11-11: Worm names (D90, Kaden): green = Gulp, red = Burp.
 
 ## Decisions made without Kaden
 - 2026-11-10: Wormhole pull dropped (no forced movement); edge arrow + held-B warp instead.
@@ -58,6 +59,14 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-11 (proto R-a): Starting regrow times in planet seconds (plain / in castings): surface 120 / 30, topsoil 180 / 45, dirt 240 / 60, deep rock 600 / 150, core 900 / 225. Tiles removed by anything but a worm regrow at the plain rate. Content lane tunes `data/rings/rings.tres`.
 - 2026-11-11 (proto R-a): A seed dropped in castings sprouts at once, then fills one cell every 4 planet seconds, spreading only through castings, up to 10 tiles from the seed; garden food that gets eaten grows back as garden.
 - 2026-11-11 (proto R-a): The planet shot steps the zoom down to 1/16 centred on the core and swaps the live tiles for a 1-px-per-2-tiles picture of the whole planet with every bite drawn in; that picture is also the stage-6 chomp's `planet_texture`.
+- 2026-11-11 (proto R-c, traits): A trait is earned when, at one moment, the worm has at least N segments of each flavour its `TraitData.requires` names. A hybrid is simply a trait that names two flavours; there is no other hybrid rule, so the base traits of a hybrid are earned on the way to it (Stone head and Glow before Drill head).
+- 2026-11-11 (proto R-c): A segment's flavour is whichever flavour gave the most growth since the previous segment; the partner's 0.25 share is flavourless, so co-op never paints the other worm's diet or hands it traits.
+- 2026-11-11 (proto R-c): New segments join at the tail. Getting eaten removes the newest (tail) segment; stage and earned traits never drop, even if segments fall below the stage threshold.
+- 2026-11-11 (proto R-c): Stacking rule: `value = (base + sum of adds) * product of muls` over active traits, sorted by id (order never matters). Two parts in one slot: the higher `part_priority` shows (Drill head beats Stone head), but both traits' modifiers still stack.
+- 2026-11-11 (proto R-c): With every slot full, a newly earned trait waits on the trait wall (with its reveal ring and sting); when a stage adds a slot, the newest waiting trait equips itself. The wall never auto-unequips anything.
+- 2026-11-11 (proto R-c): Stage thresholds, slots per stage, growth per segment, partner share and base stats live in `data/traits/worm_rules.tres` for the prototype (stages 2..7 at 6/10/15/20/24/40 segments, 2 growth per segment); they move into `data/stages.tres` when the Content lane makes it.
+- 2026-11-11 (proto R-c): Placeholder trait wall opens on Y (left/right picks, A equips/unequips, B or Y closes); in the real game it hangs in the burrow. X and Y are new player actions `carry` and `tackle`.
+- 2026-11-11 (proto R-c): "Bite rock a stage early" is a stat per flavour, `bite_bonus/<flavour>`; slow ground is `drag/<kind>`. New traits that change what can be eaten or where you are slowed need no worm code.
 - 2026-11-11 (story-1): Dock scenes are JSON in `data/cutscenes/<id>.json` (the vendored cutscene player's format), not `.tres`. Ids: `opening`, `stage_2` ... `stage_7`, `ending`. Stage 1's scene is the opening.
 - 2026-11-11 (story-1): Stage 7 (reaching space) gets its own short dock scene, "Up it went" (night, a star winks out), so every stage-up has one; the ending stays after the sun.
 - 2026-11-11 (story-1): Both worms are in the story: young Reel had two on the hook, Gulp and Burp ("That one got away... Well. Those two."). Reel's excuses, one per scene: comet, Grandma's chili, a funny purple rock, his lucky socks, lightning, a wish. The Strangestone is only ever seen.
@@ -131,10 +140,10 @@ One or two worms on the same disk, green and red. The game is complete solo: not
 
 **Saves are bait tins.** The title screen is Old Reel's dock with three bait tins on the rail; each tin is a planet. One can be the family planet and one Kaden's solo planet, and neither affects the other. The launcher's two-face profile picker still decides who is green.
 
-|  | Player 1 (green) | Player 2 (red) |
+|  | Gulp (green, Player 1) | Burp (red, Player 2) |
 | --- | --- | --- |
 | Worm | Green segments with a lighter belly stripe; big single eye with a lid for expressions | Red segments, darker stripe; two small eyes, always a little cross-eyed |
-| Named? | Proposal: universal characters from the library, named by Kaden. Not Jeff and Chuck, who are humans |  |
+| Name | Gulp (Kaden, D90) | Burp (Kaden, D90) |
 
 **Co-op rules that keep both players happy**
 
@@ -459,7 +468,7 @@ On top of the template checklist in `docs/kid-design.md`.
 **Open questions for Kaden**
 
 - [ ] The palette (you said you would specify this one).
-- [ ] Names and personalities for the two worms.
+- [ ] Names and personalities for the two worms. Names answered 2026-11-11 (D90): Gulp (green) and Burp (red); personalities still open.
 - [ ] Approve Bobber's bible once Hermes drafts it.
 
 **Decided 2026-11-10**

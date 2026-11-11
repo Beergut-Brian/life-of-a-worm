@@ -16,7 +16,7 @@ Sources (oldest first):
   unknown here.
 - S2 `GAME.md` "Producer notes (Gary, 2026-11-10)": Where Worm stands, Standing rules, Stale
   lines, Decisions made without Kaden. Wins over S1 where they disagree.
-- S3 `GAME.md` "Kaden's answers, 2026-11-10" (D86 to D89).
+- S3 `GAME.md` "Kaden's answers, 2026-11-10" (D86 to D89), plus D90 (worm names, 2026-11-11) on the same list.
 - S4 Kaden chat 2026-11-10 22:41, quoted in GAME.md: priority order.
 - S5 Kaden chat 2026-11-10, quoted in GAME.md: "no stick-only requirement anywhere".
 - S6 Kaden chat 2026-11-10, quoted in GAME.md: "Characters are 3D-first".
@@ -351,13 +351,14 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | P-31 | S2 Stale lines | Open questions current except Bobber's bible is drafted | superseded | S3 answers D88, D89, D87 | All three S1 open questions are now answered or in progress: palette (D87), names (D88), Bobber (D89) |
 | P-32 | S3 D86 | Create the repo now and run the two tile-free risk prototypes (traits on a segmented worm; stage-6 chomp + jar + cut to space) in free slots; polar-chunk prototype waits for addons v0.2.0 | partial | repo exists (`886307a`); R-02 and R-03 missing | Addons v0.2.0 is now tagged, so R-01 is unblocked too |
 | P-33 | S3 D87 | Palette by options lane: three different looks, one lit and Terraria-like; Kaden picks or edits | missing | `docs/art-direction.md` "Life of a Worm" records the brief; ∅art | No final art before his pick |
-| P-34 | S3 D88 | Gary proposes three name pairs for the green and red worms; Kaden picks | missing | GAME.md has no names | |
+| P-34 | S3 D88 | Gary proposes three name pairs for the green and red worms; Kaden picks | built | P-41 | Kaden picked on D90 |
 | P-35 | S3 D89 | Bobber's bible and Old Reel's dock-scene revision approved as drafted | built | GAME.md:41 (decision recorded) | Follow-through (landing in `openjar-characters`) is tracked on Y-13 and Y-14 |
 | P-36 | S2 Decision | Wormhole pull dropped; edge arrow + held-B warp instead | built | C-15 superseded; P-07 tracks the build | Decision recorded |
 | P-37 | S2 Decision | Select restart dropped; Select + Start = solo | built | C-09 superseded; P-08 tracks the build | Decision recorded. Code still restarts on Select |
 | P-38 | S2 Decision | Worms are bespoke avatars (library entries, not playable elsewhere), unless Kaden draws them | built | A-18, P-18 track the build | Decision recorded |
 | P-39 | S2 Decision | Bloom is a cameo update, not a launch character | built | X-09 `later` | Decision recorded |
 | P-40 | S2 Decision | Build order: addons extraction now; tile-free prototypes as soon as the repo exists; polar-chunk prototype waits for v0.2.0 | built | addons v0.2.0 tagged; repo exists | Both preconditions met. All three prototypes can start |
+| P-41 | S3 D90 | Worm names: Gulp (green) and Burp (red) (D90) | built | `test_worm_names::test_worm_display_names_are_gulp_and_burp`; `handoff/frames/names.png` | Shown in menu labels (pause "BURP PAUSED", lobby ready/waiting lines) via `WormNames`/`UiStyle.player_name`. Gameplay has no name tags (text-free). Chooser podium plates still show the Roster pick (chooser off-limits; hidden in Worm per S2) |
 
 ## R Risk prototypes and build phases
 
@@ -367,7 +368,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | R-02 | S1 Phase 1b / S3 D86 | Stage-6 chomp, jar snapshot and cross-fade to space | missing | ∅code | Tile-free, can start now |
 | R-03 | S1 Phase 1c / S3 D86 | Segmented worm with five stacked traits and no special cases (`WormStats` resolver) | missing | ∅code | Tile-free, can start now |
 | R-04 | S1 Phase 2 | Grey-box: one worm, the dirt ring, eat and carry, segments, one trait, a sleepable burrow, every action beeps | missing | ∅code | Tag `v0.0.2-dev.N` |
-| R-05 | S1 Phase 0 | Design sprint: doc becomes GAME.md; palette; worm and grandson names; story beats and the Reel explanation approved; Reel's bible updated | partial | GAME.md (`886307a`); D89 | Done: GAME.md, grandson = Bobber, explanation decided, Reel bible approved. Open: palette (D87), worm names (D88) |
+| R-05 | S1 Phase 0 | Design sprint: doc becomes GAME.md; palette; worm and grandson names; story beats and the Reel explanation approved; Reel's bible updated | partial | GAME.md (`886307a`); D89 | Done: GAME.md, grandson = Bobber, explanation decided, Reel bible approved. Open: palette (D87). Worm names done (D90, P-41) |
 | R-06 | S1 Phase 3 | Vertical slice `v0.1.0`: stages 1 and 2 at final quality (opening cutscene, dirt + topsoil with food chain, three traits, castings and one garden, burrow with trophies and a pet, ant city, tackle box, Mole's swap shop); Kaden plays alone for an evening and with his son for an afternoon | missing | ∅code | First playable is this slice, not a thin run through all seven stages |
 | R-07 | S1 Phase 4 | Ring by ring, each a playable chapter with its cutscene: rock, core, surface, sky (`v0.2` to `v0.5`) | missing | ∅code | |
 | R-08 | S1 Phase 5 | Stage 6, the jar, space with five planet types, ending cutscene, new tin with heirloom (`v0.6`) | missing | ∅code | |
