@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TrophyFamily" format=3]
+
+[ext_resource type="Script" path="res://scripts/burrow/trophy_family.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shinies"
+members = Array[StringName]([&"crystal", &"bottle_cap", &"droplet"])
+per_trophy = {"pull_radius": 10.0, "pull_speed": 12.0}
+cap = 3
+color = Color(1, 0.86, 0.3, 1)
+charm = &"twinkle"
