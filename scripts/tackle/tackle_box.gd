@@ -297,7 +297,7 @@ func _doodle(c: Vector2, p: StringName, id: StringName, i: int) -> void:
 				&"ladybird":
 					LadybirdLook.draw(_root, c, 44.0, -PI / 2.0 + sin(_t * 2.0) * 0.2, _t)
 				&"mole":
-					MoleLook.draw(_root, c + Vector2(0, 10), 2.6, MoleLook.Face.HAPPY, _t)
+					MoleLook.draw(_root, c + Vector2(0, 42), 4.2, MoleLook.Face.HAPPY, _t)
 				_:
 					_bug_doodle(c, 46.0, Color("3a3046") if id == &"beetle" else Color("8c6a4a"))
 		&"traits":

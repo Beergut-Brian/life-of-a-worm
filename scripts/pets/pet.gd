@@ -16,13 +16,11 @@ var t := 0.0
 var state := State.HOME
 var trips := 0
 var _anim := 0.0
-var _spot := Vector2.ZERO
 
 
 func _ready() -> void:
 	add_to_group(&"pets")
 	add_to_group(&"creature")
-	_spot = position
 
 
 var creature_id: StringName:
@@ -34,8 +32,14 @@ func _physics_process(delta: float) -> void:
 	step(delta)
 
 
+## Its place by the bed (follows home when home moves).
+func spot() -> Vector2:
+	return burrow.pet_spot(maxi(0, burrow.pets.find(self))) if burrow else position
+
+
 ## Advances the job by delta seconds (tests call it directly).
 func step(delta: float) -> void:
+	var _spot := spot()
 	_anim += delta
 	t += delta
 	var up := burrow.home.normalized() if burrow else Vector2.UP

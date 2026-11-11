@@ -19,6 +19,7 @@ var _wander_a := 0.0
 var _p2_a := 0.0
 var _eaten := false
 var _steps: Array = []
+var _mole_pebble: Node2D
 
 
 func _ready() -> void:
@@ -41,6 +42,12 @@ func _ready() -> void:
 		["carry_out", _go(level.local_point(7, 0), { "carry": true })],
 		["carry_home", _until(func(w: Worm) -> bool: return w.carrying == null and not level.burrow.trophies.is_empty(),
 			func(w: Worm) -> Dictionary: return _toward(w, level.burrow.home, { "carry": true }))],
+		# Home slice (feature/slice-burrow-1): a ladybird carried home alive becomes a pet.
+		["fetch_ladybird", _until(func(w: Worm) -> bool: return w.carrying is WildPet,
+			func(w: Worm) -> Dictionary: return _toward(w, _ladybird().position, { "carry": true }))],
+		["ladybird_home", _until(func(_w: Worm) -> bool: return not level.burrow.pets.is_empty(),
+			func(w: Worm) -> Dictionary: return _toward(w, level.burrow.home, { "carry": true }))],
+		["pet_soon", _once(func(_w: Worm) -> void: level.burrow.pets[0].t = level.burrow.pets[0].data.every - 5.0)],
 		["meet_beetle", _go(level.local_point(-12, 0), {})],
 		["eaten", _until(func(_w: Worm) -> bool: return _eaten, {})],
 		["grub_trail", _path(trail)],
@@ -48,11 +55,31 @@ func _ready() -> void:
 		["eat_apex", _until(func(_w: Worm) -> bool: return level.beetle.is_gone(),
 			func(w: Worm) -> Dictionary: return _toward(w, level.beetle.position, { "burst": int(t * 2.0) % 3 == 0 }))],
 		["red_hatches", _once(func(_w: Worm) -> void: Players.join_virtual(Players.P2))],
+		# The Mole's swap shop: carry a pebble to him, A swaps it for two seeds.
+		["pebble_for_mole", _once(func(_w: Worm) -> void: _mole_pebble = level._add_food(&"pebble", level.local_point(21, -3)))],
+		["grab_pebble", _until(func(w: Worm) -> bool: return w.carrying != null and not (w.carrying is WildPet) and w.carrying.data.id != &"seed",
+			func(w: Worm) -> Dictionary:
+				if not _mole_pebble.is_available() and w.carrying != _mole_pebble:   # Burp ate it: another
+					_mole_pebble = level._add_food(&"pebble", level.local_point(21, -3))
+				# X only near the pebble, so a seed on the way is not picked up instead.
+				return _toward(w, _mole_pebble.position, { "carry": w.mouth_position().distance_to(_mole_pebble.position) < 40.0 }))],
+		["visit_mole", _until(func(w: Worm) -> bool: return level.home_slice.shop.can_trade(w),
+			func(w: Worm) -> Dictionary: return _toward(w, level.home_slice.shop.mole_position(), { "carry": true }))],
+		["swap", _once(func(w: Worm) -> void: level.home_slice.shop.trade(w))],
+		["look_mole", _wait(2.0)],
 		["wander_off", _go(level.local_point(-30, -3), {})],
 		["warp_home", _until(func(w: Worm) -> bool: return w.cam_position().distance_to(level.burrow.home) < 20.0, { "hold_b": true })],
 		["trait_wall", _once(func(w: Worm) -> void: w.set_wall_open(true))],
 		["look", _wait(2.5)],
 		["wall_shut", _once(func(w: Worm) -> void: w.set_wall_open(false))],
+		# Old Reel's tackle box (Y): turn the pages. The demo keeps the game running under it.
+		["tackle_box", _once(func(w: Worm) -> void:
+			level.home_slice.box.pause_tree = false
+			level.home_slice.open_box(w.player))],
+		["box_pages", _box_tour()],
+		["box_shut", _once(func(_w: Worm) -> void:
+			level.home_slice.box.close()
+			level.home_slice.box.pause_tree = true)],
 		["soak", _until(func(_w: Worm) -> bool: return false, _orbit)],
 	]
 	_log("start")
@@ -153,6 +180,26 @@ func _once(what: Callable) -> Callable:
 func _wait(secs: float) -> Callable:
 	return func(_w: Worm) -> Dictionary:
 		return { "done": _step_t >= secs }
+
+
+func _ladybird() -> Node2D:
+	var best: Node2D = null
+	for e in level.home_slice.wild:
+		var n: Node2D = e.node
+		if n.is_available() and (best == null or n.position.distance_to(level.burrow.home) < best.position.distance_to(level.burrow.home)):
+			best = n
+	return best if best else level.home_slice.wild[0].node
+
+
+## Flips through the tackle box: along the food page, then each page down to the cutscenes.
+func _box_tour() -> Callable:
+	var moves := [[1, 0], [1, 0], [0, 1], [1, 0], [0, 1], [0, 1], [0, 1], [1, 0]]
+	var i := [0]
+	return func(_w: Worm) -> Dictionary:
+		if i[0] < moves.size() and _step_t >= 0.9 * (i[0] + 1):
+			level.home_slice.box.nav(moves[i[0]][0], moves[i[0]][1])
+			i[0] += 1
+		return { "done": _step_t >= 0.9 * (moves.size() + 1.5) }
 
 
 ## Soak: a slow lap of the dirt ring with a wobble, so there is always fresh dirt to eat.
