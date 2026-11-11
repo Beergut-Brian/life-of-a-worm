@@ -12,6 +12,8 @@ const HOME := ["b", "home", true]
 const CARRY := ["x", "mouth", false]
 const BOX := ["y", "box", false]
 const WALL := ["y", "wall", false]
+const DROP := ["x", "drop", false]
+const SWAP := ["a", "swap", false]
 
 var level: Node
 var rows: Array = []
@@ -53,6 +55,23 @@ func set_context(carry_ready: bool, has_home: bool, in_burrow: bool) -> void:
 		rows.append(HOME)
 	rows.append(WALL if in_burrow else BOX)
 	hot = { "mouth": carry_ready, "wall": in_burrow }
+
+
+## The home slice's context (HomeSlice, each frame after the level): carry_ready, carrying,
+## has_home, wall (asleep in the bed), swap (at the Mole with something to swap), box_new.
+func set_rows(ctx: Dictionary) -> void:
+	rows = [MOVE, BURST, WIGGLE]
+	if ctx.get("swap", false):
+		rows.append(SWAP)
+	if ctx.get("carrying", false):
+		rows.append(DROP)
+	elif ctx.get("carry_ready", false):
+		rows.append(CARRY)
+	if ctx.get("has_home", false):
+		rows.append(HOME)
+	rows.append(WALL if ctx.get("wall", false) else BOX)   # asleep in the bed, Y is the wall
+	hot = { "mouth": ctx.get("carry_ready", false), "drop": ctx.get("carrying", false),
+		"swap": ctx.get("swap", false), "wall": ctx.get("wall", false), "box": ctx.get("box_new", false) }
 
 
 func _process(delta: float) -> void:
@@ -130,6 +149,21 @@ func _draw_picture(c: Vector2, what: String, a: float) -> void:
 			_root.draw_rect(Rect2(c + Vector2(-18, -8), Vector2(36, 22)), Color(0.35, 0.55, 0.4, a))
 			_root.draw_rect(Rect2(c + Vector2(-18, -14), Vector2(36, 8)), Color(0.45, 0.7, 0.5, a))
 			_root.draw_rect(Rect2(c + Vector2(-4, -4), Vector2(8, 6)), ink)
+		"drop":
+			_root.draw_circle(c + Vector2(-6, -4), 13.0, green)
+			_root.draw_circle(c + Vector2(4, -4), 6.0, Color(0.15, 0.05, 0.05, a))
+			_root.draw_circle(c + Vector2(10, 12 + 3.0 * sin(_t * 6.0)), 5.0, Color(1, 0.62, 0.11, a))
+			_root.draw_line(c + Vector2(18, 2), c + Vector2(18, 14), ink, 2.0)
+			_root.draw_line(c + Vector2(15, 11), c + Vector2(18, 14), ink, 2.0)
+			_root.draw_line(c + Vector2(21, 11), c + Vector2(18, 14), ink, 2.0)
+		"swap":
+			_root.draw_circle(c + Vector2(-14, 0), 7.0, Color(0.55, 0.6, 0.68, a))
+			_root.draw_circle(c + Vector2(14, -5), 4.5, Color(0.63, 0.44, 0.24, a))
+			_root.draw_circle(c + Vector2(14, 6), 4.5, Color(0.63, 0.44, 0.24, a))
+			_root.draw_line(c + Vector2(-5, -3), c + Vector2(6, -3), ink, 2.0)
+			_root.draw_line(c + Vector2(3, -6), c + Vector2(6, -3), ink, 2.0)
+			_root.draw_line(c + Vector2(6, 3), c + Vector2(-5, 3), ink, 2.0)
+			_root.draw_line(c + Vector2(-2, 6), c + Vector2(-5, 3), ink, 2.0)
 		"wall":
 			_root.draw_rect(Rect2(c + Vector2(-20, -14), Vector2(40, 28)), Color(0.3, 0.2, 0.14, a))
 			for k in 3:

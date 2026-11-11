@@ -32,6 +32,9 @@ var camera: PolarCamera
 var burrow: Burrow
 var beetle: ApexBeetle
 var hud: PlanetHud
+## The home half of the vertical slice (scripts/burrow/home_slice.gd): trophies, pets, tackle box,
+## the Mole's swap shop and their hints.
+var home_slice: HomeSlice
 var actors: Node2D
 var foods_root: Node2D
 var planet_seed := 4
@@ -121,6 +124,9 @@ func _ready() -> void:
 	hud = PlanetHud.new()
 	hud.level = self
 	add_child(hud)
+	home_slice = HomeSlice.new()
+	home_slice.level = self
+	add_child(home_slice)
 	# Quitting at any moment loses nothing: save on quit (before Save.flush) and on pause.
 	Game.quit_requested.connect(save_now)
 	Game.state_changed.connect(func(_f: int, to: int) -> void:
@@ -312,10 +318,13 @@ func _physics_process(delta: float) -> void:
 			continue
 		w.view_rotation = camera.rotation
 		var local := world.to_local(w.head_position())
-		w.in_burrow = burrow.in_room(local)
+		var in_room := burrow.in_room(local)
+		# The trait wall is the bed's: Y opens it while asleep at home; awake, Y is the tackle box.
+		w.in_burrow = in_room and (w.asleep or w.wall_open)
+		burrow.note_pickup(w, in_room)
 		if burrow.world and burrow.can_sleep(w):
 			burrow.sleep(w)
-		if w.carrying != null and is_instance_valid(w.carrying) and w.in_burrow:
+		if w.carrying != null and is_instance_valid(w.carrying) and in_room and burrow.should_bring(w):
 			burrow.bring(w, w.carrying)
 		any_carry = any_carry or w.carry_ready or w.carrying != null
 		any_burrow = any_burrow or w.in_burrow
@@ -441,4 +450,6 @@ func save_now() -> void:
 	Save.set_value("apex", beetle.to_dict())
 	Save.set_value("foods", _foods_to_save())
 	Save.set_value("played", played)
+	if home_slice:
+		Save.set_value(HomeSlice.SAVE_KEY, home_slice.to_dict())
 	Save.flush()
