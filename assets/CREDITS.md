@@ -102,3 +102,9 @@ One line per file. Nothing enters `assets/` without a line here.
 | `characters/zorp/voice/catchphrase.ogg` | `openjar-characters` `v0.5.0`, `characters/zorp/voice/lib/catchphrase_big.ogg` | Zorp catchphrase (the chooser says it); see the library's CREDITS.md | Open Jar Games, in-house (same terms as openjar-characters) |
 
 <!-- characters:end -->
+| `proto/world/make_placeholders.py` | Written for this prototype (R-a polar world) | Generator for the `proto/world/*.wav` placeholders; the stand-in eater, tiles, castings and planet overview are drawn in code (`scripts/world/`), no image files | Project's own |
+| `proto/world/world_munch.wav` | Synthesised by `assets/proto/world/make_placeholders.py` (Python 3 stdlib: sine sweeps + filtered noise) | Placeholder SFX: a mouthful of tiles | Project's own |
+| `proto/world/world_seed.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: seed dropped in castings (also the planet-shot zoom, pitched) | Project's own |
+| `proto/world/world_sprout.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: a garden cell pops up | Project's own |
+| `proto/world/world_regrow.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: a tile grows back near the camera | Project's own |
+| `proto/world/world_blocked.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: too hard to bite / seed didn't take | Project's own |
