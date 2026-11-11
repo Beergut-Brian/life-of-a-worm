@@ -1,0 +1,29 @@
+{
+	"id": "ending",
+	"scene": "dock",
+	"title": "Still out there",
+	"when": "ending (after the sun)",
+	"time_of_day": "night",
+	"clue": "a bite is missing from the moon; a long shape drifts past the stars",
+	"steps": [
+		{"do": "call", "fn": "time", "args": {"of": "night", "secs": 0}},
+		{"do": "call", "fn": "clue", "args": {"what": "moon_bite", "to": 1.0, "secs": 0}},
+		{"do": "walk", "who": "Bobber", "to": "Reel", "dx": 12, "time": 0.05},
+		{"do": "call", "fn": "pose", "args": {"who": "Bobber", "pose": "sleep"}},
+		{"do": "camera", "to": "dock", "zoom": 4.4, "time": 0.05, "dx": -6, "wait": 0.6},
+		{"do": "line", "who": "Reel", "line": "end_reel_still_out_there", "pics": ["worm_huge", "star"]},
+		{"do": "line", "who": "Bobber", "line": "end_bobber_sleepy", "pics": ["zzz"]},
+		{"do": "line", "who": "Reel", "line": "end_reel_wish", "pics": ["wish"]},
+		{"do": "camera", "to": "moon", "zoom": 2.6, "time": 2.4, "dy": 40, "wait": 1.0},
+		{"do": "call", "fn": "clue", "args": {"what": "long_x", "to": 0.0, "secs": 0}},
+		{"do": "call", "fn": "clue", "args": {"what": "long_x", "to": 1.0, "secs": 9.0}},
+		{"do": "sound", "cue": "story_whoosh"},
+		{"do": "wait", "time": 4.0},
+		{"do": "camera", "to": "dock", "zoom": 4.4, "time": 2.0, "dx": -6, "wait": 1.6},
+		{"do": "line", "who": "Reel", "line": "end_reel_glad", "pics": ["heart", "face_happy"]},
+		{"do": "call", "fn": "pose", "args": {"who": "Reel", "pose": "tip_hat"}},
+		{"do": "sound", "cue": "story_twinkle"},
+		{"do": "wait", "time": 2.0},
+		{"do": "fade", "to": 1, "time": 1.5}
+	]
+}
