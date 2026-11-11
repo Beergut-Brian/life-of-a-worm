@@ -81,7 +81,11 @@ func _ready() -> void:
 		# Children are ready before the parent: hook once the level has built its world.
 		p.ready.connect(_attach.bind(p), CONNECT_ONE_SHOT)
 		Game.quit_requested.connect(_store)
-		Game.state_changed.connect(func(_f: int, _t: int) -> void: _store())
+		Game.state_changed.connect(_on_game_state)
+
+
+func _on_game_state(_from: int, _to: int) -> void:
+	_store()
 
 
 func _attach(p: PlanetLevel) -> void:
@@ -252,7 +256,11 @@ func hook_worm(w: Worm) -> void:
 		return
 	_hooked.append(w)
 	w.dropped.connect(_on_dropped.bind(w))
-	w.tree_exiting.connect(func() -> void: _hooked.erase(w))
+	w.tree_exiting.connect(_unhook.bind(w))
+
+
+func _unhook(w: Worm) -> void:
+	_hooked.erase(w)
 
 
 func _worms() -> Array[Worm]:
@@ -722,7 +730,7 @@ func _stage_shot() -> void:
 					world.eat_tile(c + Vector2i(x, y + (2 if x > 0 else 0)), Players.P1)
 			for spec in [[-10, &"root"], [0, &"bug"], [10, &"stone"]]:
 				plant_at(world.shape.center_of(c + Vector2i(spec[0], 0)), spec[1])
-			w.warp_to(at + up_at(at) * 20.0 + up_at(at).orthogonal() * 260.0)
+			w.warp_to(at + up_at(at) * 80.0)   # just above the tunnel, out of the patches' way
 			for i in 80:
 				world.advance(0.5)
 		"ant_city":
