@@ -1,0 +1,25 @@
+{
+	"id": "stage_2",
+	"scene": "dock",
+	"title": "It got hungry",
+	"when": "stage 2",
+	"time_of_day": "morning (noon light)",
+	"clue": "a ripple on the pond",
+	"steps": [
+		{"do": "call", "fn": "time", "args": {"of": "noon", "secs": 0}},
+		{"do": "camera", "to": "dock", "zoom": 4.2, "time": 0.05, "wait": 1.2},
+		{"do": "line", "who": "Reel", "line": "s2_reel_ate_everything", "pics": ["worm", "eat"]},
+		{"do": "line", "who": "Bobber", "line": "s2_bobber_so_do_i", "pics": ["sandwich", "face_happy"]},
+		{"do": "hop", "who": "Bobber", "height": 3, "times": 2, "time": 0.25, "sound": "story_hop"},
+		{"do": "line", "who": "Reel", "line": "s2_reel_my_boy", "pics": ["heart"]},
+		{"do": "call", "fn": "hands", "args": {"who": "Reel", "w": 14, "secs": 0.4}},
+		{"do": "line", "who": "Reel", "line": "s2_reel_this_big", "pics": ["eat", "worm_big"]},
+		{"do": "call", "fn": "clue", "args": {"what": "ripple", "to": 1.0, "secs": 1.0}},
+		{"do": "sound", "cue": "story_bloop"},
+		{"do": "call", "fn": "pose", "args": {"who": "Bobber", "pose": "squint"}},
+		{"do": "line", "who": "Bobber", "line": "s2_bobber_eww", "pics": ["worm", "face_sheepish"]},
+		{"do": "call", "fn": "hands", "args": {"who": "Reel", "w": 0, "secs": 0.4}},
+		{"do": "call", "fn": "pose", "args": {"who": "Bobber", "pose": "idle"}},
+		{"do": "camera", "to": "pond", "zoom": 3.6, "time": 2.4, "dx": -50, "wait": 2.4}
+	]
+}

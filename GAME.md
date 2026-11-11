@@ -58,6 +58,11 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-11 (proto R-a): Starting regrow times in planet seconds (plain / in castings): surface 120 / 30, topsoil 180 / 45, dirt 240 / 60, deep rock 600 / 150, core 900 / 225. Tiles removed by anything but a worm regrow at the plain rate. Content lane tunes `data/rings/rings.tres`.
 - 2026-11-11 (proto R-a): A seed dropped in castings sprouts at once, then fills one cell every 4 planet seconds, spreading only through castings, up to 10 tiles from the seed; garden food that gets eaten grows back as garden.
 - 2026-11-11 (proto R-a): The planet shot steps the zoom down to 1/16 centred on the core and swaps the live tiles for a 1-px-per-2-tiles picture of the whole planet with every bite drawn in; that picture is also the stage-6 chomp's `planet_texture`.
+- 2026-11-11 (story-1): Dock scenes are JSON in `data/cutscenes/<id>.json` (the vendored cutscene player's format), not `.tres`. Ids: `opening`, `stage_2` ... `stage_7`, `ending`. Stage 1's scene is the opening.
+- 2026-11-11 (story-1): Stage 7 (reaching space) gets its own short dock scene, "Up it went" (night, a star winks out), so every stage-up has one; the ending stays after the sun.
+- 2026-11-11 (story-1): Both worms are in the story: young Reel had two on the hook, Gulp and Burp ("That one got away... Well. Those two."). Reel's excuses, one per scene: comet, Grandma's chili, a funny purple rock, his lucky socks, lightning, a wish. The Strangestone is only ever seen.
+- 2026-11-11 (story-1): A scene plays once per tin per stage (the first worm to reach it); the second worm reaching the same stage plays nothing. A stage-up during a scene queues the next one. Any button skips, after the player's 0.5 s grace.
+- 2026-11-11 (story-1): Until a voice file exists, a line plays the speaker's library bark, else a synth placeholder babble in the speaker's pitch (low and slow for Reel, high and quick for Bobber).
 
 ---
 

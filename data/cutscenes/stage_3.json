@@ -1,0 +1,26 @@
+{
+	"id": "stage_3",
+	"scene": "dock",
+	"title": "It started to change",
+	"when": "stage 3",
+	"time_of_day": "noon",
+	"clue": "the tree on the far shore is pulled into the ground",
+	"steps": [
+		{"do": "call", "fn": "time", "args": {"of": "noon", "secs": 0}},
+		{"do": "camera", "to": "dock", "zoom": 4.0, "time": 0.05, "wait": 0.6},
+		{"do": "line", "who": "Reel", "line": "s3_reel_different", "pics": ["worm", "question"]},
+		{"do": "hold", "who": "Reel", "pic": "stone_worm"},
+		{"do": "sound", "cue": "story_item"},
+		{"do": "line", "who": "Bobber", "line": "s3_bobber_rock_head", "pics": ["stone_worm", "exclaim"]},
+		{"do": "drop", "who": "Reel"},
+		{"do": "call", "fn": "hands", "args": {"who": "Reel", "w": 24, "secs": 0.4}},
+		{"do": "line", "who": "Reel", "line": "s3_reel_comet", "pics": ["comet", "sparkle"]},
+		{"do": "line", "who": "Reel", "line": "s3_reel_this_big", "pics": ["worm_big"]},
+		{"do": "call", "fn": "clue", "args": {"what": "tree", "to": 0.0, "secs": 1.6}},
+		{"do": "sound", "cue": "story_chomp"},
+		{"do": "call", "fn": "pose", "args": {"who": "Bobber", "pose": "squint"}},
+		{"do": "line", "who": "Bobber", "line": "s3_bobber_hmm", "pics": ["question"]},
+		{"do": "call", "fn": "hands", "args": {"who": "Reel", "w": 0, "secs": 0.4}},
+		{"do": "wait", "time": 1.2}
+	]
+}

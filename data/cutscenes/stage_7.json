@@ -1,0 +1,24 @@
+{
+	"id": "stage_7",
+	"scene": "dock",
+	"title": "Up it went",
+	"when": "stage 7 (space)",
+	"time_of_day": "night",
+	"clue": "a bright star winks out",
+	"steps": [
+		{"do": "call", "fn": "time", "args": {"of": "night", "secs": 0}},
+		{"do": "camera", "to": "dock", "zoom": 4.0, "time": 0.05, "wait": 0.5},
+		{"do": "call", "fn": "pose", "args": {"who": "Reel", "pose": "point_up"}},
+		{"do": "line", "who": "Reel", "line": "s7_reel_up", "pics": ["worm_up", "star"]},
+		{"do": "camera", "to": "dock", "zoom": 3.4, "time": 2.0, "dy": -50},
+		{"do": "line", "who": "Reel", "line": "s7_reel_lightning", "pics": ["lightning", "worm_huge"]},
+		{"do": "call", "fn": "pose", "args": {"who": "Reel", "pose": "idle"}},
+		{"do": "line", "who": "Bobber", "line": "s7_bobber_cant_fly", "pics": ["worm", "no"]},
+		{"do": "line", "who": "Reel", "line": "s7_reel_didnt_say_fly", "pics": ["worm_up"]},
+		{"do": "call", "fn": "clue", "args": {"what": "star", "to": 0.0, "secs": 0.4}},
+		{"do": "sound", "cue": "story_wink"},
+		{"do": "call", "fn": "pose", "args": {"who": "Bobber", "pose": "squint"}},
+		{"do": "line", "who": "Bobber", "line": "s7_bobber_squint", "pics": ["question"]},
+		{"do": "wait", "time": 1.6}
+	]
+}

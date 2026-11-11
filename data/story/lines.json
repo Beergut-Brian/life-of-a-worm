@@ -1,0 +1,330 @@
+{
+	"note": "Every spoken story line in Life of a Worm. Gary voices each id to res://assets/story/voice/<id>.ogg from the speaker's saved voice library (old_reel: Chatterbox library voice; bobber: his library voice once made). Until a file exists the line plays fallback: bark:<cue> is the speaker's library bark, else a short placeholder blip (scripts/story/story_voice.gd: library bark file if vendored, else a synth placeholder babble in the speaker's pitch). text is the script for the voice, never shown in play (subtitles are off by default). [tags] are ElevenLabs v3-style directions. excuse: Reel's reason the worms changed, different every time.",
+	"speakers": {
+		"old_reel": "Old Reel (library Jarling)",
+		"bobber": "Bobber, his grandson (new Jarling)"
+	},
+	"lines": [
+		{
+			"id": "op_bobber_why",
+			"character": "bobber",
+			"text": "Grandpa? Why's a sandwich on my hook? Why not worms?",
+			"delivery": "curious, a bit put out, quick",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "op_reel_worms",
+			"character": "old_reel",
+			"text": "[chuckles] Worms? Heh. Back in my day, worms were little.",
+			"delivery": "low, slow, creaky; chuckle first; trails off",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "op_reel_this_big",
+			"character": "old_reel",
+			"text": "THIS big. Fit right on a hook...",
+			"delivery": "holds two fingers an inch apart; fond, quiet",
+			"fallback": "bark:oops"
+		},
+		{
+			"id": "op_bobber_tiny",
+			"character": "bobber",
+			"text": "That's teeny.",
+			"delivery": "unimpressed, a little giggle",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "op_reel_one_morning",
+			"character": "old_reel",
+			"text": "Heh. Then one morning, right here by the pond...",
+			"delivery": "slows down, story voice, drifting into memory",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "op_reel_young_hum",
+			"character": "old_reel",
+			"text": "[hums] Come on, little fella. Breakfast for the fish.",
+			"delivery": "younger, brighter, humming while baiting the hook",
+			"fallback": "bark:join"
+		},
+		{
+			"id": "op_reel_two_of_em",
+			"character": "old_reel",
+			"text": "Two of 'em, come to think of it.",
+			"delivery": "remembers, amused; co-op only",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "op_reel_names",
+			"character": "old_reel",
+			"text": "One I called Gulp. The other one... [chuckles] Burp.",
+			"delivery": "fond, slow; the chuckle lands right before Burp",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "op_bobber_burp",
+			"character": "bobber",
+			"text": "[giggles] BURP!",
+			"delivery": "delighted kid giggle, then shouts it",
+			"fallback": "bark:win"
+		},
+		{
+			"id": "op_reel_got_away",
+			"character": "old_reel",
+			"text": "Heh. That one got away... Well. Those two.",
+			"delivery": "the old catchphrase, then a sheepish correction, quieter",
+			"fallback": "bark:oops"
+		},
+		{
+			"id": "op_reel_hungry",
+			"character": "old_reel",
+			"text": "And then... it got HUNGRY.",
+			"delivery": "pause, then big on HUNGRY",
+			"fallback": "bark:win"
+		},
+		{
+			"id": "s2_reel_ate_everything",
+			"character": "old_reel",
+			"text": "[chuckles] That worm ate everything smaller than itself.",
+			"delivery": "proud, like bragging about a grandkid",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s2_bobber_so_do_i",
+			"character": "bobber",
+			"text": "So do I!",
+			"delivery": "delighted, fist pump, mouth full of sandwich",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "s2_reel_my_boy",
+			"character": "old_reel",
+			"text": "Heh heh. That's my boy.",
+			"delivery": "warm chuckle",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "s2_reel_this_big",
+			"character": "old_reel",
+			"text": "Seeds. Roots. Bugs. Got THIS big.",
+			"delivery": "counts on fingers, then hands a hand-width apart",
+			"fallback": "bark:win"
+		},
+		{
+			"id": "s2_bobber_eww",
+			"character": "bobber",
+			"text": "Bugs? EWWW.",
+			"delivery": "scrunched face, delighted disgust",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s3_reel_different",
+			"character": "old_reel",
+			"text": "It wasn't just bigger, see. It was... different.",
+			"delivery": "lowers voice, mysterious",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s3_bobber_rock_head",
+			"character": "bobber",
+			"text": "A worm with a ROCK for a head?",
+			"delivery": "squinting, half laughing",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s3_reel_comet",
+			"character": "old_reel",
+			"text": "Heh. Must've been that comet. Whoosh! Right over the pond.",
+			"delivery": "excuse 1: points at the sky, sure of himself",
+			"fallback": "bark:win",
+			"excuse": "comet"
+		},
+		{
+			"id": "s3_reel_this_big",
+			"character": "old_reel",
+			"text": "Got THIS big, too.",
+			"delivery": "hands shoulder-width apart",
+			"fallback": "bark:oops"
+		},
+		{
+			"id": "s3_bobber_hmm",
+			"character": "bobber",
+			"text": "Hmmmm.",
+			"delivery": "long, suspicious squint",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s4_reel_came_up",
+			"character": "old_reel",
+			"text": "Then one day it came UP. Right under my shed...",
+			"delivery": "building; keeps talking while the shed sinks behind him",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s4_reel_chili",
+			"character": "old_reel",
+			"text": "Heh. Your grandma's chili, I reckon. Fed it one spoonful.",
+			"delivery": "excuse 2: certain, a bit guilty",
+			"fallback": "bark:oops",
+			"excuse": "chili"
+		},
+		{
+			"id": "s4_reel_this_big",
+			"character": "old_reel",
+			"text": "It was THIS big!",
+			"delivery": "arms wide open",
+			"fallback": "bark:win"
+		},
+		{
+			"id": "s4_bobber_nuh_uh",
+			"character": "bobber",
+			"text": "Nuh-uh.",
+			"delivery": "flat, arms crossed: the catchphrase",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s4_reel_honest",
+			"character": "old_reel",
+			"text": "Honest! Never saw that shed again.",
+			"delivery": "wounded dignity, hand on heart, trails off",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s5_reel_nobody_fished",
+			"character": "old_reel",
+			"text": "Nobody fished that year. Whole town watched the hill.",
+			"delivery": "wistful, then lighting up",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s5_reel_ho_ho",
+			"character": "old_reel",
+			"text": "Ho ho! Look at it GO!",
+			"delivery": "the only delighted one; hops; laughing",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "s5_reel_purple_rock",
+			"character": "old_reel",
+			"text": "Dug the bait up by a funny purple rock, see. That's why.",
+			"delivery": "excuse 3: confident, taps his nose",
+			"fallback": "bark:win",
+			"excuse": "purple_rock"
+		},
+		{
+			"id": "s5_reel_this_big",
+			"character": "old_reel",
+			"text": "THIS big. Bigger!",
+			"delivery": "on tiptoe, arms as wide as a hug",
+			"fallback": "bark:win"
+		},
+		{
+			"id": "s5_bobber_nuh_uh",
+			"character": "bobber",
+			"text": "Nuh-UH.",
+			"delivery": "louder, arms crossed tighter",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s6_reel_biggest",
+			"character": "old_reel",
+			"text": "[chuckles] It was THIS... big.",
+			"delivery": "arms as wide as they go; strains",
+			"fallback": "bark:win"
+		},
+		{
+			"id": "s6_reel_socks",
+			"character": "old_reel",
+			"text": "Ate my lucky socks first. Powerful socks, those.",
+			"delivery": "excuse 4: dead serious",
+			"fallback": "bark:oops",
+			"excuse": "lucky_socks"
+		},
+		{
+			"id": "s6_reel_everything",
+			"character": "old_reel",
+			"text": "And then it ate... everything.",
+			"delivery": "slow, hushed, dramatic pause",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s6_bobber_where",
+			"character": "bobber",
+			"text": "Then where are WE sitting?",
+			"delivery": "triumphant, gotcha",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s6_reel_long_story",
+			"character": "old_reel",
+			"text": "...It's a long story.",
+			"delivery": "caught out, sheepish chuckle",
+			"fallback": "bark:oops"
+		},
+		{
+			"id": "s7_reel_up",
+			"character": "old_reel",
+			"text": "Too big for the ground, so... up it went.",
+			"delivery": "points up, slow wonder",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "s7_reel_lightning",
+			"character": "old_reel",
+			"text": "Lightning hit it on the nose. Zap! That's why.",
+			"delivery": "excuse 5: claps on Zap",
+			"fallback": "bark:win",
+			"excuse": "lightning"
+		},
+		{
+			"id": "s7_bobber_cant_fly",
+			"character": "bobber",
+			"text": "Worms can't fly, Grandpa.",
+			"delivery": "patient, like explaining to a baby",
+			"fallback": "bark:lose"
+		},
+		{
+			"id": "s7_reel_didnt_say_fly",
+			"character": "old_reel",
+			"text": "Heh. Didn't say fly. Said UP.",
+			"delivery": "smug little chuckle",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "s7_bobber_squint",
+			"character": "bobber",
+			"text": "Hmmmm... nuh-uh.",
+			"delivery": "the squint: one eye closed, slow and sceptical",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "end_reel_still_out_there",
+			"character": "old_reel",
+			"text": "Heh. And it's still out there. Eating stars.",
+			"delivery": "quiet, under the stars, fond",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "end_reel_wish",
+			"character": "old_reel",
+			"text": "Maybe it was my wish. I wished for the big one.",
+			"delivery": "excuse 6: soft, almost to himself",
+			"fallback": "bark:oops",
+			"excuse": "wish"
+		},
+		{
+			"id": "end_bobber_sleepy",
+			"character": "bobber",
+			"text": "Nuh... uh...",
+			"delivery": "fast asleep, mumbled",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "end_reel_glad",
+			"character": "old_reel",
+			"text": "Never did catch it. Glad I didn't.",
+			"delivery": "whisper, smile in the voice, trails off",
+			"fallback": "bark:win"
+		}
+	]
+}

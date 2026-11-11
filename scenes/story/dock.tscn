@@ -1,0 +1,94 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/story/dock.gd" id="1_dock"]
+[ext_resource type="Script" path="res://scripts/story/story_actor.gd" id="2_actor"]
+
+[node name="Dock" type="Node2D"]
+script = ExtResource("1_dock")
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(20, -60)
+zoom = Vector2(3.2, 3.2)
+
+[node name="Tint" type="CanvasModulate" parent="."]
+
+[node name="Grade" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Vignette" type="ColorRect" parent="Grade"]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.62, 0.25, 0.16)
+
+[node name="Reel" type="Node2D" parent="."]
+position = Vector2(100, -3)
+script = ExtResource("2_actor")
+
+[node name="Bobber" type="Node2D" parent="."]
+position = Vector2(136, -1)
+script = ExtResource("2_actor")
+kind = "bobber"
+
+[node name="YoungReel" type="Node2D" parent="."]
+visible = false
+position = Vector2(-40, 0)
+script = ExtResource("2_actor")
+kind = "young_reel"
+
+[node name="Gulp" type="Node2D" parent="."]
+visible = false
+position = Vector2(-22, -16)
+script = ExtResource("2_actor")
+kind = "worm_green"
+
+[node name="Burp" type="Node2D" parent="."]
+visible = false
+position = Vector2(-20, -10)
+script = ExtResource("2_actor")
+kind = "worm_red"
+
+[node name="Anchors" type="Node2D" parent="."]
+
+[node name="wide" type="Marker2D" parent="Anchors"]
+position = Vector2(0, -70)
+
+[node name="dock" type="Marker2D" parent="Anchors"]
+position = Vector2(112, -16)
+
+[node name="bank" type="Marker2D" parent="Anchors"]
+position = Vector2(-40, -10)
+
+[node name="tin" type="Marker2D" parent="Anchors"]
+position = Vector2(-6, -8)
+
+[node name="hook" type="Marker2D" parent="Anchors"]
+position = Vector2(-22, -16)
+
+[node name="plop" type="Marker2D" parent="Anchors"]
+position = Vector2(-34, 2)
+
+[node name="burrow" type="Marker2D" parent="Anchors"]
+position = Vector2(-50, 60)
+
+[node name="shed" type="Marker2D" parent="Anchors"]
+position = Vector2(-120, -20)
+
+[node name="hill" type="Marker2D" parent="Anchors"]
+position = Vector2(-190, -40)
+
+[node name="tree" type="Marker2D" parent="Anchors"]
+position = Vector2(200, -30)
+
+[node name="pond" type="Marker2D" parent="Anchors"]
+position = Vector2(220, -10)
+
+[node name="moon" type="Marker2D" parent="Anchors"]
+position = Vector2(110, -170)
+
+[node name="sky" type="Marker2D" parent="Anchors"]
+position = Vector2(0, -200)
