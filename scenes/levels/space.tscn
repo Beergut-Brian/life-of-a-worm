@@ -1,0 +1,83 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/space/space.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/space/space_worm.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/space/space_planet.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/space/starfield.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/chomp/proto_sfx.gd" id="5"]
+
+[sub_resource type="CircleShape2D" id="body"]
+radius = 46.0
+
+[sub_resource type="CircleShape2D" id="mouth"]
+radius = 62.0
+
+[node name="Space" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Sfx" type="Node" parent="."]
+script = ExtResource("5")
+
+[node name="FarStars" type="Node2D" parent="."]
+script = ExtResource("4")
+count = 500
+star_seed = 3
+parallax = 0.3
+
+[node name="NearStars" type="Node2D" parent="."]
+script = ExtResource("4")
+count = 160
+star_seed = 11
+parallax = 0.7
+
+[node name="Camera" type="Camera2D" parent="."]
+
+[node name="Planets" type="Node2D" parent="."]
+
+[node name="Moon" type="RigidBody2D" parent="Planets"]
+position = Vector2(520, 60)
+script = ExtResource("3")
+size_stage = 5
+theme = &"candy"
+drift = Vector2(-30, 4)
+
+[node name="Jungle" type="RigidBody2D" parent="Planets"]
+position = Vector2(-560, -300)
+script = ExtResource("3")
+size_stage = 6
+theme = &"jungle"
+drift = Vector2(12, 8)
+
+[node name="Ice" type="RigidBody2D" parent="Planets"]
+position = Vector2(-380, 420)
+script = ExtResource("3")
+size_stage = 6
+theme = &"ice"
+drift = Vector2(18, -6)
+
+[node name="Junk" type="RigidBody2D" parent="Planets"]
+position = Vector2(760, -420)
+script = ExtResource("3")
+size_stage = 8
+theme = &"junk"
+drift = Vector2(-8, 6)
+
+[node name="Clockwork" type="RigidBody2D" parent="Planets"]
+position = Vector2(1300, 500)
+script = ExtResource("3")
+size_stage = 9
+theme = &"clockwork"
+drift = Vector2(-10, -4)
+
+[node name="Worm" type="CharacterBody2D" parent="."]
+z_index = 2
+motion_mode = 1
+script = ExtResource("2")
+
+[node name="Body" type="CollisionShape2D" parent="Worm"]
+shape = SubResource("body")
+
+[node name="Mouth" type="Area2D" parent="Worm"]
+
+[node name="Shape" type="CollisionShape2D" parent="Worm/Mouth"]
+shape = SubResource("mouth")

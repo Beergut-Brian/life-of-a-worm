@@ -262,6 +262,120 @@ The launcher starts a game with `--profile=<id>` and expects the game to:
 
 Add this game's own signals and APIs below. Keep the same format.
 
+### Planet chomp and jars (stage 6 → 7; risk prototype R-b, `feature/proto-chomp-1`)
+
+Jars are per install, one file per eaten planet: `user://jars/<planet_id>.json`, a full copy of the
+tin's save taken just before the chomp (seed + edits, so a few KB). `planet_id` is
+`<profile>_<seed>`. The jar API lives in `scripts/jars/jars.gd` (class `JarStore`); it is meant to
+become the autoload `Jars` (requested from Systems). Until then a scene instances it as a node
+named `Jars`.
+
+```gdscript
+# JarStore (Jars)
+signal planet_jarred(planet_id: StringName)       # after the jar file is written
+var dir := "user://jars"                           # tests and the demo point this elsewhere
+func snapshot(planet_id: StringName) -> String     # flush Save, copy it to <dir>/<planet_id>.json,
+                                                   # add planet_id to Save "jars"; returns the path ("" on failure)
+func list() -> Array[StringName]                   # jar ids on the shelf, sorted
+func has_jar(planet_id: StringName) -> bool
+func open(planet_id: StringName) -> bool           # load the jar as profile "jar_<planet_id>" with
+                                                   # "jar": true and "stage6_disabled": true
+func close() -> void                               # write the jar profile back into the jar, return
+                                                   # to the tin that opened it
+func is_in_jar() -> bool
+static func stage6_allowed() -> bool               # false inside a jar (Save "stage6_disabled")
+
+# PlanetChomp (scenes/levels/planet_chomp.tscn, scripts/chomp/planet_chomp.gd)
+signal confirm_started()
+signal confirm_cancelled()                         # the hold was released before it filled
+signal planet_eaten()                              # exactly once, on the final gulp
+func begin() -> bool                               # shows the picture; false if stage 6 is disabled
+func advance(delta: float, held: bool) -> void     # the whole sequence; _process calls it with A held
+var planet_texture: Texture2D                      # the remaining planet; the tile world provides it
+
+# Save keys this section reads and writes (per tin)
+#   "planet": { "id": String, "seed": int, "bites": [[angle, radius, size], ...] }   # stand-in edits
+#   "stage": int          6 before the chomp, 7 after
+#   "jars": Array[String] planet ids jarred from this tin
+#   "jar": bool, "stage6_disabled": bool              # only inside a jar
+
+# Space (scenes/levels/space.tscn, scripts/space/)
+signal ate(player: int, what: StringName, growth: float)   # same signal as the disk worm
+static func StageRule.relation(eater_stage: int, other_stage: int) -> int  # FOOD | THREAT | IGNORE
+# Anything that can be eaten exposes `var size_stage: int`; bigger eats smaller, equal ignores.
+```
+
+### World: the polar disk (risk prototype R-a, `feature/proto-polar-1`)
+
+The planet is a `PolarWorld` (`scripts/world/polar_world.gd`), a subclass of the addon's `TileWorld`
+(`addons/openjar/tileworld/`, vendored v0.2.0) on a `DiskShape`. In `scenes/levels/disk.tscn` it is
+the node named `World`, in group `&"world"`; find it with
+`get_tree().get_first_node_in_group(&"world")`. It is not an autoload. Cells are `Vector2i` on one
+Cartesian grid (16 px squares, y down, core at the origin); only chunk grouping is polar. Positions
+are local to the world node; the world is translated, never rotated (the camera rotates).
+
+Time is the world's own simulated clock (`clock`, seconds, saved), never the wall clock: regrowth and
+gardens run on it, tests drive it with `advance()`.
+
+```gdscript
+# PolarWorld ("World")
+signal tile_eaten(cell: Vector2i, block: StringName, player: int)   # after eat_tile removed it
+signal tile_regrown(cell: Vector2i, block: StringName)              # a regrowth pass put it back
+signal garden_planted(cell: Vector2i, flavour: StringName)          # a seed took in castings
+signal garden_grew(cell: Vector2i, flavour: StringName)             # the patch filled one more cell
+# inherited from TileWorld: chunk_loaded(key), chunk_freed(key), tile_dug, dig_blocked, ...
+
+var clock: float                                   # simulated planet seconds
+var rings: RingSet                                 # data/rings/rings.tres
+func setup_planet(rings: RingSet, radius: int, seed: int, band := 32) -> void   # before add_child is fine
+func advance(delta: float) -> void                 # clock += delta; regrowth and garden passes when due
+                                                   # (_physics_process calls it; tests call it directly)
+func set_stage(player: int, stage: int) -> void    # the worm lane tells the world each worm's stage
+func stage_of(player: int) -> int                  # 1 until set
+func is_edible_by(stage: int, thing) -> bool       # thing: a Vector2i cell, a StringName tile id, or any
+                                                   # Object with `size_stage` (StageRule.relation == FOOD).
+                                                   # Cells and tiles: breakable and ring.edible_from <= stage.
+                                                   # Strangestone is never edible.
+func eat_tile(cell: Vector2i, player: int) -> bool # true when eaten: air + timestamped edit + castings,
+                                                   # tile_eaten emitted. False (nothing changes) when air,
+                                                   # outside, or not edible by stage_of(player).
+func eat_circle(pos: Vector2, radius_px: float, player: int) -> int   # eat_tile on every cell centre in
+                                                   # the circle; returns how many were eaten
+func regrow_time(cell: Vector2i) -> float          # seconds from being eaten to regrowing: the ring's
+                                                   # regrow_time, x castings_factor in castings;
+                                                   # INF = never (the Green thumb trait will scale
+                                                   # castings_factor through WormStats, not here)
+func has_castings(cell: Vector2i) -> bool
+func plant_seed(cell: Vector2i, flavour: StringName) -> bool   # true only on an air cell with castings
+                                                   # whose flavour is in rings.garden_tiles
+func ring_of(cell: Vector2i) -> RingDef
+func eaten_at(cell: Vector2i) -> float             # clock time of the edit, -1 if none
+func track_eater(node: Node2D) -> void             # track() + regrowth never fills within
+                                                   # keep_clear_tiles of it; untrack_eater(node) undoes it
+func planet_texture() -> Texture2D                 # the whole disk, 1 px per 2 tiles, edits drawn in;
+                                                   # the planet shot and the stage-6 chomp use it
+
+# Chunks (the addon's WorldShape interface on DiskShape)
+#   key = Vector2i(ring_band, sector): ring_band = int(dist / band), sectors_in(band) = max(4,
+#   ceil(TAU * (band + 0.5))) so a sector is about `band` tiles of arc. band = 32 (R-a decision).
+#   shape.chunk_of(cell) -> Vector2i, shape.chunk_cells(key) -> Array[Vector2i],
+#   shape.neighbourhood(key, 2) -> the 5x5 kept live around each tracked node (chunk_radius = 2).
+#   loaded_chunks() -> Array[Vector2i]; two eaters on opposite sides = two separate neighbourhoods.
+#   Gravity: shape.gravity_at(pos) == -pos.normalized() * gravity; up for a body = pos.normalized().
+
+# Save (inside the tin's "planet" key once Systems wires it; PolarWorld.to_save() / load_save())
+#   {"seed": int, "radius": int, "band": int, "clock": float,
+#    "edits": [x, y, id, ...],                    # addon EditStore, only differences from the seed
+#    "times": [x, y, deciseconds, ...],           # when each still-edited cell was eaten
+#    "castings": [x, y, ...],
+#    "gardens": [[x, y, "flavour", planted_ds], ...], "water": [...]}
+```
+
+`RingSet` / `RingDef` (`scripts/world/ring_def.gd`, `ring_set.gd`; data in `data/rings/rings.tres`):
+per ring `id`, `outer` (fraction of the radius), `tile` / `alt_tile` names, `hue`, `edible_from`
+(stage), `regrow_time` (seconds, 0 = never), `flavour`. The set holds `castings_factor`,
+`garden_interval`, `garden_max_radius`, `garden_tiles` ({flavour: tile name}) and
+`strangestone_radius` (tiles). Regrow times are data; the Content lane tunes them there.
 ### Worm and traits (`scenes/players/worm.tscn`, `scripts/worm/`; risk prototype R-c)
 
 One `Worm` node per player (class `Worm`, root of `worm.tscn`). Signals are on the worm node and
