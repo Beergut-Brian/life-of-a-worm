@@ -40,3 +40,10 @@ func _player(cue: String) -> AudioStreamPlayer:
 
 static func _audio_has(cue: String) -> bool:
 	return ResourceLoader.exists(Audio.SFX_DIR + cue + ".ogg") or ResourceLoader.exists(Audio.SFX_DIR + cue + "_1.ogg")
+
+
+## Stop before leaving so no playback outlives the scene (it would leak at exit).
+func _exit_tree() -> void:
+	for p in _players.values():
+		p.stop()
+		p.stream = null

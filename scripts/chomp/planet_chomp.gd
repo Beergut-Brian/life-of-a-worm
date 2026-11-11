@@ -38,6 +38,9 @@ var eaten_count := 0
 var frame_ms_max := 0.0
 var frame_ms_sum := 0.0
 var frame_count := 0
+var delta_sum := 0.0
+var delta_max := 0.0
+var texture_ms := 0.0
 
 var _t := 0.0          # time in the current phase
 var _clock := 0.0      # time since ready (demo script)
@@ -94,7 +97,9 @@ func _load_planet() -> void:
 		planet = PlanetStandIn.generate("", 1)
 	if planet.id == "":
 		planet.id = "%s_%d" % [Save.profile, planet.seed_value]
+	var t0 := Time.get_ticks_usec()
 	planet_texture = planet.texture(TEX_SIZE)
+	texture_ms = (Time.get_ticks_usec() - t0) / 1000.0
 	_planet_sprite.texture = planet_texture
 	_planet_sprite.scale = Vector2.ONE * PLANET_SCALE
 	(_planet_sprite.material as ShaderMaterial).set_shader_parameter("tex_px", float(TEX_SIZE))
@@ -134,6 +139,8 @@ func _process(delta: float) -> void:
 		frame_ms_max = maxf(frame_ms_max, ms)
 		frame_ms_sum += ms
 		frame_count += 1
+		delta_sum += delta
+		delta_max = maxf(delta_max, delta)
 
 
 func _held() -> bool:
@@ -288,8 +295,9 @@ func _set_progress(p: float) -> void:
 ## Hold the last frame over the space scene and fade it out.
 func _cross_fade() -> void:
 	if frame_count > 0:
-		print("chomp: %d frames, script ms avg %.3f max %.3f, texture %dx%d" % [
-			frame_count, frame_ms_sum / frame_count, frame_ms_max, TEX_SIZE, TEX_SIZE])
+		print("chomp: %d frames, frame ms avg %.1f max %.1f, script ms avg %.3f max %.3f, texture %dx%d built in %.0f ms" % [
+			frame_count, delta_sum * 1000.0 / frame_count, delta_max * 1000.0, frame_ms_sum / frame_count,
+			frame_ms_max, TEX_SIZE, TEX_SIZE, texture_ms])
 	var tree := get_tree()
 	var layer := CanvasLayer.new()
 	layer.layer = 60

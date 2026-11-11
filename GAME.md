@@ -46,6 +46,12 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-10: The worms are bespoke Worm avatars (library entries, not playable elsewhere), 3D creature master then 16 px pixel set, unless Kaden draws them.
 - 2026-11-10: Bloom becomes Worm's first cameo update rather than a launch character.
 - 2026-11-10: Build order inside the gate: addons extraction now (Systems, Opus); the Worm risk prototypes that don't need the tile world (trait resolver on a segmented worm; the stage-6 chomp + jar snapshot + cross-fade) can run as soon as the repo exists; the polar-chunk prototype waits for addons `v0.2.0`.
+- 2026-11-11 (proto R-b): A jar is per install at `user://jars/<planet_id>.json`, `planet_id = <profile>_<seed>`. Entering a jar plays it as profile `jar_<id>` with `stage6_disabled`; leaving writes what you did back into the jar, so a jar is a planet you keep playing, not a frozen photo.
+- 2026-11-11 (proto R-b): If the jar can't be written, the chomp doesn't happen (nothing built is ever lost).
+- 2026-11-11 (proto R-b): Confirm is a 2.0 s hold of A with a filling ring; letting go drains the ring at twice the fill speed and plays a soft boop. Either player's A counts.
+- 2026-11-11 (proto R-b): The chomp is 6 s of 14 bites that grow bigger, ~12 s from confirm to space in all (1.1 s jar beat, 6.4 s chomp, 3.6 s gulp-silence-burp, 1.25 s cross-fade). Tunable constants in `scripts/chomp/planet_chomp.gd`.
+- 2026-11-11 (proto R-b): In space, bumping a bigger planet knocks the worm back (a physical bounce, not steering) and the planet wakes up for a second. The demo's autopilot exists only under `--demo-chomp`.
+- 2026-11-11 (proto R-b): Bigger-eats-smaller lives in `scripts/space/stage_rule.gd` (`StageRule.relation`) until the worm lane's stage logic exists; the disk's `World.is_edible_by` should call the same rule.
 
 ---
 
