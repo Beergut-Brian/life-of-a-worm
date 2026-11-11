@@ -39,6 +39,7 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - D87: palette by options lane: three different looks, one lit and Terraria-like; Kaden picks or edits.
 - D88: Gary proposes three name pairs for the green and red worms; Kaden picks.
 - D89: Bobber's bible and Old Reel's dock-scene revision approved as drafted (`openjar-characters`).
+- Worm names (D90, Kaden): green = Gulp, red = Burp
 
 ## Decisions made without Kaden
 - 2026-11-10: Wormhole pull dropped (no forced movement); edge arrow + held-B warp instead.
@@ -66,6 +67,17 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-11 (proto R-c): Stage thresholds, slots per stage, growth per segment, partner share and base stats live in `data/traits/worm_rules.tres` for the prototype (stages 2..7 at 6/10/15/20/24/40 segments, 2 growth per segment); they move into `data/stages.tres` when the Content lane makes it.
 - 2026-11-11 (proto R-c): Placeholder trait wall opens on Y (left/right picks, A equips/unequips, B or Y closes); in the real game it hangs in the burrow. X and Y are new player actions `carry` and `tackle`.
 - 2026-11-11 (proto R-c): "Bite rock a stage early" is a stat per flavour, `bite_bonus/<flavour>`; slow ground is `drag/<kind>`. New traits that change what can be eaten or where you are slowed need no worm code.
+- 2026-11-11 (grey-box): The worm names show wherever the game names a worm: lobby podiums and plates, "GULP PAUSED", the tin log, debug logs. Gameplay stays text-free (the HUD is glyphs and pictures).
+- 2026-11-11 (grey-box): An apex creature is food once the worm's body has grown to its size (segments for the next stage), and the stage-up waits for that apex bite. So the dirt beetle is a threat at stage 1, turns pale and wide-eyed when you are long enough, and eating it is the stage-up.
+- 2026-11-11 (grey-box): The apex notices a smaller worm within 260 px (the rumble plays once), winds up for 1.0 s before every lunge, and dozes for 6 s after eating; the worm pops out of its back end one segment shorter and dizzy.
+- 2026-11-11 (grey-box): A hollow is a spot where 75% of the cells within 2 tiles are air; hold still there for 2 s and the worm falls asleep: that is home. Sleeping in a hollow elsewhere moves home (trophies come along, they are data). Nothing within 5 tiles of home ever regrows.
+- 2026-11-11 (grey-box): Carried home, a seed is planted in the nearest castings by the bed (a garden); anything else becomes a trophy in a notch dug in the burrow floor. Pets later.
+- 2026-11-11 (grey-box): Held-B warp goes home; if the partner is more than 420 px away and not smaller, it goes to the partner instead; with no home and no far partner it is a bonk. Y in the burrow opens the trait wall; Y elsewhere is the tackle box (a placeholder beep for now).
+- 2026-11-11 (grey-box): Tunnelling costs 35% speed, and each dirt tile is 0.05 growth in its ring's flavour (about 40 tiles a segment); the tunnel is about 1.5 tiles wide at stage 1. The worm's body grows 18% per stage. Camera cap: 3x at stage 1, 2x at stage 2, 1x at stages 3 and 4, 0.5x after.
+- 2026-11-11 (grey-box): Saves are three bait tins per launcher profile (`user://saves/<profile>_tin1..3.json`). The dock comes after ready-up: pick a tin, an empty one is a new planet. `--demo` plays in a throwaway "demo" tin and never touches a real one.
+- 2026-11-11 (grey-box): A worm that drops in hatches at once (no waiting for a round); one that leaves stays in the tin and comes back with its own body. Select alone does nothing; in solo, Select hands the pad to the other worm.
+- 2026-11-11 (grey-box): Until the Audio lane delivers files, every cue plays a synthesized placeholder beep. Cues beyond the Audio table: `carry`, `drop`, `sleep`, `warp`, `warp_charge`, `segment_pop`, `hatch`, `egg_crack`, `bonk`, `boop`, `beetle_windup`, `beetle_lunge`, `home_trophy`, `home_seed`, `tackle_box`, `solo_focus`, `trait_*`, `wall_open`, `wall_close`, `trait_swap`.
+- 2026-11-11 (grey-box): Grey-box planet: radius 300 tiles, the worm starts in a small pocket in the dirt ring, with a seeded trail of grubs past the apex's lair and pebbles and seeds near the start. The lobby backdrop is a placeholder dock still, with no round card.
 
 ---
 

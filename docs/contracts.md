@@ -419,3 +419,90 @@ var model: WormGrowth                          # segments, flavours, stage, earn
 `food` with `data: FoodData` and `take()`; `World.is_edible_by(stage, thing)` honouring
 `stage + stats.value("bite_bonus/" + flavour)`; `World.eat_tile(cell, player)` that calls
 `Worm.of(player).feed(food_for_tile)`; slow zones in group `slow_zone` with `kind` and `drag`.
+
+### Grey-box planet (`scenes/levels/planet.tscn`, `scripts/planet/`; `feature/greybox-1`)
+
+The game scene. `scenes/main.gd` hosts it under `Arena` after the dock picks a tin, and calls
+`spawn_worm(p)` for each active player; a mid-game join calls `drop_in(p)`. One `PlanetLevel` per
+open bait tin; everything in it reads and writes that tin through `Save`.
+
+```gdscript
+# PlanetLevel (planet.tscn root)
+signal worm_spawned(worm: Worm)
+const WORM_NAMES := ["Gulp", "Burp"]          # D90; menus and logs, never in gameplay
+var world: PolarWorld                         # also in group &"world"
+var camera: PolarCamera                       # fit = true; max_fit_index drops a notch per stage
+var burrow: Burrow
+var beetle: ApexBeetle                        # the dirt ring's apex (placeholder)
+var hud: PlanetHud
+var spawn_point: Vector2                      # world px; local_point(x_tiles, y_tiles_up) is relative to it
+func spawn_worm(player: int, at = null, start_stage := 0) -> Worm   # the tin's saved body if any
+func drop_in(player: int) -> WormEgg          # hatches next to the first worm at its stage - 1
+func remove_worm(player: int) -> void         # kept in the tin
+func save_now() -> void                       # writes the tin and flushes (autosave 30 s, sleep, pause,
+                                              # quit, back to lobby, stage-up, apex bite)
+# Cutscene hook (story lane): on every stage-up, if /root/Story exists: Story.play("stage_<to>").
+
+# Burrow (scripts/planet/burrow.gd)
+signal home_set(player: int, at: Vector2)
+signal brought_home(player: int, what: StringName, kind: StringName)   # &"trophy" | &"seed"
+var has_home: bool; var home: Vector2; var trophies: Array[StringName]
+static func is_hollow(world, pos, tiles := 2.0, share := 0.75) -> bool
+func in_room(pos: Vector2) -> bool            # within 4 tiles of home: Y opens the trait wall here
+func can_sleep(w: Worm) -> bool               # still 2 s in a hollow
+func bring(w: Worm, food: Node2D) -> StringName
+
+# ApexBeetle (scripts/planet/apex_beetle.gd): one per ring, the stage gate
+signal ate_worm(player: int)                  # the worm popped out the far end, one segment shorter
+signal eaten(player: int)                     # the apex bite; the level calls Worm.model.eat_apex()
+var size_stage := 2; var ring_stage := 1
+func relation_to(w: Worm) -> int              # StageRule.FOOD once w.model.size_stage() >= size_stage
+const WINDUP := 1.0                           # every lunge telegraphs this long (kid check)
+
+# BaitTins (scripts/planet/bait_tins.gd): three Save slots per profile
+static func open(i: int) -> void              # Save.use_slot("tin<i+1>")
+static func open_demo() -> void               # slot "demo", wiped
+static func summary(i: int) -> Dictionary     # {} empty, else {stage, segments, minutes, worms}
+```
+
+**Worm additions** (`scripts/worm/worm.gd`, `worm_growth.gd`):
+
+```gdscript
+signal warp_requested(player: int)            # B held Worm.WARP_HOLD (2 s); the level picks the target
+signal tackle_pressed(player: int)            # Y outside the burrow
+var world: PolarWorld                         # set_world(w): tunnels with World.eat_circle at the mouth
+var wall_anywhere := true                     # false in the planet: the trait wall is the burrow's
+var in_burrow, asleep, still_time, warp_charge, carry_ready, tiles_this_frame, view_rotation
+func bite_tile(flavour: StringName) -> void   # World.tile_eaten for this player -> growth 0.05 (stat tile_growth)
+func warp_to(pos: Vector2) -> void
+func get_eaten(creature: StringName, out_at = null) -> void
+func cam_position() -> Vector2; func fit_points() -> Array   # PolarCamera targets
+func to_dict() -> Dictionary; func from_dict(d: Dictionary) -> void
+# WormGrowth
+var apex_gate := false                        # true in the planet: a stage needs its ring's apex eaten
+var apex_eaten: Array[int]
+func size_stage() -> int                      # what creatures compare against (segments, >= stage)
+func eat_apex(ring_stage: int) -> bool        # true on a stage-up
+func to_dict() / from_dict(d)
+```
+
+New base stats read by name (defaults in code, tune in `worm_rules.tres`): `tile_growth` (0.05),
+`dig_speed` (0.65).
+
+**Tin save keys** (per tin file `user://saves/<profile>_tin<N>.json`): `seed`, `planet`
+(`PolarWorld.to_save()`), `worms` ({"0": Worm.to_dict(), "1": ...}), `stage` (highest),
+`burrow`, `apex`, `foods` ([[id, home x, y, x, y, gone_at clock], ...]), `played` (seconds).
+Never `solo`: solo is session-only.
+
+**Template changes made for Worm, in code** (no `.tscn` overrides): `Save.slot` / `use_slot(id)` /
+`path_for(slot)`; `Game.select_restarts` (false in Worm); `Lobby.chooser` (false in Worm);
+`UiStyle.player_name()` uses the skin's fixed names; glyph token `[stick]`; `Audio.played` (cue ->
+count), `Audio.loop_player(cue)`, and a synthesized placeholder (`GreyBeep`) for any cue with no file.
+`scenes/main.gd` `template_only` (tests of the template kit only).
+
+**Audio cues the grey-box plays** (file stem in `assets/audio/sfx/`, `_1.._N` variants allowed):
+GAME.md table: `chomp_1`..`chomp_5`, `tunnel` (loop), `burst`, `wiggle`, `stage_up`, `threat_near`,
+`eaten`, `now_i_eat_you`. Also: `carry`, `drop`, `sleep`, `warp_charge`, `warp`, `segment_pop`,
+`egg_crack`, `hatch`, `bonk`, `boop`, `beetle_windup`, `beetle_lunge`, `home_trophy`, `home_seed`,
+`tackle_box`, `solo_focus`, `trait_wriggle` (and each trait's `cue`), `wall_open`, `wall_close`,
+`trait_swap`, `round_start`, `pause`.

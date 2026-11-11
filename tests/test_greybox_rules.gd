@@ -130,3 +130,24 @@ func test_growth_round_trips_through_a_dict() -> void:
 	assert_array(n.active).is_equal(m.active)
 	assert_array(n.apex_eaten).is_equal(m.apex_eaten)
 	assert_float(n.growth).is_equal_approx(m.growth, 0.0001)
+
+
+func test_camera_rotation_is_capped_and_zoom_is_whole_pixel() -> void:
+	var cam := PolarCamera.new()
+	var a := Node2D.new()
+	a.position = Vector2(0, -1000)
+	add_child(a)
+	auto_free(a)
+	cam.targets = [a]
+	cam.fit = true
+	add_child(cam)
+	auto_free(cam)
+	cam.snap()
+	a.position = Vector2(1000, 0)   # the worm jumps a quarter turn round the planet
+	var before := cam.rotation
+	cam.step(0.1)
+	assert_float(absf(angle_difference(before, cam.rotation))).is_less_equal(cam.max_turn_rate * 0.1 + 0.0001)
+	for i in 40:
+		cam.step(0.1)
+		assert_bool(cam.zoom.x in PolarCamera.ZOOMS).is_true()
+		assert_int(cam.zoom_index).is_less_equal(cam.max_fit_index)

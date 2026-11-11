@@ -450,6 +450,7 @@ func test_demo_skips_lobby() -> void:
 	assert_array(Players.active_players()).is_equal([P1])   # Burp hatches later in the demo
 	assert_bool(_lobby().visible).is_false()
 	assert_str(Save.slot).is_equal(BaitTins.DEMO)
+	assert_bool(Game.select_restarts).is_false()   # Worm: Select alone never restarts the planet
 
 
 # --- solo mode (Players) -------------------------------------------------------
