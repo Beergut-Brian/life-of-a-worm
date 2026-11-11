@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="RingSet" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/ring_def.gd" id="1_e0svs"]
+[ext_resource type="Script" path="res://scripts/world/ring_set.gd" id="2_7qqrw"]
+
+[sub_resource type="Resource" id="Resource_i8tvw"]
+script = ExtResource("1_e0svs")
+id = &"core"
+outer = 0.12
+tile = &"core_rock"
+alt_tile = &"crystal"
+hue = Color(0.84705883, 0.39215687, 0.17254902, 1)
+alt_hue = Color(0.41568628, 0.9098039, 1, 1)
+alt_share = 0.22
+edible_from = 5
+regrow_time = 900.0
+flavour = &"crystal"
+
+[sub_resource type="Resource" id="Resource_dsajy"]
+script = ExtResource("1_e0svs")
+id = &"deep_rock"
+outer = 0.45
+tile = &"stone"
+alt_tile = &"ore"
+hue = Color(0.3529412, 0.3882353, 0.47058824, 1)
+alt_hue = Color(0.7882353, 0.63529414, 0.2901961, 1)
+alt_share = 0.1
+edible_from = 4
+regrow_time = 600.0
+flavour = &"stone"
+
+[sub_resource type="Resource" id="Resource_170wb"]
+script = ExtResource("1_e0svs")
+id = &"dirt"
+outer = 0.82
+tile = &"dirt"
+alt_tile = &"clay"
+hue = Color(0.5411765, 0.3529412, 0.19607843, 1)
+alt_hue = Color(0.6901961, 0.47058824, 0.3137255, 1)
+flavour = &"root"
+
+[sub_resource type="Resource" id="Resource_7ffi2"]
+script = ExtResource("1_e0svs")
+id = &"topsoil"
+outer = 0.95
+tile = &"topsoil"
+alt_tile = &"mushroom"
+hue = Color(0.36862746, 0.26666668, 0.14901961, 1)
+alt_hue = Color(0.8509804, 0.7607843, 0.627451, 1)
+alt_share = 0.08
+edible_from = 2
+regrow_time = 180.0
+flavour = &"root"
+
+[sub_resource type="Resource" id="Resource_wampu"]
+script = ExtResource("1_e0svs")
+id = &"surface"
+tile = &"grass"
+alt_tile = &"flower"
+hue = Color(0.54509807, 0.6901961, 0.2901961, 1)
+alt_hue = Color(0.9098039, 0.84705883, 0.2901961, 1)
+alt_share = 0.08
+edible_from = 4
+regrow_time = 120.0
+flavour = &"junk"
+
+[resource]
+script = ExtResource("2_7qqrw")
+rings = Array[ExtResource("1_e0svs")]([SubResource("Resource_i8tvw"), SubResource("Resource_dsajy"), SubResource("Resource_170wb"), SubResource("Resource_7ffi2"), SubResource("Resource_wampu")])
+garden_tiles = Dictionary[StringName, StringName]({
+&"crystal": &"garden_crystal",
+&"root": &"garden_root",
+&"stone": &"garden_stone"
+})
+garden_hues = Dictionary[StringName, Color]({
+&"crystal": Color(0.76862746, 0.42352942, 1, 1),
+&"root": Color(0.9411765, 0.65882355, 0.1882353, 1),
+&"stone": Color(0.8745098, 0.9019608, 0.9411765, 1)
+})
