@@ -1,0 +1,94 @@
+{
+ "zoom": 4,
+ "offset": [
+  80,
+  70
+ ],
+ "layers": [
+  {
+   "layer": -10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "dock_sky.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ]
+  },
+  {
+   "layer": 0,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "dock.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "normal": "dock_n.png"
+    },
+    {
+     "t": "sprite",
+     "tex": "reel.png",
+     "pos": [
+      262,
+      216
+     ],
+     "z": 2
+    },
+    {
+     "t": "sprite",
+     "tex": "kid.png",
+     "pos": [
+      318,
+      220
+     ],
+     "z": 2
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      470,
+      200
+     ],
+     "color": "#ffc890",
+     "energy": 1.2,
+     "scale": 3.2,
+     "height": 80
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      401,
+      202
+     ],
+     "color": "#ffc060",
+     "energy": 1.4,
+     "scale": 0.55,
+     "height": 20
+    },
+    {
+     "t": "light",
+     "tex": "light_radial.png",
+     "pos": [
+      167,
+      212
+     ],
+     "color": "#5ff0d8",
+     "energy": 1.2,
+     "scale": 0.3,
+     "height": 16
+    }
+   ],
+   "modulate": "#8a7c98"
+  }
+ ],
+ "glow": false
+}

@@ -1,0 +1,198 @@
+{
+ "zoom": 2,
+ "layers": [
+  {
+   "layer": -10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "xs_sky.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ]
+  },
+  {
+   "layer": 0,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "xs_back.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "t": "sprite",
+     "tex": "xs_terrain.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "worm_p1.png",
+     "pos": [
+      409,
+      226
+     ],
+     "z": 4,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "grub.png",
+     "pos": [
+      569,
+      256
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "worm_p2.png",
+     "pos": [
+      472,
+      376
+     ],
+     "z": 4,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "nugget.png",
+     "pos": [
+      425,
+      410
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "beetle.png",
+     "pos": [
+      798,
+      307
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "mushroom.png",
+     "pos": [
+      211,
+      175
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "crystal0.png",
+     "pos": [
+      403,
+      491
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "crystal1.png",
+     "pos": [
+      473,
+      491
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "crystal2.png",
+     "pos": [
+      544,
+      491
+     ],
+     "z": 3,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "tree.png",
+     "pos": [
+      284,
+      83
+     ],
+     "z": 1,
+     "normal": null
+    },
+    {
+     "t": "sprite",
+     "tex": "fence.png",
+     "pos": [
+      784,
+      151
+     ],
+     "z": 1,
+     "normal": null
+    },
+    {
+     "t": "particles",
+     "pos": [
+      542.0,
+      255.7142857142857
+     ],
+     "colors": [
+      "#f3e2b0",
+      "#d8c690",
+      "#ffffff",
+      "#a8622c"
+     ],
+     "amount": 26,
+     "dir": [
+      -0.3,
+      -1
+     ],
+     "spread": 75,
+     "speed": [
+      35,
+      85
+     ],
+     "gravity": [
+      0,
+      160
+     ],
+     "size": 2,
+     "lifetime": 0.7
+    }
+   ]
+  },
+  {
+   "layer": 10,
+   "items": [
+    {
+     "t": "sprite",
+     "tex": "paper.png",
+     "pos": [
+      0,
+      0
+     ],
+     "z": 0,
+     "blend": "mul"
+    }
+   ]
+  }
+ ],
+ "glow": false
+}
