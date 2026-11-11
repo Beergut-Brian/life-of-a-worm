@@ -94,13 +94,24 @@ func _log() -> TackleLog:
 func test_eating_a_food_unlocks_its_sketch() -> void:
 	_open(0)
 	var w := _p1()
-	assert_bool(_log().is_found(&"foods", &"grub")).is_false()
+	assert_bool(_log().is_found(&"foods", &"seed")).is_false()
+	# A seed, not a grub: since the living rings a grub is also a creature, so eating one fills two pages.
+	var fresh0 := _log().fresh
+	var pages0: int = Audio.played.get("page_new", 0)
+	w.feed(load("res://data/foods/seed.tres"))
+	assert_bool(_log().is_found(&"foods", &"seed")).is_true()
+	assert_int(_log().fresh).is_equal(fresh0 + 1)
+	assert_int(Audio.played.get("page_new", 0)).is_equal(pages0 + 1)
+	w.feed(load("res://data/foods/seed.tres"))
+	assert_int(_log().fresh).is_equal(fresh0 + 1)   # once
+
+
+func test_eating_a_creature_food_also_meets_it() -> void:
+	_open(0)
+	var w := _p1()
 	w.feed(load("res://data/foods/grub.tres"))
 	assert_bool(_log().is_found(&"foods", &"grub")).is_true()
-	assert_int(_log().fresh).is_equal(1)
-	assert_int(Audio.played.get("page_new", 0)).is_equal(1)
-	w.feed(load("res://data/foods/grub.tres"))
-	assert_int(_log().fresh).is_equal(1)   # once
+	assert_bool(_log().is_found(&"creatures", &"grub")).is_true()
 
 
 func test_meeting_a_creature_unlocks_it() -> void:

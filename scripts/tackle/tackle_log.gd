@@ -72,7 +72,7 @@ static func _ids_in(dir: String, cls: String) -> Array[StringName]:
 		var r := load(dir + f)
 		if r == null or not (&"id" in r):
 			continue
-		if cls != "" and (r.get_script() == null or r.get_script().get_global_name() != cls):
+		if cls != "" and not _is_class(r.get_script(), cls):
 			continue
 		if not out.has(r.id):
 			out.append(r.id)
@@ -230,3 +230,12 @@ func from_dict(d: Dictionary) -> void:
 	for p in d.get("lures", []):
 		lures.append(StringName(p))
 	fresh = int(d.get("fresh", 0))
+
+
+## True when the script or any base script is the named global class (RingFood extends FoodData).
+static func _is_class(sc: Script, cls: String) -> bool:
+	while sc != null:
+		if sc.get_global_name() == cls:
+			return true
+		sc = sc.get_base_script()
+	return false
