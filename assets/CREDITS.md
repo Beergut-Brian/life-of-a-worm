@@ -108,3 +108,23 @@ One line per file. Nothing enters `assets/` without a line here.
 | `proto/world/world_sprout.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: a garden cell pops up | Project's own |
 | `proto/world/world_regrow.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: a tile grows back near the camera | Project's own |
 | `proto/world/world_blocked.wav` | Synthesised by `assets/proto/world/make_placeholders.py` | Placeholder SFX: too hard to bite / seed didn't take | Project's own |
+
+## Worm trait prototype placeholders (risk prototype R-c, 2026-11-11)
+
+All drawn in code by `assets/proto/worm/make_art.py` (Python + Pillow), original shapes, no references. Placeholders until the Art lane's worm set lands.
+
+| File | Source / tool | Prompt or notes | License |
+| --- | --- | --- | --- |
+| `proto/worm/make_art.py` | Written for this prototype | Generator for every PNG below | Project's own |
+| `proto/worm/segment.png` | `make_art.py` (Pillow) | 16 px stage-1 body segment, near-white so `modulate` gives the player colour | Project's own |
+| `proto/worm/band.png` | `make_art.py` (Pillow) | Diet stripe laid over a segment, tinted the flavour colour | Project's own |
+| `proto/worm/head.png` | `make_art.py` (Pillow) | 20 px head, tinted the player colour | Project's own |
+| `proto/worm/face_p1_0.png`, `face_p1_1.png`, `face_p1_2.png` | `make_art.py` (Pillow) | P1 face (one big lidded eye), mouth closed / half / wide | Project's own |
+| `proto/worm/face_p2_0.png`, `face_p2_1.png`, `face_p2_2.png` | `make_art.py` (Pillow) | P2 face (two small cross-eyes), mouth closed / half / wide | Project's own |
+| `proto/worm/part_fin.png` | `make_art.py` (Pillow) | Back fin part (bug trait) | Project's own |
+| `proto/worm/part_stone_helmet.png` | `make_art.py` (Pillow) | Rock cap head part | Project's own |
+| `proto/worm/part_drill.png` | `make_art.py` (Pillow) | Drill head part (hybrid) | Project's own |
+| `proto/worm/part_glow_bulb.png` | `make_art.py` (Pillow) | Antenna bulb crown part | Project's own |
+| `proto/worm/part_magnet.png` | `make_art.py` (Pillow) | Horseshoe tail part | Project's own |
+| `proto/worm/part_sheen.png` | `make_art.py` (Pillow) | Glossy highlight skin part | Project's own |
+| `proto/worm/heart.png`, `note.png`, `star.png` | `make_art.py` (Pillow) | Boop heart, wiggle note, dizzy / share star | Project's own |

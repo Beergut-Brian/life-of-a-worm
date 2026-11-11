@@ -58,6 +58,14 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-11 (proto R-a): Starting regrow times in planet seconds (plain / in castings): surface 120 / 30, topsoil 180 / 45, dirt 240 / 60, deep rock 600 / 150, core 900 / 225. Tiles removed by anything but a worm regrow at the plain rate. Content lane tunes `data/rings/rings.tres`.
 - 2026-11-11 (proto R-a): A seed dropped in castings sprouts at once, then fills one cell every 4 planet seconds, spreading only through castings, up to 10 tiles from the seed; garden food that gets eaten grows back as garden.
 - 2026-11-11 (proto R-a): The planet shot steps the zoom down to 1/16 centred on the core and swaps the live tiles for a 1-px-per-2-tiles picture of the whole planet with every bite drawn in; that picture is also the stage-6 chomp's `planet_texture`.
+- 2026-11-11 (proto R-c, traits): A trait is earned when, at one moment, the worm has at least N segments of each flavour its `TraitData.requires` names. A hybrid is simply a trait that names two flavours; there is no other hybrid rule, so the base traits of a hybrid are earned on the way to it (Stone head and Glow before Drill head).
+- 2026-11-11 (proto R-c): A segment's flavour is whichever flavour gave the most growth since the previous segment; the partner's 0.25 share is flavourless, so co-op never paints the other worm's diet or hands it traits.
+- 2026-11-11 (proto R-c): New segments join at the tail. Getting eaten removes the newest (tail) segment; stage and earned traits never drop, even if segments fall below the stage threshold.
+- 2026-11-11 (proto R-c): Stacking rule: `value = (base + sum of adds) * product of muls` over active traits, sorted by id (order never matters). Two parts in one slot: the higher `part_priority` shows (Drill head beats Stone head), but both traits' modifiers still stack.
+- 2026-11-11 (proto R-c): With every slot full, a newly earned trait waits on the trait wall (with its reveal ring and sting); when a stage adds a slot, the newest waiting trait equips itself. The wall never auto-unequips anything.
+- 2026-11-11 (proto R-c): Stage thresholds, slots per stage, growth per segment, partner share and base stats live in `data/traits/worm_rules.tres` for the prototype (stages 2..7 at 6/10/15/20/24/40 segments, 2 growth per segment); they move into `data/stages.tres` when the Content lane makes it.
+- 2026-11-11 (proto R-c): Placeholder trait wall opens on Y (left/right picks, A equips/unequips, B or Y closes); in the real game it hangs in the burrow. X and Y are new player actions `carry` and `tackle`.
+- 2026-11-11 (proto R-c): "Bite rock a stage early" is a stat per flavour, `bite_bonus/<flavour>`; slow ground is `drag/<kind>`. New traits that change what can be eaten or where you are slowed need no worm code.
 
 ---
 

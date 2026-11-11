@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/proto/worm/part_sheen.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"slick"
+requires = {"water": 4}
+add = {"sheen": 1.0}
+mul = {"drag/water": 0.1, "speed": 1.1}
+part_slot = &"skin"
+part_textures = Array[Texture2D]([ExtResource("2")])
+part_priority = 0
+part_spin = 0.0
+cue = "trait_slick"
+color = Color(0.2275, 0.5255, 1, 1)
