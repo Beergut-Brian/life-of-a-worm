@@ -45,6 +45,8 @@ const P2 := Players.P2
 			_apply_title()
 
 ## Shown under the round card ("JEFF KICKS FIRST"); set it in code before the countdown ends.
+## false: the character chooser is hidden (a game whose players are fixed avatars, like Worm).
+var chooser := true
 var round_card_subtitle := ""
 var round_card_color := Color(0, 0, 0, 0)
 
@@ -222,6 +224,8 @@ func solo_switch() -> void:
 
 ## Can this player change character right now? Joined, not ready, nothing else going on.
 func can_choose(player: int) -> bool:
+	if not chooser:
+		return false
 	if not _live() or _launched or in_submenu() or not Players.is_active(player) or readied[player]:
 		return false
 	return not Players.solo or player == Players.solo_focus

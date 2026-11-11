@@ -27,6 +27,7 @@ func before_test() -> void:
 
 
 func after_test() -> void:
+	load("res://scenes/main.gd").template_only = false
 	if is_instance_valid(_main):
 		_main.free()
 	UiStyle.use_skin(null)
@@ -56,6 +57,7 @@ func test_long_names_shrink_but_not_below_the_minimum() -> void:
 
 
 func test_twelve_letters_fit_between_the_arrows_on_the_podium() -> void:
+	load("res://scenes/main.gd").template_only = true   # the template lobby, not Worm's
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 	var lobby := _main.get_node("UI/Lobby")

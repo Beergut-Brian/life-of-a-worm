@@ -43,6 +43,7 @@ func before_test() -> void:
 
 
 func after_test() -> void:
+	load("res://scenes/main.gd").template_only = false
 	if is_instance_valid(_main):
 		_main.free()
 	UiStyle.use_skin(null)
@@ -61,6 +62,7 @@ func _on_said(player: int, id: String, path: String) -> void:
 
 
 func _boot() -> Lobby:
+	load("res://scenes/main.gd").template_only = true   # the template lobby, not Worm's
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 	return _main.get_node("UI/Lobby")

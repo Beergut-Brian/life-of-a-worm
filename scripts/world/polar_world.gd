@@ -26,6 +26,9 @@ var rings: RingSet
 var regrow_chunks_per_frame := 2
 ## Regrowth and gardens never fill a cell this close (tiles) to a tracked eater, plus its radius.
 var keep_clear_tiles := 3.0
+## Circles (centre px, radius px) where nothing ever regrows: a worm's burrow. Not saved here; the
+## burrow owner re-adds its zone after load_save().
+var keep_zones: Array[Dictionary] = []
 ## At most this many cells regrow per physics frame (the rest wait a frame), so a big tunnel coming
 ## due at once never makes a spike. Tests pass budget -1 to regrow_pass, which has no cap.
 var max_regrow_per_frame := 48
@@ -296,9 +299,24 @@ func _regrow(cell: Vector2i) -> void:
 	tile_regrown.emit(cell, palette[id].id)
 
 
+## A burrow: cells within radius_px of centre are never refilled by regrowth.
+func add_keep_zone(centre: Vector2, radius_px: float) -> void:
+	keep_zones.append({ "c": centre, "r": radius_px })
+
+
+func in_keep_zone(cell: Vector2i) -> bool:
+	var p := shape.center_of(cell)
+	for z in keep_zones:
+		if p.distance_squared_to(z.c) < z.r * z.r:
+			return true
+	return false
+
+
 func _near_eater(cell: Vector2i) -> bool:
 	var p := shape.center_of(cell)
 	var cs := float(shape.cell_size)
+	if not keep_zones.is_empty() and in_keep_zone(cell):
+		return true
 	for e in _eaters:
 		if not is_instance_valid(e):
 			continue

@@ -44,6 +44,10 @@ func before_test() -> void:
 func after_test() -> void:
 	if is_instance_valid(_main):
 		_main.free()
+	for i in BaitTins.COUNT:   # tins the flow opened (this suite's sandbox profile only)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(Save.path_for(BaitTins.slot_name(i))))
+	Save.use_slot("")
+	UiStyle.use_skin(null)   # main sets Worm's skin; the next suite expects the template's
 	Players.reset()
 	Game.demo = false
 	Game._set_state(Game.State.LOBBY)
@@ -62,6 +66,12 @@ func _boot() -> Node:
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 	return _main
+
+
+func _worms() -> int:
+	if _main.level == null:
+		return 0
+	return _main.level.actors.get_children().filter(func(n): return n is Worm and not n.is_queued_for_deletion()).size()
 
 
 func _lobby() -> Lobby:
@@ -144,8 +154,11 @@ func test_both_ready_counts_down_then_starts() -> void:
 	lobby.count_step(Lobby.COUNT_STEP * 2.0)
 	assert_int(Game.state).is_equal(Game.State.PLAYING)
 	assert_array(_readies).is_equal([[P1, P2]])
-	assert_int(_main.get_node("Arena/Players").get_child_count()).is_equal(2)
 	assert_bool(lobby.visible).is_false()
+	# Worm: the bait-tin dock comes next; a tin opens the planet with both worms.
+	assert_bool(_main.dock.visible).is_true()
+	_main.dock.pick()
+	assert_int(_worms()).is_equal(2)
 
 
 func test_unready_cancels_countdown() -> void:
@@ -403,7 +416,7 @@ func test_restart_returns_to_lobby() -> void:
 	assert_bool(lobby.readied[P1]).is_false()
 	assert_bool(lobby.get_node("Spots/P2").joined).is_true()   # pads stay joined
 	await await_idle_frame()
-	assert_int(_main.get_node("Arena/Players").get_child_count()).is_equal(0)
+	assert_int(_worms()).is_equal(0)
 	lobby.press_a(P1)
 	lobby.press_a(P2)
 	_finish_countdown()
@@ -413,18 +426,20 @@ func test_restart_returns_to_lobby() -> void:
 
 # --- joins mid-game, demo ------------------------------------------------------
 
-func test_late_joiner_plays_from_next_round() -> void:
+## Worm: a pad that joins mid-game hatches its worm from an egg at once (no waiting a round).
+func test_late_joiner_hatches_from_an_egg() -> void:
 	_boot()
 	Players.join_virtual(P1)
 	_lobby().hold_step(P1, true, Lobby.HOLD_TO_START)
 	_finish_countdown()
+	_main.dock.pick()
+	assert_int(_worms()).is_equal(1)
 	Players.join_virtual(P2)
-	var p2: Node = _main.get_node("Arena/Players").get_child(1)
-	assert_int(p2.player).is_equal(P2)
-	assert_bool(p2.waiting).is_true()
-	Game.end_round()
-	Game.start_round()
-	assert_bool(p2.waiting).is_false()
+	var eggs: Array = _main.level.get_children().filter(func(n): return n is WormEgg)
+	assert_int(eggs.size()).is_equal(1)
+	eggs[0].hatched.emit()
+	assert_int(_worms()).is_equal(2)
+	assert_object(Worm.of(P2)).is_not_null()
 
 
 func test_demo_skips_lobby() -> void:
@@ -432,8 +447,9 @@ func test_demo_skips_lobby() -> void:
 	_boot()
 	await await_idle_frame()
 	assert_int(Game.state).is_equal(Game.State.PLAYING)
-	assert_array(Players.active_players()).is_equal([P1, P2])
+	assert_array(Players.active_players()).is_equal([P1])   # Burp hatches later in the demo
 	assert_bool(_lobby().visible).is_false()
+	assert_str(Save.slot).is_equal(BaitTins.DEMO)
 
 
 # --- solo mode (Players) -------------------------------------------------------

@@ -1,64 +1,141 @@
-## Boot scene: lobby (start screen and main menu), drop-in players, round loop, pause menu.
-## Replace the Arena node with this game's level scene; keep the node names other lanes use.
-## A pad that joins mid-game waits on its spawn (see-through) and plays from the next round.
+## Boot scene: lobby (start screen and main menu, ready-up) -> the bait-tin dock (pick a tin) ->
+## the planet (scenes/levels/planet.tscn under Arena). Worm's customisations of the template are
+## made here in code: the lobby's chooser is hidden (you play a worm), its podiums show Gulp and
+## Burp, Select never restarts. A pad that joins mid-game hatches its worm from an egg at once.
+## The open tin saves on pause, back to the lobby and quit (and every 30 s, and on sleep).
+## --demo: no lobby or dock; the scripted demo plays in its own throwaway tin.
 extends Node2D
 
-@onready var spawns: Node2D = $Arena/Spawns
-@onready var players_root: Node2D = $Arena/Players
+const PLANET := preload("res://scenes/levels/planet.tscn")
+const PODIUM := preload("res://scripts/planet/worm_podium.gd")
+## The worm names (Docket D90, Kaden, 2026-11-11). Menus, podiums, pause and logs use these.
+const NAMES := { 0: "Gulp", 1: "Burp" }   # = PlanetLevel.WORM_NAMES
 
-const PLAYER_SCENE := preload("res://scenes/players/player.tscn")
-var _players := {}
+@onready var arena: Node2D = $Arena
+@onready var lobby: Node = $UI/Lobby
+
+## Template-kit test suites (chooser, showtime, name plate) set this to boot the plain template
+## lobby: no Worm skin, chooser shown, Select restarts. The game never sets it.
+static var template_only := false
+
+var level: PlanetLevel
+var dock: Dock
+var tin := -1
 
 
 func _ready() -> void:
+	if not template_only:
+		UiStyle.use_skin(worm_skin())
+	Game.select_restarts = template_only
+	lobby.chooser = template_only
+	dock = Dock.new()
+	dock.name = "Dock"
+	$UI.add_child(dock)
+	$UI.move_child(dock, lobby.get_index() + 1)
+	dock.chosen.connect(open_tin)
 	Players.player_joined.connect(_on_player_joined)
 	Players.player_left.connect(_on_player_left)
-	Game.lobby_ready.connect(_on_lobby_ready)
-	Game.back_to_lobby.connect(_clear_players)
 	Game.round_started.connect(_on_round_started)
+	Game.back_to_lobby.connect(close_level)
 	if Game.demo:
 		(func() -> void:
 			Players.join_virtual(Players.P1)
-			Players.join_virtual(Players.P2)
 			Game.start_round()).call_deferred()
 	elif Game.state != Game.State.LOBBY:
 		Game.to_lobby()
 
 
-func _on_lobby_ready(players: Array) -> void:
-	for p in players:
-		_spawn(p)
+## The lobby's look: Gulp and Burp on the podiums, the dock as the backdrop, no round card.
+static func worm_skin() -> MenuSkin:
+	var sk := MenuSkin.new()
+	sk.title_text = "LIFE OF A WORM"
+	sk.p1_name = NAMES[0].to_upper()
+	sk.p2_name = NAMES[1].to_upper()
+	sk.p1_character = _podium_scene(0)
+	sk.p2_character = _podium_scene(1)
+	sk.round_card = false
+	sk.accent = Color("ffc23a")
+	sk.deep = Color("2a1a14")
+	sk.backdrop = MenuSkin.Backdrop.TEXTURE
+	sk.backdrop_texture = dock_texture()
+	return sk
+
+
+static func _podium_scene(p: int) -> PackedScene:
+	var n := Node2D.new()
+	n.set_script(PODIUM)
+	n.set("player", p)
+	var ps := PackedScene.new()
+	ps.pack(n)
+	n.free()
+	return ps
+
+
+## Placeholder dock at dawn with three bait tins on the rail (the lobby backdrop).
+static func dock_texture() -> Texture2D:
+	var img := Image.create_empty(480, 270, false, Image.FORMAT_RGBA8)
+	img.fill(Color("f2b880"))
+	img.fill_rect(Rect2i(0, 95, 480, 40), Color("f7d2a0"))
+	for y in range(-22, 23):
+		for x in range(-22, 23):
+			if x * x + y * y <= 22 * 22:
+				img.set_pixel(380 + x, 112 + y, Color("fff1c8"))
+	img.fill_rect(Rect2i(0, 135, 480, 135), Color("3f6f8f"))
+	img.fill_rect(Rect2i(0, 168, 480, 16), Color("8a5a34"))
+	for x in range(10, 480, 30):
+		img.fill_rect(Rect2i(x, 184, 5, 60), Color("5e3b20"))
+	img.fill_rect(Rect2i(0, 164, 480, 4), Color("6e4527"))
+	for i in 3:
+		var x := 300 + i * 34
+		img.fill_rect(Rect2i(x, 140, 26, 24), Color("9aa4ad"))
+		img.fill_rect(Rect2i(x, 140, 26, 5), Color("c3ccd3"))
+		img.fill_rect(Rect2i(x, 150, 26, 8), [Color("c94a3a"), Color("3a8f5a"), Color("d9a12b")][i])
+	return ImageTexture.create_from_image(img)
 
 
 func _on_round_started(_round: int) -> void:
+	if level != null:
+		return
+	if Game.demo:
+		BaitTins.open_demo()
+		_open_level()
+	else:
+		dock.open()
+
+
+## The dock picked tin i: open its planet (an empty tin is a new planet).
+func open_tin(i: int) -> void:
+	tin = i
+	BaitTins.open(i)
+	_open_level()
+
+
+func _open_level() -> void:
+	level = PLANET.instantiate()
+	arena.add_child(level)
 	for p in Players.active_players():
-		_spawn(p)
-		_players[p].waiting = false
+		level.spawn_worm(p)
+	print("tin: %s open (%s)" % [Save.slot, ", ".join(Players.active_players().map(func(p): return NAMES[p]))])
+
+
+func close_level() -> void:
+	dock.close()
+	if level == null:
+		return
+	level.save_now()
+	level.queue_free()
+	arena.remove_child(level)
+	level = null
+	tin = -1
+	Save.use_slot("")
 
 
 func _on_player_joined(player: int, _device: int) -> void:
-	if Game.state != Game.State.LOBBY:
-		_spawn(player, true)
+	if level != null and Game.state != Game.State.LOBBY:
+		level.drop_in(player)
+		print("drop-in: %s hatches" % NAMES[player])
 
 
 func _on_player_left(player: int) -> void:
-	if _players.has(player):
-		_players[player].queue_free()
-		_players.erase(player)
-
-
-func _clear_players() -> void:
-	for p in _players.values():
-		p.queue_free()
-	_players.clear()
-
-
-func _spawn(player: int, waiting := false) -> void:
-	if _players.has(player):
-		return
-	var p := PLAYER_SCENE.instantiate()
-	p.player = player
-	p.waiting = waiting
-	p.global_position = spawns.get_child(player).global_position
-	players_root.add_child(p)
-	_players[player] = p
+	if level != null:
+		level.remove_worm(player)
