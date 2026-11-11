@@ -85,7 +85,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | D-10 | S1 Depth 1 | Star → one rare trait per space planet type | missing | ∅data | |
 | D-11 | S1 Depth 1 | Hybrids from two filled flavours (Drill head, Skater, Garden cart); ~8 base traits and 10 hybrids at launch as `TraitData` | missing | ∅data | Only 3 hybrids are named. 7 still to design |
 | D-12 | S1 Depth 1 | Trait slots grow with stage, 1 at stage 2 to 5 at stage 6; earned traits are never lost | missing | ∅code | |
-| D-13 | S1 Depth 1 | Sleep in the burrow to choose active traits from a wall of pictures; the newest equips itself for players who never open it | partial | `scripts/worm/worm.gd` `wall_anywhere`; `handoff/shots/` | Y opens the trait wall only in the burrow; a placeholder plaque shows the traits there. PictoBubble wall later (feature/greybox-1) |
+| D-13 | S1 Depth 1 | Sleep in the burrow to choose active traits from a wall of pictures; the newest equips itself for players who never open it | partial | `tests/test_burrow_home.gd::test_sleep_saves_and_a_waiting_trait_opens_the_wall`, `::test_y_awake_is_the_tackle_box_and_asleep_is_the_wall` | Sleep in the bed = autosave; a waiting trait opens the wall by itself; Y while asleep opens it. Still the placeholder wall (feature/slice-burrow-1) |
 | D-14 | S1 Tech | `TraitData` (flavour requirements, modifiers, part sprite per stage, sound); per-segment flavour counts; one `WormStats` resolver, no special cases | missing | ∅code, ∅tests | R-03 proves it |
 | D-15 | S2 Upgrades are felt | Every trait changes something visible and audible on the worm; no hidden-number traits; its part shows the moment it's earned | missing | ∅code | Sound side is U-16 |
 | D-16 | S1 Data | `data/foods/*.tres` (flavour, growth, size stage, regrow time, sprite, sounds) and `data/traits/*.tres` | missing | ∅data | |
@@ -105,14 +105,14 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 
 | ID | Source | Item | Status | Proof | Notes |
 | --- | --- | --- | --- | --- | --- |
-| B-01 | S1 Core loop 2 | Eat it or keep it: hold X to carry instead of swallow, bring it home as trophy, seed or pet; optional, a kid who eats everything is fine | partial | `tests/test_greybox_planet.gd::test_carried_home_becomes_a_trophy` | Hold X carries; home turns it into a trophy, or a seed into a garden in castings. Pets missing (feature/greybox-1) |
+| B-01 | S1 Core loop 2 | Eat it or keep it: hold X to carry instead of swallow, bring it home as trophy, seed or pet; optional, a kid who eats everything is fine | built | `tests/test_burrow_home.gd`, `tests/test_pets_ladybird.gd::test_a_ladybird_carried_home_alive_becomes_a_pet` | Carried home: trophy, seed (garden) or, for a ladybird, a pet. Things picked up inside the room are just moved about (feature/slice-burrow-1) |
 | B-02 | S1 Depth 3 | Hollow out a chamber anywhere and sleep in it: that is home | built | `tests/test_greybox_planet.gd::test_sleeping_in_a_hollow_sets_home_and_saves`, `::test_standing_still_in_a_tunnel_is_not_a_burrow` | Hold still 2 s where 75% of cells within 2 tiles are air (feature/greybox-1) |
-| B-03 | S1 Depth 3 | Carried things become trophies on shelves the worm digs itself | built | `tests/test_greybox_planet.gd::test_carried_home_becomes_a_trophy`; `handoff/shots/` | Placeholder: one dug notch per trophy on the burrow floor, drawn trophy blobs (feature/greybox-1) |
-| B-04 | S1 Depth 3 | Pets with jobs: ladybird fetches seeds, glow-worm lamp, ant crew tends one garden | missing | ∅data | `data/pets/*.tres` |
-| B-05 | S1 Depth 3 | Trophy families give small standing bonuses; decorating is also a build | missing | ∅data | `data/trophies/*.tres` |
-| B-06 | S1 Depth 3 | Burrow grows with the worm; by stage 5 a cavern with a buried house for furniture | missing | ∅code | |
-| B-07 | S1 Depth 3 | The burrow rides along into the jar at the planet chomp | missing | ∅code | Part of S-10 |
-| B-08 | S1 Tech | Burrow = flagged chamber region, shelf slots, sleep spot, pet slots; trophies and pets are `Node2D`s saved by id | partial | `scripts/planet/burrow.gd` | Chamber = world keep zone (never regrows), shelf slots, sleep spot, trophies saved by id. No pet slots (feature/greybox-1) |
+| B-03 | S1 Depth 3 | Carried things become trophies on shelves the worm digs itself | built | `tests/test_burrow_home.gd::test_trophy_lands_on_the_dug_ledge_nearest_the_worm`, `::test_no_ledge_digs_a_notch_so_nothing_is_refused`; `handoff/shots/burrow-trophy-pet.png` | Any ledge the worm digs in the room is a shelf; the trophy lands on the free ledge nearest the worm; no ledge: a notch is dug (feature/slice-burrow-1) |
+| B-04 | S1 Depth 3 | Pets with jobs: ladybird fetches seeds, glow-worm lamp, ant crew tends one garden | partial | `tests/test_pets_ladybird.gd`; `data/pets/ladybird.tres` | Ladybird built: carried home alive, fetches a seed to the bed every 45 s (max 2 waiting). Glow-worm lamp and ant crew not built (feature/slice-burrow-1) |
+| B-05 | S1 Depth 3 | Trophy families give small standing bonuses; decorating is also a build | built | `tests/test_burrow_home.gd::test_family_bonus_is_felt_by_every_worm_and_capped`; `data/trophies/*.tres` | Stones +wiggle_hop, shinies +pull (magnet tug), snacks +speed, per trophy, cap 3; worn on the worm as studs / twinkles / leaves (`TrophyCharms`). Values untuned (feature/slice-burrow-1) |
+| B-06 | S1 Depth 3 | Burrow grows with the worm; by stage 5 a cavern with a buried house for furniture | partial | `tests/test_burrow_home.gd::test_the_burrow_grows_with_the_stage` | Room radius +1.5 tiles and chamber +1 tile a stage, carved with `burrow_grow`. Stage-5 cavern with a buried house not built (feature/slice-burrow-1) |
+| B-07 | S1 Depth 3 | The burrow rides along into the jar at the planet chomp | partial | `tests/test_burrow_home.gd::test_the_burrow_is_in_the_tin_file_the_jar_copies` | Burrow, pets, pantry, tackle log, shop are in the tin file the jar copies. `JarStore._read_save` ignores the tin slot (see slice-burrow REPORT) (feature/slice-burrow-1) |
+| B-08 | S1 Tech | Burrow = flagged chamber region, shelf slots, sleep spot, pet slots; trophies and pets are `Node2D`s saved by id | built | `scripts/burrow/burrow.gd`; `tests/test_burrow_home.gd::test_home_round_trips_and_quitting_loses_nothing` | Moved to `scripts/burrow/`. Shelf ledges, sleep spot (bed), pet slots, pantry; trophies (with cells) and pets saved by id (feature/slice-burrow-1) |
 
 ## L Living rings and creatures
 
@@ -126,7 +126,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | L-06 | S1 Bugs | Ant (1): marches in lines, cartoon march, tiny hats | missing | ∅data | |
 | L-07 | S1 Bugs | Beetle (2): trundles toward smaller worms, slow in dirt; round, shiny, blinks | partial | `scripts/planet/apex_beetle.gd` | Round, shiny, blinks, trundles toward smaller worms; it is the grey-box apex (feature/greybox-1) |
 | L-08 | S1 Bugs | Centipede (3): wavy chase, gives up fast; sneakers on every foot | missing | ∅data | |
-| L-09 | S1 Bugs | Mole (3): a Jarling, never food, never a threat; pops out of walls, apologises, keeps the swap shop | missing | ∅code; Mole not in `data/roster.json` or `assets/characters/` | Mole exists in `~/openjar/openjar-characters/characters/mole/` (lead) |
+| L-09 | S1 Bugs | Mole (3): a Jarling, never food, never a threat; pops out of walls, apologises, keeps the swap shop | partial | `tests/test_swap_shop.gd::test_the_mole_is_never_food`, `::test_he_pops_out_surprised_then_apologises` | Placeholder Mole drawn from his look sheet; his pixel form (A-20) and bark files still to come (feature/slice-burrow-1) |
 | L-10 | S1 Bugs | Bird (3): pecks from the surface with a boing, flies off offended | missing | ∅data | |
 | L-11 | S1 Bugs | Gardener's boot (4): stomps near the surface; the gardener is never seen | missing | ∅data | |
 | L-12 | S1 Bugs | Lawnmower (5): drives the surface, very loud, eats grass only, bumps you | missing | ∅data | |
@@ -148,7 +148,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | X-04 | S1 Depth 5 | Fossil hall in the rock | missing | ∅data | |
 | X-05 | S1 Depth 5 | Geode cathedral at the core | missing | ∅data | |
 | X-06 | S1 Depth 5 | A balloon stuck in the sky | missing | ∅data | |
-| X-07 | S1 Depth 5 / Decided | The Mole's swap shop in the dirt ring (trophies for seeds), the first Jarling cameo | missing | ∅code | In vertical slice. Uses PictoBubble |
+| X-07 | S1 Depth 5 / Decided | The Mole's swap shop in the dirt ring (trophies for seeds), the first Jarling cameo | built | `tests/test_swap_shop.gd`; `handoff/shots/swap-shop-closeup.png` | Mole pops out startled, apologises, swaps a carried thing for two seeds on A (PictoBubble offer) (feature/slice-burrow-1) |
 | X-08 | S1 Decided | Secrets and the surface keep a few empty spots for later Jarling cameos | missing | ∅data | |
 | X-09 | S2 Jarling cameos | Bloom becomes Worm's first cameo update (Gary's pick; Kaden can veto) | later | GAME.md:24 | After v1.0. `assets/characters/bloom/` is vendored by the template (as a playable chooser character) |
 
@@ -156,10 +156,10 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 
 | ID | Source | Item | Status | Proof | Notes |
 | --- | --- | --- | --- | --- | --- |
-| T-01 | S1 Depth 6 | The collection book and the only menu: sketched, wordless pages for every food, creature, trait, secret, and cutscene | missing | ∅code | |
-| T-02 | S1 Depth 6 | Each completed page pins a fishing lure to the lid | missing | ∅code | |
-| T-03 | S1 Tech | A page per `FoodData`, `CreatureData`, `TraitData`, secret and cutscene, unlocked by signals | missing | ∅code, ∅contract | `page_completed` signal |
-| T-04 | S1 Depth 6 | Completion is the long tail for a solo player after the planet is eaten | missing | ∅code | |
+| T-01 | S1 Depth 6 | The collection book and the only menu: sketched, wordless pages for every food, creature, trait, secret, and cutscene | partial | `tests/test_tackle_box.gd`; `handoff/shots/tackle-box-creatures.png` | Five picture pages (foods, creatures, traits, secrets, cutscenes), Reel doodle placeholder, no words; rewatch works. Final look waits on D92 (feature/slice-burrow-1) |
+| T-02 | S1 Depth 6 | Each completed page pins a fishing lure to the lid | built | `tests/test_tackle_box.gd::test_a_completed_page_pins_a_lure_once` | Lure pins to the lid with a bounce and `lure_pin` (feature/slice-burrow-1) |
+| T-03 | S1 Tech | A page per `FoodData`, `CreatureData`, `TraitData`, secret and cutscene, unlocked by signals | built | `tests/test_tackle_box.gd` | Unlocked by `Worm.ate`, `trait_earned`, creature proximity (group `creature`), any `secret_found(id)`, `Story.seen` / `cutscene_finished`; `page_completed(id)` emitted (feature/slice-burrow-1) |
+| T-04 | S1 Depth 6 | Completion is the long tail for a solo player after the planet is eaten | partial | `scripts/tackle/tackle_log.gd` | Pages exist and save; long-tail completion needs the content of all rings (feature/slice-burrow-1) |
 
 ## W World, engine, save, data, contracts
 
@@ -216,7 +216,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | C-10 | S1 Controls | Eating is automatic on contact; there is no bite button | built | `tests/test_worm_body.gd` | (feature/greybox-1) |
 | C-11 | S1 Controls (2026-11-10) | Hold X = gentle bite (carry; release to drop) | built | `tests/test_greybox_planet.gd::test_carried_home_becomes_a_trophy` | `p*_carry` (X; Q / .) (feature/greybox-1) |
 | C-12 | S1 Controls (2026-11-10) | Hold B (Wiggle) 2 s = warp home to the burrow | built | `tests/test_greybox_planet.gd::test_hold_b_warps_home` | Fill ring round the head, `warp_charge` then `warp` (feature/greybox-1) |
-| C-13 | S1 Controls (2026-11-10) | Y opens Old Reel's tackle box | partial | `scripts/worm/worm.gd` `tackle_pressed` | Y outside the burrow: placeholder `tackle_box` beep + pop; in the burrow: trait wall (feature/greybox-1) |
+| C-13 | S1 Controls (2026-11-10) | Y opens Old Reel's tackle box | built | `tests/test_tackle_box.gd::test_y_opens_the_box_and_the_game_waits` | Y awake opens the tackle box anywhere (asleep in the bed: the trait wall) (feature/slice-burrow-1) |
 | C-14 | S1 Controls (2026-11-10) | In co-op the smaller worm's held-B warp goes to its partner when the partner is far | partial | `scripts/planet/planet_level.gd` `_on_warp_requested` | Partner > 420 px away and not bigger than me: warp goes to the partner. Untested (feature/greybox-1) |
 | C-15 | S1 Co-op | Far worm gently pulled to the other by a "wormhole" tunnel | superseded | GAME.md:14, :44 (S2) | Replaced by P-07 (no forced movement). The wormhole stays only as the warp's look |
 | C-16 | S1 Co-op | One or two worms; complete solo; a second worm drops in or out of any save at any time | built | `tests/test_lobby.gd::test_late_joiner_hatches_from_an_egg` | Join hatches at once; leaving keeps the worm in the tin (feature/greybox-1) |
@@ -293,7 +293,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | Y-08 | S1 Story | One dock scene of 15 to 30 s per stage; hands wider each time, grandson less convinced, background quietly confirms | partial | `tests/test_story_data.gd::test_hands_get_wider_every_stage`, `::test_every_scene_has_a_background_clue_and_a_time_of_day`; `docs/story-script.md` | 15 to 23 s with placeholder voices. Clues persist (`StoryDock.prepare`) |
 | Y-09 | S1 Story / Decided | What happened: Reel gives a different silly reason each time (comet, wife's chili, odd rock); the truth is Strangestone under the bait tin, never said aloud | partial | `tests/test_story_data.gd::test_reels_excuse_differs_every_time_and_strangestone_is_never_said`; `scripts/story/dock.gd` | Six excuses (comet, chili, purple rock, lucky socks, lightning, wish). Grey-box Strangestone pulses under the tin; final art missing |
 | Y-10 | S1 Cutscene rules | Voiced, not written: Reel narrates (library voice), grandson has a few lines; subtitles off by default; gameplay text-free | partial | `data/story/lines.json` (45 lines); `scripts/story/story_voice.gd`; `tests/test_story_host.gd::test_missing_voice_files_fall_back_to_a_bark_or_blip` | No voice files yet: every line plays the library bark if vendored, else a placeholder babble. Gary voices `assets/story/voice/<id>.ogg`. No subtitles built |
-| Y-11 | S1 Cutscene rules | Short, skippable with any button, rewatchable from the tackle box | partial | `tests/test_story_host.gd::test_skip_from_any_beat_ends_every_scene`, `::test_any_button_skips` | Any button skips after 0.5 s; 90 s cap. `Story.seen` (Save `story_seen`) is the list the tackle box will offer; `Story.play(id)` replays. Tackle box itself missing |
+| Y-11 | S1 Cutscene rules | Short, skippable with any button, rewatchable from the tackle box | partial | `tests/test_tackle_box.gd::test_a_seen_cutscene_can_be_watched_again` | Rewatch from the tackle box built (cutscene page, A) (feature/slice-burrow-1) |
 | Y-12 | S1 Cutscene rules | Built with the cutscene tool from `openjar-addons`; scenes are data (shots, poses, PictoBubbles, voice clips) in `data/cutscenes/*.tres` | built | `data/cutscenes/*.json` (8 scenes); `scripts/story/story.gd`; `tests/test_story_data.gd` | The vendored `CutscenePlayer` reads JSON, not `.tres`; scenes are JSON (story-1 decision, GAME.md) |
 | Y-13 | S1 Decided / S3 D89 | Old Reel's bible bends to the dock scenes: narrator, "he never did catch it, and he's glad" | partial | `~/openjar/worm-sprint/characters/old_reel-worm-revision.md` (lead); D89 approved | Approved per GAME.md. I didn't confirm it landed in `openjar-characters` (no `old_reel/` in the local checkout) |
 | Y-14 | S1 Decided / S3 D89 | The grandson is Bobber, a new Jarling; bible approved | partial | `~/openjar/worm-sprint/characters/bobber-bible.md` (lead) | D89 says "approved as drafted (`openjar-characters`)", but the local `openjar-characters/characters/` has no `bobber/`. See A-19 |
@@ -331,7 +331,7 @@ Proof shorthand for `missing` rows (each checked 2026-11-11):
 | P-10 | S2 Template pieces | Drop-in from the template | built | `tests/test_lobby.gd::test_late_joiner_hatches_from_an_egg` | (feature/greybox-1) |
 | P-11 | S2 Template pieces | Menus are for Kaden: real type, labels, glyphs are fine; gameplay text-free | partial | `test_lobby::test_lobby_menu_has_text_labels` | Menu side built. Gameplay side is K-10 |
 | P-12 | S2 / S5 Buttons | Stick, A, B are the whole game for the kid; X carry, held-B warp, Y tackle box are the depth layer; no stick-only requirement | built | `project.godot` `p*_carry`, `p*_tackle`; HUD panel | (feature/greybox-1) |
-| P-13 | S2 Buttons | Context hint panel with glyphs (near carryable food: X; in the burrow: Y) plus a blinking glyph over the worm when an interaction is ready | built | `scripts/planet/planet_hud.gd`, `ready_glyph.gd`; `handoff/shots/` | Rows: stick, A, B, hold B (home), X (near food), Y (box / wall in burrow); blinking X or Y over the head (feature/greybox-1) |
+| P-13 | S2 Buttons | Context hint panel with glyphs (near carryable food: X; in the burrow: Y) plus a blinking glyph over the worm when an interaction is ready | built | `scripts/planet/planet_hud.gd` `set_rows`; `handoff/shots/` | Adds X drop, A swap (at the Mole), Y wall when asleep, Y box glows on a new page; blinking A / X / Y over the head (feature/slice-burrow-1) |
 | P-14 | S2 Show the cause | Every stage-up, trait, getting eaten, breakthrough, chomp shown with a camera beat | partial | stage-up and eaten beats | Stage-up: flash, shake, pull back; eaten: shake, stars. Breakthrough and chomp later (feature/greybox-1) |
 | P-15 | S2 Upgrades felt | Every trait changes something visible and audible; no hidden-number traits | missing | ∅code | Same as D-15 |
 | P-16 | S2 Progress earned | Rings gated by stage and apex creature; stage 1 starts slow | partial | `tests/test_greybox_rules.gd::test_stage_up_needs_segments_and_the_apex` | Stage 2 gated by the dirt apex (feature/greybox-1) |

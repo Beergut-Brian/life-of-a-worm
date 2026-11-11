@@ -443,9 +443,9 @@ func save_now() -> void                       # writes the tin and flushes (auto
                                               # quit, back to lobby, stage-up, apex bite)
 # Cutscene hook (story lane): on every stage-up, if /root/Story exists: Story.play("stage_<to>").
 
-# Burrow (scripts/planet/burrow.gd)
+# Burrow (scripts/burrow/burrow.gd since feature/slice-burrow-1)
 signal home_set(player: int, at: Vector2)
-signal brought_home(player: int, what: StringName, kind: StringName)   # &"trophy" | &"seed"
+signal brought_home(player: int, what: StringName, kind: StringName)   # &"trophy" | &"seed" | &"pet"
 var has_home: bool; var home: Vector2; var trophies: Array[StringName]
 static func is_hollow(world, pos, tiles := 2.0, share := 0.75) -> bool
 func in_room(pos: Vector2) -> bool            # within 4 tiles of home: Y opens the trait wall here
@@ -506,3 +506,35 @@ GAME.md table: `chomp_1`..`chomp_5`, `tunnel` (loop), `burst`, `wiggle`, `stage_
 `egg_crack`, `hatch`, `bonk`, `boop`, `beetle_windup`, `beetle_lunge`, `home_trophy`, `home_seed`,
 `tackle_box`, `solo_focus`, `trait_wriggle` (and each trait's `cue`), `wall_open`, `wall_close`,
 `trait_swap`, `round_start`, `pause`.
+
+
+### Home slice (`scripts/burrow/`, `scripts/pets/`, `scripts/tackle/`, `scripts/swap_shop/`; `feature/slice-burrow-1`)
+
+`PlanetLevel.home_slice: HomeSlice` hosts it; tin key `home_slice` (tackle log, shop, wild pets);
+the burrow keeps `burrow` (trophies + cells, pets by id, pantry, stage).
+
+```gdscript
+# Burrow additions
+signal bonus_changed(bonus: Dictionary)       # stat -> add, applied to every worm by TrophyBonus
+signal grew(stage: int)
+func room_tiles() -> float                    # 4 + 1.5 per stage
+func free_ledge(near: Vector2) -> Vector2i    # Vector2i(-99999, -99999) if none
+func bonus() -> Dictionary; func family_counts() -> Dictionary
+func remove_trophy(id := &"") -> StringName
+func add_pet(id: StringName, t := 0.0) -> Node2D; func add_pantry() -> Node2D
+func grow_to(stage: int) -> bool
+func note_pickup(w, inside: bool); func should_bring(w) -> bool   # the level calls these each frame
+
+# Anything a worm can "meet" for the tackle box: join group &"creature" and expose
+# creature_id: StringName (property or meta). Secrets: any node with
+signal secret_found(id: StringName)           # connected automatically when it enters the tree
+
+# TackleLog
+signal page_completed(id: StringName)         # &"foods" | &"creatures" | &"traits" | &"secrets" | &"cutscenes"
+signal unlocked(page: StringName, id: StringName)
+func unlock(page, id) -> bool; func meet(id); func note_secret(id); func note_cutscene(id)
+# TackleBox: open(player), close(), nav(dx, dy), confirm(); signal rewatch(id)
+# SwapShop: signal traded(player, gave, got); func can_trade(w) -> bool; func trade(w) -> bool
+# PetData (data/pets/*.tres): id, food: FoodData (wild form), job &"fetch", fetch, every, trip, max_waiting
+# TrophyFamily (data/trophies/*.tres): id, members, per_trophy {stat: add}, cap, color, charm
+```
