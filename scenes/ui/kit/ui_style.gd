@@ -209,8 +209,9 @@ static func player_color(player: int) -> Color:
 	return PLAYER_COLORS[player]
 
 
+## Life of a Worm: the slot's worm name (Gulp / Burp, WormNames), not "Player 1".
 static func player_name(player: int) -> String:
-	return "Player %d" % (player + 1)
+	return WormNames.of(player)
 
 
 ## A rounded panel with a soft drop shadow.
