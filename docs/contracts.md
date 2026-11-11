@@ -201,7 +201,7 @@ to turn it off). Both players join on that pad; only `solo_focus`'s actions get 
 two-heads icon shows top-left while it is on. A keyboard key from a player's action joins that player.
 
 Input map actions (defined in `project.godot`, per player, prefix `p1_` / `p2_`):
-`move_left`, `move_right`, `move_up`, `move_down`, `action`, `jump`.
+`move_left`, `move_right`, `move_up`, `move_down`, `action`, `jump`, `carry` (X; keys Q / .), `tackle` (Y; keys E / /).
 Global: `pause`, `restart`, `debug_overlay`, `debug_screenshot`.
 
 ### `Save` (`scripts/autoload/Save.gd`)
