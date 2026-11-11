@@ -342,8 +342,9 @@ func eat_tile(cell: Vector2i, player: int) -> bool # true when eaten: air + time
 func eat_circle(pos: Vector2, radius_px: float, player: int) -> int   # eat_tile on every cell centre in
                                                    # the circle; returns how many were eaten
 func regrow_time(cell: Vector2i) -> float          # seconds from being eaten to regrowing: the ring's
-                                                   # regrow_time, x castings_factor in castings,
-                                                   # x green_thumb when the eater had it; INF = never
+                                                   # regrow_time, x castings_factor in castings;
+                                                   # INF = never (the Green thumb trait will scale
+                                                   # castings_factor through WormStats, not here)
 func has_castings(cell: Vector2i) -> bool
 func plant_seed(cell: Vector2i, flavour: StringName) -> bool   # true only on an air cell with castings
                                                    # whose flavour is in rings.garden_tiles
