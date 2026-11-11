@@ -42,7 +42,7 @@ flavour = &"root"
 [sub_resource type="Resource" id="Resource_7ffi2"]
 script = ExtResource("1_e0svs")
 id = &"topsoil"
-outer = 0.95
+outer = 0.988
 tile = &"topsoil"
 alt_tile = &"mushroom"
 hue = Color(0.36862746, 0.26666668, 0.14901961, 1)
@@ -70,10 +70,12 @@ rings = Array[ExtResource("1_e0svs")]([SubResource("Resource_i8tvw"), SubResourc
 garden_tiles = Dictionary[StringName, StringName]({
 &"crystal": &"garden_crystal",
 &"root": &"garden_root",
-&"stone": &"garden_stone"
+&"stone": &"garden_stone",
+&"bug": &"garden_bug"
 })
 garden_hues = Dictionary[StringName, Color]({
 &"crystal": Color(0.76862746, 0.42352942, 1, 1),
 &"root": Color(0.9411765, 0.65882355, 0.1882353, 1),
-&"stone": Color(0.8745098, 0.9019608, 0.9411765, 1)
+&"stone": Color(0.8745098, 0.9019608, 0.9411765, 1),
+&"bug": Color(1, 0.8, 0.35, 1)
 })

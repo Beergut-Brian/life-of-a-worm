@@ -132,6 +132,7 @@ All drawn in code by `assets/proto/worm/make_art.py` (Python + Pillow), original
 | `proto/worm/part_fin.png` | `make_art.py` (Pillow) | Back fin part (bug trait) | Project's own |
 | `proto/worm/part_stone_helmet.png` | `make_art.py` (Pillow) | Rock cap head part | Project's own |
 | `proto/worm/part_drill.png` | `make_art.py` (Pillow) | Drill head part (hybrid) | Project's own |
+| `proto/rings/part_leaf.png` | `proto/rings/make_art.py` (Pillow) | Green thumb sprout crown part (slice-rings-1) | Project's own |
 | `proto/worm/part_glow_bulb.png` | `make_art.py` (Pillow) | Antenna bulb crown part | Project's own |
 | `proto/worm/part_magnet.png` | `make_art.py` (Pillow) | Horseshoe tail part | Project's own |
 | `proto/worm/part_sheen.png` | `make_art.py` (Pillow) | Glossy highlight skin part | Project's own |

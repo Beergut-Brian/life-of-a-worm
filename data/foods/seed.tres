@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="FoodData" format=3]
+[gd_resource type="Resource" script_class="RingFood" format=3]
 
-[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
@@ -10,3 +10,8 @@ growth = 1.0
 size_stage = 1
 color = Color(0.6275, 0.4392, 0.2353, 1)
 radius = 4.5
+ring = &"dirt"
+regrow_time = 90.0
+plants = &"root"
+look = 1
+accent = Color(0.8510, 0.6902, 0.4784, 1)

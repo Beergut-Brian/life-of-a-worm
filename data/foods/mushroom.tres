@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"mushroom"
+flavour = &"root"
+growth = 1.2
+size_stage = 1
+color = Color(0.7608, 0.3333, 0.2471, 1)
+radius = 5.5
+ring = &"topsoil"
+regrow_time = 150.0
+plants = &""
+look = 3
+accent = Color(1.0000, 0.9529, 0.8784, 1)

@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="RingLife" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_life.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("2")
+id = &"mushroom"
+ring = &"topsoil"
+start = 70.0
+plant = true
+growth_rate = 0.04
+capacity = 90.0
+death = 0.0
+efficiency = 0.5
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.1
+live_max = 8
+live = "res://data/foods/mushroom.tres"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("2")
+id = &"ant"
+ring = &"topsoil"
+start = 24.0
+plant = false
+growth_rate = 0.0
+capacity = 60.0
+death = 0.008
+efficiency = 0.6
+immigration = 0.02
+eats = Dictionary[StringName, float]({&"mushroom": 0.02})
+half_sat = 30.0
+live_scale = 0.6
+live_max = 10
+live = "res://scenes/creatures/ant.tscn"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("2")
+id = &"bird"
+ring = &"topsoil"
+start = 3.0
+plant = false
+growth_rate = 0.0
+capacity = 6.0
+death = 0.004
+efficiency = 0.3
+immigration = 0.002
+eats = Dictionary[StringName, float]({&"beetle": 0.02, &"ant": 0.006})
+half_sat = 6.0
+live_scale = 0.0
+live_max = 0
+live = ""
+depth_min = 0.0
+depth_max = 0.0
+
+[resource]
+script = ExtResource("1")
+ring = &"topsoil"
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2")])
+scatter = Array[ExtResource("3")]([])
+scatter_count = 0

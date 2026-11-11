@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ant"
+flavour = &"bug"
+growth = 0.6
+size_stage = 1
+color = Color(0.3529, 0.1804, 0.1333, 1)
+radius = 4.5
+behaviour = 1
+ring = &"topsoil"
+telegraph = 1.0
+bark = "ant_hup"
+windup_cue = ""
+speed = 24.0
+notice = 0.0
+strike = 0.0
+hunts = &""
+hat = Color(0.2275, 0.4824, 0.8353, 1)
+accent = Color(0.5412, 0.2902, 0.2118, 1)
