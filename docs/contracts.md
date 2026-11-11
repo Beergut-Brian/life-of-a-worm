@@ -261,3 +261,47 @@ The launcher starts a game with `--profile=<id>` and expects the game to:
 ## Game-specific contracts
 
 Add this game's own signals and APIs below. Keep the same format.
+
+### Worm and traits (`scenes/players/worm.tscn`, `scripts/worm/`; risk prototype R-c)
+
+One `Worm` node per player (class `Worm`, root of `worm.tscn`). Signals are on the worm node and
+always carry its player, so a listener can connect to both worms the same way
+(`Worm.of(Players.P1).ate.connect(...)`, or every node in group `worms`).
+
+```gdscript
+signal ate(player: int, what: StringName, growth: float)        # swallowed a FoodData (id)
+signal segment_added(player: int, flavour: StringName)         # &"" = a plain segment
+signal segment_lost(player: int)                               # eaten by a bigger thing
+signal trait_earned(player: int, trait_id: StringName)         # once per trait, never lost
+signal traits_changed(player: int, active: Array[StringName])  # equip / swap / slot growth
+signal stage_changed(player: int, from: int, to: int)          # only ever goes up
+signal carried(player: int, what: StringName)                  # hold X on food: in the mouth
+signal dropped(player: int, what: StringName)                  # X released: back in the world
+signal eaten_by(player: int, creature: StringName)
+signal booped(player: int, other: int)                         # worms pass through each other
+
+static func stats(player: int) -> WormStats   # resolved stats of that player's worm (base if none)
+static func of(player: int) -> Worm            # null if that player has no worm
+func feed(food: FoodData) -> void              # swallow: growth + flavour, partner gets the share
+func get_eaten(creature: StringName) -> void   # one segment shorter, dizzy; never a stage
+var player: int
+var model: WormGrowth                          # segments, flavours, stage, earned/active traits
+```
+
+**Data.** `FoodData` (`data/foods/*.tres`): `id`, `flavour`, `growth`, `size_stage`, `color`.
+`TraitData` (`data/traits/*.tres`): `id`, `requires` (flavour -> filled segments), `add` and `mul`
+(stat -> number), `part_slot`, `part_textures` (one per stage, last one repeats), `part_priority`,
+`cue`, `color`. A trait whose `requires` names two flavours is a hybrid; no other rule.
+`WormRules` (`data/traits/worm_rules.tres`): `growth_per_segment`, `stage_segments`,
+`slots_per_stage`, `partner_share` (0.25), `base_stats`, flavour colours.
+
+**`WormStats`** (`scripts/worm/worm_stats.gd`). The only place trait modifiers meet:
+`value(stat) = (base + sum of add) * product of mul` over the active traits, order-independent.
+`parts` is slot -> the highest-priority active trait's part. Worm code reads stats by name
+(`speed`, `burst_speed`, `burst_time`, `light_radius`, `pull_radius`, `sheen`, `bite_bonus/<flavour>`,
+`drag/<zone kind>`, ...) and never names a trait.
+
+**What the tile world must provide** (later, `openjar-addons` tileworld): food nodes in group
+`food` with `data: FoodData` and `take()`; `World.is_edible_by(stage, thing)` honouring
+`stage + stats.value("bite_bonus/" + flavour)`; `World.eat_tile(cell, player)` that calls
+`Worm.of(player).feed(food_for_tile)`; slow zones in group `slow_zone` with `kind` and `drag`.
