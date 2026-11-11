@@ -46,6 +46,14 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-10: The worms are bespoke Worm avatars (library entries, not playable elsewhere), 3D creature master then 16 px pixel set, unless Kaden draws them.
 - 2026-11-10: Bloom becomes Worm's first cameo update rather than a launch character.
 - 2026-11-10: Build order inside the gate: addons extraction now (Systems, Opus); the Worm risk prototypes that don't need the tile world (trait resolver on a segmented worm; the stage-6 chomp + jar snapshot + cross-fade) can run as soon as the repo exists; the polar-chunk prototype waits for addons `v0.2.0`.
+- 2026-11-11 (proto R-c, traits): A trait is earned when, at one moment, the worm has at least N segments of each flavour its `TraitData.requires` names. A hybrid is simply a trait that names two flavours; there is no other hybrid rule, so the base traits of a hybrid are earned on the way to it (Stone head and Glow before Drill head).
+- 2026-11-11 (proto R-c): A segment's flavour is whichever flavour gave the most growth since the previous segment; the partner's 0.25 share is flavourless, so co-op never paints the other worm's diet or hands it traits.
+- 2026-11-11 (proto R-c): New segments join at the tail. Getting eaten removes the newest (tail) segment; stage and earned traits never drop, even if segments fall below the stage threshold.
+- 2026-11-11 (proto R-c): Stacking rule: `value = (base + sum of adds) * product of muls` over active traits, sorted by id (order never matters). Two parts in one slot: the higher `part_priority` shows (Drill head beats Stone head), but both traits' modifiers still stack.
+- 2026-11-11 (proto R-c): With every slot full, a newly earned trait waits on the trait wall (with its reveal ring and sting); when a stage adds a slot, the newest waiting trait equips itself. The wall never auto-unequips anything.
+- 2026-11-11 (proto R-c): Stage thresholds, slots per stage, growth per segment, partner share and base stats live in `data/traits/worm_rules.tres` for the prototype (stages 2..7 at 6/10/15/20/24/40 segments, 2 growth per segment); they move into `data/stages.tres` when the Content lane makes it.
+- 2026-11-11 (proto R-c): Placeholder trait wall opens on Y (left/right picks, A equips/unequips, B or Y closes); in the real game it hangs in the burrow. X and Y are new player actions `carry` and `tackle`.
+- 2026-11-11 (proto R-c): "Bite rock a stage early" is a stat per flavour, `bite_bonus/<flavour>`; slow ground is `drag/<kind>`. New traits that change what can be eaten or where you are slowed need no worm code.
 
 ---
 
