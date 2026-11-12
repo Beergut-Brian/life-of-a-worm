@@ -695,6 +695,87 @@ func steer_camera(base_zoom_index: int)  # PlanetLevel calls it each frame: sets
                                          # lowers min_fit_index during the pull-back, then restores it
 # Tin save key "crust": {"broken": [player, ...], "eaten": int}. Cue: "breakthrough".
 ```
+### Creature behaviour (worm-creatures-1)
+
+`feature/worm-creatures-1` (PLAN-STATUS L-04, S-07, L-15, L-16, L-17). Code in `scripts/creatures/`.
+Reads `WormGrowth` / `WormStats` / `StageData`; never changes them.
+
+```gdscript
+# CreatureSense (static): the size table
+enum React { FLEE, IGNORE, AMBLE, FRIEND }
+static func react(creature_stage, worm_size, jarling := false) -> React   # < FLEE, > AMBLE, == IGNORE
+static func worm_size(w, data) -> int     # stage_info().edible_size + round(stats "bite_bonus/<flavour>")
+static func of(data, w) -> React; static func is_food(data, w) -> bool; static func is_threat(data, w) -> bool
+# is_food(data, w) == w.can_eat(data) for every non-Jarling (tested over all stages and creatures).
+
+# Creature (adds)
+func react_to(w) -> CreatureSense.React
+func is_jarling() -> bool                  # CreatureData.jarling; group &"jarlings", never &"food"
+func is_gulping() -> bool                  # drawn mid-gulp for 0.7 s after it eats a worm (the cause)
+
+# Gulp (static): the one eaten path; the beetle, the bird and the apex beetle all use it
+static func eat(creature_id, w, far_end: Vector2, from = null) -> bool   # false while w sparkles
+static func is_safe(w) -> bool             # EatenSparkle on w.head, 0.5 s
+static func landing(w, far_end) -> Vector2 # partner within 160 px: beside them; else nearest open
+                                           # tile within 96 px of far_end; else far_end
+
+# Outgrown (per worm, Outgrown.of(w)): species once a threat in sight (260 px)
+signal flipped(species)                    # first time seen as food in sight: once per species
+signal first_bite(species)                 # first one eaten: once per species
+# Tin key `outgrown`: {"<player>": {"threat": [...], "flipped": [...], "bitten": [...]}}
+
+# GrinCloseup (CanvasLayer 55): static show_for(w, prey_data = null); 1.6 s inset, P1 left, P2 right
+```
+
+**Data.** `CreatureData.jarling: bool` (default false, a new field in the script only; no
+`data/creatures/*.tres` changed). A Jarling is never food, never a threat, never in Outgrown, and is
+drawn with the soft warm friend outline (the Mole's `MoleLook.FRIEND` colour).
+
+**Reaction by size** (GAME.md "Bugs and threats", taken literally): a worm bigger than a creature
+makes it flee slowly (slower than half the worm's speed); a worm its own size is ignored (no flee,
+no stalk) but it is still food (`Worm.can_eat`, equal = food); a smaller worm is ambled toward by a
+TRUNDLE creature with `notice > 0` (others just carry on). This replaces slice-rings-1's "equal size
+runs away".
+
+**Audio cues** (new; grey beeps until audio lands): `outgrown` (the creature's startle when a worm
+outgrows its kind: a surprised squeak, never pain), `creature_gulp` (comic gulp when a creature
+swallows a worm). `now_i_eat_you` now also plays on the first bite of any outgrown species.
+
+### Sky ring (worm-sky-ring-1)
+
+`feature/worm-sky-ring-1`, PLAN-STATUS W-07 (part), X-06. The sky has no tiles: `rings.tres` still
+ends at the surface (the lantern and the generator read its last two rings). The sky ring is one
+data file, a `RingLife` subclass that also carries its band, stage and regrow time.
+
+```gdscript
+# SkyLife extends RingLife (scripts/rings/sky_life.gd; data/rings/sky_life.tres, ring = &"sky")
+@export var inner := 1.03 ; @export var outer := 1.45   # band of air, fractions of the planet radius
+@export var edible_from := 5                             # every sky food has this size_stage
+@export var regrow_time := 150.0                         # every scattered sky food has this regrow_time
+@export var balloon_angle, balloon_height, balloon_string, balloon_tie, balloon_color   # SkyBalloon
+# species: cloud_puff (plant), toy_plane, sky_balloon: counters only (live_max 0), no `eats`,
+# never a .tscn (no threats). scatter: cloud_puff, toy_plane, sky_balloon (data/foods/, ring &"sky").
+
+# RingsDirector
+const SKY: SkyLife                  # loaded beside LIVES; its counters join the ecology
+ring_band(&"sky") -> Vector2(SKY.inner, SKY.outer)
+var balloon: SkyBalloon
+func balloon_popped(player)         # SkyBalloon calls it: store + level.save_now()
+# Sky statics are appended after every other static, so old tins keep their saved order.
+# Rings save key gains "balloon": bool (popped in this tin; missing = not popped).
+# --rings-shot=sky | sky_pop stages a stage-5 worm by the balloon (sky_pop bites the tie at 1.5 s).
+
+# SkyBalloon (scripts/rings/sky_balloon.gd)
+signal popped(player: int)
+const CUE := "segment_pop"
+var is_popped: bool ; var popped_by: int ; var pop_t: float   # < 0 when the beat is not playing
+var tie: RingPickup                  # data/foods/balloon_tie.tres (size_stage 5): eating it pops
+func pop(player := -1)               # once: cue, shake (WormHooks.juice + PolarCamera.shake), burst
+                                     # ring and scraps, the snapped string, worm swell. Never moves a worm.
+```
+
+Hooks still waiting: live sky bodies (the director only spawns into loaded tile chunks, and the
+sky has none); birds (creatures lane); plane and cloud placeholder shapes (`RingFood.Look`).
 
 ### Destructible world: loose things and surface props (W-10, W-11; world-destruct-1)
 
