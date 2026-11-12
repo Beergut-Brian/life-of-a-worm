@@ -539,6 +539,32 @@ func unlock(page, id) -> bool; func meet(id); func note_secret(id); func note_cu
 # TrophyFamily (data/trophies/*.tres): id, members, per_trophy {stat: add}, cap, color, charm
 ```
 
+### Ring content (rings-content-1)
+
+Data only (`feature/rings-content-1`, PLAN-STATUS W-02, W-03). Same classes as the dirt and
+topsoil rings; nothing new in code. Ids are unique across all rings (the ecology keys on them).
+
+```
+# data/foods/ (RingFood)          ring        stage  flavour  growth  plants   look
+core_crystal.tres                 core        5      crystal  6.0     crystal  PEBBLE
+ore_nugget.tres                   deep_rock   4      stone    3.0     stone    PEBBLE
+fossil.tres                       deep_rock   4      stone    4.0     &""      BLOB
+# data/creatures/ (CreatureData)  ring        stage  behaviour  notes
+rock_beetle.tres                  deep_rock   4      TRUNDLE    1.4 s wind-up; notice 170, strike 44
+lava_blob.tres                    core        6      WIGGLE     notice 0, strike 0: never chases or eats;
+                                                                 meant to bounce (no hook yet), food at 6
+# data/rings/ (RingLife)
+core_life.tres       species core_crystal (plant, live = core_crystal.tres), lava_blob (counter
+                     only, live_max 0); scatter core_crystal x4
+deep_rock_life.tres  species ore_nugget (plant, live = ore_nugget.tres), rock_beetle (eats
+                     ore_nugget; counter only, live_max 0); scatter fossil x5
+```
+
+Hooks these files wait on (owned by other lanes): `RingsDirector.LIVES` to load the two lives; a
+`scenes/creatures/` scene for each creature (then set `live` and `live_max`); a bounce behaviour
+for the lava blob (knock-back on contact, never steering); `RingFood.Look` shapes for crystal,
+nugget and fossil. Audio cues `rock_beetle_clack`, `rock_beetle_windup`, `lava_blob_blorp`,
+`lava_blob_swell` have no files yet (grey beeps).
 ### Collection book (worm-book-1)
 
 `scenes/ui/book.tscn` (`Book`, a CanvasLayer, layer 70) with one `scenes/ui/book_page.tscn` (`BookPage`)

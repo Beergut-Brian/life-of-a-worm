@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"core_crystal"
+flavour = &"crystal"
+growth = 6.0
+size_stage = 5
+color = Color(0.4353, 0.9412, 1.0000, 1)
+radius = 16.0
+ring = &"core"
+regrow_time = 900.0
+plants = &"crystal"
+look = 7
+accent = Color(0.8784, 0.9882, 1.0000, 1)
