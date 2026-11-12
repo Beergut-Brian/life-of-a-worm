@@ -660,7 +660,7 @@ def planet_gone(rng):
     mix(x, g, 0.0, 1.0)
     burp = voice(lambda t: 150 * (1 - 0.2 * t / 0.2), 0.2, glide("o", "a", 0.0, 0.2), rng=rng,
                  rough=0.6, scale=1.1, amp=ar(0.2, 0.01, 0.1))
-    mix(x, burp, BURP_AT, 0.22)
+    mix(x, burp, BURP_AT, 0.45)
     mix(x, struck(midi(96), 0.05, rng, BELL, click=0.02), BURP_AT + 0.18, 0.06)
     return x
 
