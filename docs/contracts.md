@@ -597,6 +597,39 @@ Cues (placeholder beeps until the Audio lane adds them): `book_open`, `book_clos
 `book_tick`, `book_look`, and the existing `bonk` (cursor against an edge) and `boop` (A on an
 unfound sketch).
 
+### Pets 2 (pets-2)
+
+Glow-worm lamp and ant crew (`feature/pets-2`). Both are `PetData` in `data/pets/`, carried home
+alive by the existing carry rule (`Burrow.bring` sees `pet_id()`), saved by id like the ladybird.
+
+```gdscript
+# PetData additions (all exported, defaults keep the ladybird unchanged)
+look: StringName            # &"ladybird" | &"glowworm" | &"ant_crew" (PetLook, placeholder drawn in code)
+max_kept: int               # at most this many of the kind in one burrow (ant crew 1)
+wild_max: int               # the wild one does not come back while this many live at home (ant crew 1)
+# job &"lamp": lamp_radius (tiles), lamp_energy, lamp_color, dark_rings: Array[StringName], wiggle_every
+# job &"tend": walk_speed (px/s), tend_range (tiles), work (s at the bed), nudge (planet s pulled forward)
+
+# Pet additions
+signal tended(id: StringName, cell: Vector2i)   # the ant crew nudged the seed bed at cell
+signal lamp_changed(lit: bool)
+func meet() -> void                             # the meet beat: bubble [pet][heart][job], then the job
+func is_dark() -> bool                          # Burrow.night, or home in one of data.dark_rings
+static func seed_bed_at(w: PolarWorld, cell: Vector2i) -> int   # garden index, -1 if not a live seed bed
+static func nudge_garden(w: PolarWorld, gi: int, secs: float)  # gardens()[gi].next -= secs
+
+# Burrow additions
+var night: bool             # hook for a future day/night clock; nothing sets it yet
+var met: Array[StringName]  # kinds that had their meet beat; saved as "met" in the burrow entry
+func can_keep(id) -> bool; func pet_count(id) -> int
+# bring(): first of a kind -> Pet.meet(); a kind at its cap -> a hello (cue pet_hello), the wild one
+# goes back to the wild, brought_home still says &"pet".
+
+# HomeSlice: wild glow-worms and the ant crew live in `wild_more` (tin key "wild_more":
+# [x, y, gone_at, id]); `wild` stays ladybirds only. Old tins get them on load.
+```
+
+Cues (placeholder beeps, none is a pain sound): `pet_meet`, `pet_hello`, `pet_lamp`, `pet_walk`, `pet_tend`.
 ### Secrets 2 (secrets-2)
 
 `feature/secrets-2`, PLAN-STATUS X-03, X-04. A hidden place is now data only: drop a
