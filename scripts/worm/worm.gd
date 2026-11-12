@@ -21,9 +21,6 @@ signal warp_requested(player: int)
 signal tackle_pressed(player: int)
 
 const ART := "res://assets/proto/worm/"
-const SEGMENT_TEX := preload("res://assets/proto/worm/segment.png")
-const BAND_TEX := preload("res://assets/proto/worm/band.png")
-const HEAD_TEX := preload("res://assets/proto/worm/head.png")
 const HEART_TEX := preload("res://assets/proto/worm/heart.png")
 const NOTE_TEX := preload("res://assets/proto/worm/note.png")
 const STAR_TEX := preload("res://assets/proto/worm/star.png")
@@ -41,9 +38,10 @@ const WARP_HOLD := 2.0
 const TILE_CHOMP_EVERY := 0.3
 ## Body size per stage (visual and collision): stage 1 = 1.0, each stage + SIZE_STEP.
 const SIZE_STEP := 0.18
+## Chomp face after a swallow: chomp_1, _2, _3 over this many seconds.
+const CHOMP_FACE_SECS := 0.27
 
 static var _all: Array[Worm] = []
-static var _faces := {}
 
 @export var player := 0
 ## Optional brain for demos and tests: func(worm) -> Dictionary with the keys of _read_intent().
@@ -83,6 +81,8 @@ var _bonk_cool := 0.0
 var _dizzy := 0.0
 var _time := 0.0
 var _mouth := 0
+## Seconds left of the chomp face after a swallow (WormLook chomp_1..3).
+var _chomp_t := 0.0
 var _sheen_mat: ShaderMaterial
 var _part_nodes := {}          # slot -> Sprite2D (head/crown on the head)
 var _parts_sig := ""
@@ -135,7 +135,7 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	_all.erase(self)
 	if _all.is_empty():
-		_faces.clear()   # static texture cache: drop it with the last worm (no leak line at exit)
+		WormLook.clear_cache()   # static texture cache: drop it with the last worm (no leak line at exit)
 
 
 func _ready() -> void:
@@ -149,11 +149,8 @@ func _ready() -> void:
 	model.traits_changed.connect(_on_traits_changed)
 	_sheen_mat = ShaderMaterial.new()
 	_sheen_mat.shader = SHEEN_SHADER
-	var col: Color = Players.COLOR[player]
-	head_sprite.texture = HEAD_TEX
-	head_sprite.modulate = col
 	head_sprite.material = _sheen_mat
-	face.texture = _face_tex(0)
+	_apply_look_textures()
 	light.texture = _light_texture()
 	dust.color = Color(0.85, 0.72, 0.55)
 	if has_meta("start_pos"):
@@ -215,6 +212,7 @@ func _apply_size() -> void:
 	body.scale = Vector2.ONE
 	for n in _seg_nodes:
 		n.set_meta("size", _size)
+	_apply_look_textures()
 	var sh := $Head/Shape as CollisionShape2D
 	if sh and sh.shape is CircleShape2D:
 		sh.shape = sh.shape.duplicate()
@@ -329,6 +327,7 @@ func feed(food: FoodData) -> void:
 	crumbs.restart()
 	crumbs.emitting = true
 	_pop(look, 1.25)
+	_chomp_t = CHOMP_FACE_SECS
 	for w in Worm.all():
 		if w != self:
 			w.receive_share(g * rules.partner_share)
@@ -566,7 +565,8 @@ func _update_look(_delta: float, stats: WormStats) -> void:
 	var facing_left := cos(heading) < 0.0
 	look.rotation = heading
 	look.scale.y = -absf(look.scale.y) if facing_left else absf(look.scale.y)
-	face.texture = _face_tex(0 if asleep else _mouth)
+	_chomp_t = maxf(0.0, _chomp_t - _delta)
+	face.texture = WormLook.face_texture(player, model.stage, _face_mood())
 	if asleep and int(_time * 2.0) != int((_time - _delta) * 2.0):
 		_float_fx(NOTE_TEX, head.position + Vector2(6, -12), Color(0.7, 0.8, 1.0), 1.2)
 	light.enabled = stats.value("light_radius") > 0.0
@@ -599,11 +599,47 @@ func _update_look(_delta: float, stats: WormStats) -> void:
 		_float_fx(STAR_TEX, head.position + Vector2.from_angle(_time * 8.0) * 10.0, Color(1, 1, 1), 0.3)
 
 
-func _face_tex(open_amt: int) -> Texture2D:
-	var key := "%sface_p%d_%d.png" % [ART, player + 1, open_amt]
-	if not _faces.has(key):
-		_faces[key] = load(key)
-	return _faces[key]
+## The face for this frame (WormLook moods): sleep, chomp after a swallow, squash while boosting,
+## worried while dizzy, happy while dancing, else the mouth state (idle / ajar / open).
+func _face_mood() -> StringName:
+	if asleep:
+		return &"sleep"
+	if _chomp_t > 0.0:
+		return [&"chomp_3", &"chomp_2", &"chomp_1"][clampi(int(_chomp_t / CHOMP_FACE_SECS * 3.0), 0, 2)]
+	if _burst_left > 0.0:
+		return &"squash"
+	if _dizzy > 0.0:
+		return &"worried"
+	if _dance > 0.0:
+		return &"happy"
+	return WormLook.mouth_mood(_mouth)
+
+
+## Gulp / Burp art from WormLook for the current stage: head, face, each segment (last one the
+## tail) and its diet band. The art is drawn bigger per stage, so the sprites undo the stage
+## scale of their parents (sprite swap, never stretching); collision still uses size_factor().
+func _apply_look_textures() -> void:
+	if model == null or head_sprite == null:
+		return
+	var st := model.stage
+	var unscale := Vector2.ONE / maxf(0.01, size_factor())
+	# The stage-3 head canvas sits the head 2 px low (headroom for the bow / cap): lift it back.
+	var lift := Vector2(0, -2) if st >= 3 else Vector2.ZERO
+	for s in [head_sprite, face]:
+		s.scale = unscale
+		s.offset = lift
+	head_sprite.texture = WormLook.segment_texture(player, st, &"head")
+	head_sprite.modulate = Color.WHITE
+	face.texture = WormLook.face_texture(player, st, _face_mood())
+	for i in _seg_nodes.size():
+		var tail := i == _seg_nodes.size() - 1
+		var node := _seg_nodes[i]
+		var base := node.get_child(0) as Sprite2D
+		var band := node.get_node("Band") as Sprite2D
+		base.texture = WormLook.segment_texture(player, st, &"tail" if tail else &"body")
+		band.texture = WormLook.segment_texture(player, st, &"tail_band" if tail else &"band")
+		base.scale = unscale
+		band.scale = unscale
 
 
 func _light_texture() -> Texture2D:
@@ -624,19 +660,17 @@ func _add_segment_node(flavour: StringName, pop := true) -> void:
 	var node := Node2D.new()
 	node.z_index = -1 - _seg_nodes.size()
 	var base := Sprite2D.new()
-	base.texture = SEGMENT_TEX
-	base.modulate = Players.COLOR[player]
 	base.material = _sheen_mat
 	node.add_child(base)
 	var band := Sprite2D.new()
 	band.name = "Band"
-	band.texture = BAND_TEX
 	band.visible = flavour != &""
-	band.modulate = rules.flavour_color(flavour)
+	band.modulate = WormLook.flavour_tint(flavour)
 	band.material = _sheen_mat
 	node.add_child(band)
 	body.add_child(node)
 	_seg_nodes.append(node)
+	_apply_look_textures()
 	if pop:
 		node.set_meta("pop", 0.1)
 		var tw := create_tween()
@@ -661,6 +695,7 @@ func _on_segment_lost() -> void:
 	_positions.pop_back()
 	_float_fx(STAR_TEX, node.position, Color(1, 1, 1), 0.6)
 	node.queue_free()
+	_apply_look_textures()
 	_refresh_parts(false)
 	segment_lost.emit(player)
 
