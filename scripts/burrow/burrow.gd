@@ -498,10 +498,15 @@ func _draw() -> void:
 	draw_rect(Rect2(-30, y - 8, 60, 16), Color("2a1a14"), false, 2.0)
 	var x := -24.0
 	for w in Worm.all():
+		# Lit = what the one resolver (WormStats) has active; dark = earned, waiting; rings = free slots.
+		var lit: Array[StringName] = w.model.stats.active
 		for id in w.model.earned:
 			var t := w.rules.find_trait(id)
 			var col := t.color if t else Color.WHITE
-			draw_circle(Vector2(x, y), 4.0, col if w.model.is_active(id) else col.darkened(0.5))
+			draw_circle(Vector2(x, y), 4.0, col if id in lit else col.darkened(0.5))
+			x += 10.0
+		for i in maxi(0, w.model.slots() - lit.size()):
+			draw_arc(Vector2(x, y), 3.5, 0.0, TAU, 12, Color(1, 0.9, 0.7, 0.6), 1.0)
 			x += 10.0
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for i in trophies.size():

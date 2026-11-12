@@ -155,3 +155,8 @@ Generated procedurally in Python (Pillow) by the Art lane; no prompts, no image 
 | `sprites/worm/lantern/*.png` | `art/tools/lantern_faces.py` | Worm head, segment, band (white, tinted in code) and A-size faces p1/p2 x 3 mouths; `_n` normals | Project's own |
 | `sprites/foods/*_calm.png`, `*_wide.png` | `art/tools/lantern_faces.py` | Food sprites with calm and wide-eyed faces; `_n` normals | Project's own |
 | `sprites/creatures/*_calm.png`, `*_wide.png`, `*_smug.png` | `art/tools/lantern_faces.py` | Creature sprites (grub, ant, ladybird, beetle, apex beetle, bird) with three faces; `_n` normals | Project's own |
+| `proto/worm/make_slice_parts.py` | Written for feature/stages-traits-1 | Generator for the four PNGs below (Python + Pillow, original shapes, no references) | Project's own |
+| `proto/worm/feature_feelers.png` | `make_slice_parts.py` (Pillow) | Stage-2 feature: two springy feelers on the head (served by the WormLook stub) | Project's own |
+| `proto/worm/part_cloud.png` | `make_slice_parts.py` (Pillow) | Float trait: a cloud puff above the head | Project's own |
+| `proto/worm/part_skates.png` | `make_slice_parts.py` (Pillow) | Skater hybrid: blue blades under the body | Project's own |
+| `proto/worm/part_cart.png` | `make_slice_parts.py` (Pillow) | Garden cart hybrid: a one-wheel cart with a sprout, on the tail | Project's own |
