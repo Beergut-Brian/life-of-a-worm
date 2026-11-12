@@ -27,6 +27,10 @@ var stats: WormStats
 var apex_gate := false
 ## Stages whose apex creature this worm has eaten (eating the stage-1 apex opens stage 2).
 var apex_eaten: Array[int] = []
+## What finished the last stage-up: &"segments" (the body grew long enough with the apex already
+## eaten), &"apex" (the apex bite, with enough segments), &"hatch" (a drop-in start). The beat
+## shows it, so the player sees why it happened.
+var last_cause: StringName = &""
 
 
 func _init(r: WormRules = null) -> void:
@@ -47,6 +51,8 @@ func add_growth(amount: float, flavour: StringName = &"") -> int:
 		growth -= rules.growth_per_segment
 		add_segment(_pending_flavour())
 		pending.clear()
+		if growth > 0.0001:
+			pending[flavour] = growth   # a big bite's leftover stays its flavour (D-01: every new segment)
 		added += 1
 	return added
 
@@ -55,6 +61,7 @@ func add_segment(flavour: StringName) -> void:
 	segments.append(flavour)
 	segment_added.emit(flavour)
 	_check_traits()
+	last_cause = &"segments"
 	_check_stage()
 
 
@@ -68,6 +75,32 @@ func lose_segment() -> void:
 
 func flavour_count(flavour: StringName) -> int:
 	return segments.count(flavour)
+
+
+## Segments per flavour (plain segments under &""): the diet stripes as numbers.
+func flavour_counts() -> Dictionary:
+	var out := {}
+	for f in segments:
+		out[f] = int(out.get(f, 0)) + 1
+	return out
+
+
+## The flavours of the newest n segments, newest last (what the tail stripes show).
+func newest_flavours(n: int) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for i in range(maxi(0, segments.size() - n), segments.size()):
+		out.append(segments[i])
+	return out
+
+
+## This stage's row of data/stages.tres.
+func stage_info() -> StageData:
+	return rules.stage_info(stage)
+
+
+## The segments the next stage needs (0 at the last stage).
+func next_threshold() -> int:
+	return rules.stage_segments[stage + 1] if stage < rules.max_stage() else 0
 
 
 func slots() -> int:
@@ -101,6 +134,7 @@ func start_at_stage(s: int) -> void:
 	for k in range(1, s):
 		if not k in apex_eaten:
 			apex_eaten.append(k)   # a hatchling starts past the apexes of the stages below it
+	last_cause = &"hatch"
 	_check_stage()
 
 
@@ -157,7 +191,7 @@ func apex_cap() -> int:
 	if not apex_gate:
 		return rules.max_stage()
 	var s := 1
-	while s in apex_eaten:
+	while s < rules.max_stage() and (s in apex_eaten or not rules.needs_apex(s + 1)):
 		s += 1
 	return s
 
@@ -167,6 +201,7 @@ func eat_apex(ring_stage: int) -> bool:
 	if not ring_stage in apex_eaten:
 		apex_eaten.append(ring_stage)
 	var before := stage
+	last_cause = &"apex"
 	_check_stage()
 	return stage > before
 

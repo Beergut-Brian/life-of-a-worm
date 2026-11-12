@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/proto/worm/part_skates.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"skater"
+requires = {"bug": 4, "water": 4}
+add = {"skate": 1.0}
+mul = {"drag/water": 0.5, "speed": 1.1}
+part_slot = &"under"
+part_textures = Array[Texture2D]([ExtResource("2")])
+part_priority = 1
+part_spin = 0.0
+cue = "trait_skater"
+color = Color(0.3725, 0.7608, 1, 1)

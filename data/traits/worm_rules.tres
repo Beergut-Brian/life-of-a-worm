@@ -9,14 +9,17 @@
 [ext_resource type="Resource" path="res://data/traits/slick.tres" id="t4"]
 [ext_resource type="Resource" path="res://data/traits/drill_head.tres" id="t5"]
 [ext_resource type="Resource" path="res://data/traits/green_thumb.tres" id="t6"]
+[ext_resource type="Resource" path="res://data/traits/floaty.tres" id="t7"]
+[ext_resource type="Resource" path="res://data/traits/skater.tres" id="t8"]
+[ext_resource type="Resource" path="res://data/traits/garden_cart.tres" id="t9"]
+[ext_resource type="Resource" path="res://data/stages.tres" id="st"]
 
 [resource]
 script = ExtResource("1")
 growth_per_segment = 2.0
 start_segments = 3
-stage_segments = PackedInt32Array(0, 0, 6, 10, 15, 20, 24, 40)
-slots_per_stage = PackedInt32Array(0, 0, 1, 2, 3, 4, 5, 5)
+stages = ExtResource("st")
 partner_share = 0.25
-base_stats = {"speed": 80.0, "burst_speed": 2.2, "burst_time": 0.25, "burst_cooldown": 0.3, "turn_rate": 10.0, "light_radius": 0.0, "pull_radius": 0.0, "pull_speed": 0.0, "sheen": 0.0, "wiggle_radius": 56.0, "wiggle_hop": 16.0, "mouth_radius": 8.0, "segment_spacing": 9.0, "bite_bonus/stone": 0.0, "drag/water": 1.0}
-flavour_colors = {&"root": Color(0.6275, 0.4392, 0.2353, 1), &"bug": Color(1, 0.6235, 0.1098, 1), &"stone": Color(0.5529, 0.6, 0.6824, 1), &"crystal": Color(0.4353, 0.9412, 1, 1), &"junk": Color(0.902, 0.7608, 0.1608, 1), &"water": Color(0.2275, 0.5255, 1, 1)}
-traits = Array[ExtResource("2")]([ExtResource("t0"), ExtResource("t1"), ExtResource("t2"), ExtResource("t3"), ExtResource("t4"), ExtResource("t5"), ExtResource("t6")])
+base_stats = {"speed": 80.0, "burst_speed": 2.2, "burst_time": 0.25, "burst_cooldown": 0.3, "turn_rate": 10.0, "light_radius": 0.0, "pull_radius": 0.0, "pull_speed": 0.0, "sheen": 0.0, "wiggle_radius": 56.0, "wiggle_hop": 16.0, "mouth_radius": 8.0, "segment_spacing": 9.0, "bite_bonus/stone": 0.0, "drag/water": 1.0, "glide": 0.0, "skate": 0.0, "carry_slots": 1.0, "castings_speed": 0.0, "garden_yield": 0.0}
+flavour_colors = {&"root": Color(0.6275, 0.4392, 0.2353, 1), &"bug": Color(1, 0.6235, 0.1098, 1), &"stone": Color(0.5529, 0.6, 0.6824, 1), &"crystal": Color(0.4353, 0.9412, 1, 1), &"junk": Color(0.902, 0.7608, 0.1608, 1), &"water": Color(0.2275, 0.5255, 1, 1), &"cloud": Color(0.8706, 0.9255, 1, 1)}
+traits = Array[ExtResource("2")]([ExtResource("t0"), ExtResource("t1"), ExtResource("t2"), ExtResource("t3"), ExtResource("t4"), ExtResource("t5"), ExtResource("t6"), ExtResource("t7"), ExtResource("t8"), ExtResource("t9")])

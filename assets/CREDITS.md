@@ -141,3 +141,8 @@ All drawn in code by `assets/proto/worm/make_art.py` (Python + Pillow), original
 | `proto/worm/part_magnet.png` | `make_art.py` (Pillow) | Horseshoe tail part | Project's own |
 | `proto/worm/part_sheen.png` | `make_art.py` (Pillow) | Glossy highlight skin part | Project's own |
 | `proto/worm/heart.png`, `note.png`, `star.png` | `make_art.py` (Pillow) | Boop heart, wiggle note, dizzy / share star | Project's own |
+| `proto/worm/make_slice_parts.py` | Written for feature/stages-traits-1 | Generator for the four PNGs below (Python + Pillow, original shapes, no references) | Project's own |
+| `proto/worm/feature_feelers.png` | `make_slice_parts.py` (Pillow) | Stage-2 feature: two springy feelers on the head (served by the WormLook stub) | Project's own |
+| `proto/worm/part_cloud.png` | `make_slice_parts.py` (Pillow) | Float trait: a cloud puff above the head | Project's own |
+| `proto/worm/part_skates.png` | `make_slice_parts.py` (Pillow) | Skater hybrid: blue blades under the body | Project's own |
+| `proto/worm/part_cart.png` | `make_slice_parts.py` (Pillow) | Garden cart hybrid: a one-wheel cart with a sprout, on the tail | Project's own |

@@ -10,7 +10,8 @@ extends Resource
 @export var add: Dictionary = {}
 ## stat -> factor (multiplied over active traits, after the adds).
 @export var mul: Dictionary = {}
-## Where the part sits: head, crown, back, tail, skin. &"" = no part.
+## Where the part sits: head, crown, above (over the head), back, under (below the body), tail,
+## skin (every segment). &"" = no part.
 @export var part_slot: StringName
 ## One texture per stage (index stage - 1); the last one repeats for later stages.
 @export var part_textures: Array[Texture2D] = []
