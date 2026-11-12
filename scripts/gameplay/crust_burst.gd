@@ -4,7 +4,7 @@
 ## bite through, once per worm per tin and saved, is the breakthrough: the "breakthrough" cue, a
 ## grass-and-dirt burst, a flash and shake, a short camera pull-back and the why-bubble (sky over
 ## the worm). Crust tiles a worm eats never grow back (StageTable.apply_crust), so the disk shrinks.
-## The level only connects, caps its zoom through cap() and saves to_dict(). Placeholder visuals.
+## The level only connects, sets its zoom through steer_camera() and saves to_dict(). Placeholder visuals.
 class_name CrustBurst
 extends Node
 
@@ -28,6 +28,7 @@ var eaten := 0
 var history: Array[Dictionary] = []
 
 var _pull_t := 0.0
+var _base_min := -1
 
 
 func _init(p_table: StageTable = null) -> void:
@@ -60,6 +61,17 @@ func is_crust(cell: Vector2i, block: StringName) -> bool:
 ## The zoom cap with the breakthrough's pull-back applied (one step wider while it plays).
 func cap(base: int) -> int:
 	return maxi(0, base - 1) if _pull_t > 0.0 else base
+
+
+## Sets the camera's zoom bounds for this frame: the stage's cap, one step wider during the
+## pull-back (the camera's own floor is lowered for it, then restored).
+func steer_camera(base: int) -> void:
+	if camera == null:
+		return
+	if _base_min < 0:
+		_base_min = camera.min_fit_index
+	camera.max_fit_index = cap(base)
+	camera.min_fit_index = mini(_base_min, camera.max_fit_index)
 
 
 func _process(delta: float) -> void:

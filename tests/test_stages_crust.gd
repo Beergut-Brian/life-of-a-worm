@@ -139,6 +139,10 @@ func test_breakthrough_is_once_per_worm_per_tin_and_saved() -> void:
 	assert_int(_level.find_children("*", "CrustWhy", true, false).size()).is_equal(1)
 	assert_int(Audio.played.get(CrustBurst.CUE, 0)).is_equal(1)
 	assert_int(_level.crust.cap(base_cap)).is_equal(maxi(0, base_cap - 1))
+	var floor_before := _level.camera.min_fit_index
+	_level.crust.steer_camera(base_cap)
+	assert_int(_level.camera.max_fit_index).is_equal(maxi(0, base_cap - 1))
+	assert_int(_level.camera.min_fit_index).is_less_equal(_level.camera.max_fit_index)   # the floor lets it pull back
 	assert_bool(_level.world.eat_tile(_cell_of(_table.crust_ring(), 40), Players.P1)).is_true()
 	assert_int(heard[0]).is_equal(1)
 	assert_int(Audio.played.get(CrustBurst.CUE, 0)).is_equal(1)
@@ -147,6 +151,9 @@ func test_breakthrough_is_once_per_worm_per_tin_and_saved() -> void:
 	# the beat ends: the camera's cap goes back
 	_level.crust._process(CrustBurst.PULL_TIME + 0.1)
 	assert_int(_level.crust.cap(base_cap)).is_equal(base_cap)
+	_level.crust.steer_camera(base_cap)
+	assert_int(_level.camera.max_fit_index).is_equal(base_cap)
+	assert_int(_level.camera.min_fit_index).is_equal(mini(floor_before, base_cap))   # and the floor comes back
 	_level.save_now()
 	_close()
 	_open(false)

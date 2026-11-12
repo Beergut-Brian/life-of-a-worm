@@ -351,7 +351,7 @@ func _physics_process(delta: float) -> void:
 				tok = "y"
 			_glyphs[w.player].token = tok
 	hud.set_context(any_carry, burrow.has_home, any_burrow)
-	camera.max_fit_index = crust.cap(stage_beat.zoom_cap())
+	crust.steer_camera(stage_beat.zoom_cap())
 	_tunnel_step(digging > 0, delta)
 	_bonk_t = maxf(0.0, _bonk_t - delta)
 	for e in _foods:

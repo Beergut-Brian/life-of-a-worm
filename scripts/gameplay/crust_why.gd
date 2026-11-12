@@ -28,9 +28,12 @@ func _follow() -> void:
 	if is_instance_valid(worm):
 		var up := worm.head_position().normalized() if worm.head_position().length() > 1.0 else Vector2.UP
 		var k := clampf((_t - life * 0.7) / (life * 0.3), 0.0, 1.0)
-		position = worm.head_position() + up * lerpf(64.0 * worm.size_factor(), 0.0, ease(k, 2.0))
+		# the same size on screen however far the camera has pulled back (0.5x zoom = 1)
+		var cam := get_viewport().get_camera_2d() if is_inside_tree() else null
+		var screen := clampf(0.5 / cam.zoom.x, 1.0, 3.0) if cam != null else 1.0
+		position = worm.head_position() + up * lerpf(64.0 * worm.size_factor() * screen, 0.0, ease(k, 2.0))
 		rotation = up.angle() + PI / 2.0
-		scale = Vector2.ONE * lerpf(1.6, 0.2, k)
+		scale = Vector2.ONE * lerpf(1.6, 0.2, k) * screen
 
 
 func _draw() -> void:
