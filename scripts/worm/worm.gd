@@ -47,6 +47,12 @@ const TILE_CHOMP_EVERY := 0.3
 ## The step data/stages.tres uses for body size (stage 1 = 1.0, + SIZE_STEP a stage). Size itself is
 ## read from the stage row (StageData.size); this is kept for tests that reason about radii.
 const SIZE_STEP := 0.18
+## Open-ground speed per point of the "skate" stat (tunnels already eaten, open air).
+const SKATE_BOOST := 0.35
+## Seconds between two "trait at work" flashes (the bite-bonus clonk).
+const TRAIT_MOMENT_COOLDOWN := 0.4
+## Where cart riders sit behind the tail part, one after another.
+const CART_STEP := Vector2(-5, -4)
 
 static var _all: Array[Worm] = []
 
@@ -77,6 +83,14 @@ var tiles_this_frame := 0
 var tiles_total := 0
 ## The shared camera's rotation: the stick is screen-relative (up on the stick = up on screen).
 var view_rotation := 0.0
+## Extra things riding in the tail (carry_slots above 1): X held picks up more, release drops all.
+var cart: Array[Node2D] = []
+## Every trait reveal shown on this worm (ring + sting), by trait id: tests and the report read it.
+var reveals := {}
+## True while the head moved through open ground last frame (no tile eaten).
+var in_open := true
+## Per trait id: how many times it was shown at work (a bite only it allows, a cart rider).
+var moments := {}
 
 var _positions: Array[Vector2] = []
 var _seg_nodes: Array[Node2D] = []
@@ -97,6 +111,10 @@ var _warp_fired := false
 var _ring_node: Node2D
 var _size := 1.0
 var _feature: Sprite2D
+var _prev_active: Array[StringName] = []
+var _revealed_now := {}
+var _moment_cool := 0.0
+var _trail: CPUParticles2D
 ## The stage the worm is drawn at (mirrors model.stage; the look reads it).
 var stage: int:
 	get:
@@ -176,6 +194,9 @@ func _ready() -> void:
 		_positions.append(head.position - Vector2(spacing() * (i + 1), 0))
 		_add_segment_node(model.segments[i], false)
 	_refresh_parts(false)
+	_prev_active = model.active.duplicate()
+	_trail = _make_trail()
+	head.add_child(_trail)
 	_ring_node = Node2D.new()
 	_ring_node.z_index = 20
 	_ring_node.draw.connect(_draw_ring)
@@ -283,6 +304,7 @@ func from_dict(d: Dictionary) -> void:
 			_positions.append(head.position - Vector2.from_angle(heading) * spacing() * (i + 1))
 			_add_segment_node(model.segments[i], false)
 		_refresh_parts(false)
+		_prev_active = model.active.duplicate()
 		_apply_size()
 	elif p.size() == 2:
 		set_meta("start_pos", Vector2(p[0], p[1]))
@@ -371,6 +393,11 @@ func get_eaten(creature: StringName, out_at = null) -> void:
 	eaten_by.emit(player, creature)
 
 
+## True when only a trait's bite_bonus makes this food edible (the stage alone could not).
+func needs_bonus(food: FoodData) -> bool:
+	return food.size_stage > model.stage_info().edible_size and can_eat(food)
+
+
 func can_eat(food: FoodData) -> bool:
 	var bonus := model.stats.value("bite_bonus/" + String(food.flavour))
 	return food.size_stage <= model.stage_info().edible_size + int(round(bonus))
@@ -402,8 +429,12 @@ func _physics_process(delta: float) -> void:
 	_bonk_cool = maxf(0.0, _bonk_cool - delta)
 	_dizzy = maxf(0.0, _dizzy - delta)
 	_dance = maxf(0.0, _dance - delta)
+	_moment_cool = maxf(0.0, _moment_cool - delta)
 	if intent.burst and _burst_cool <= 0.0:
 		_burst_left = stats.value("burst_time")
+		if in_open and stats.value("glide") > 0.0:
+			_burst_left *= 1.0 + stats.value("glide")   # open ground: the burst floats on
+			_trail_on(_trait_for("glide"), _burst_left)
 		_burst_cool = _burst_left + stats.value("burst_cooldown")
 		Audio.play("burst")
 		_pop(look, 1.2)
@@ -427,6 +458,9 @@ func _physics_process(delta: float) -> void:
 	if _dizzy > 0.0:
 		speed *= 0.5
 	speed *= _zone_factor(stats)
+	if in_open and speed > 0.0 and stats.value("skate") > 0.0:
+		speed *= 1.0 + SKATE_BOOST * stats.value("skate")   # open tunnels and air: it skates
+		_trail_on(_trait_for("skate"), 0.1)
 	if world and speed > 0.0:
 		# The bite is centred just ahead of the head and wide enough to clear it, so the tunnel
 		# never snags the head on a tile corner (about 1.5 tiles wide at stage 1).
@@ -434,9 +468,16 @@ func _physics_process(delta: float) -> void:
 		var n := world.eat_circle(bite_at, BITE_RADIUS * _size, player)
 		if n > 0 or tiles_this_frame > 0:
 			speed *= stats.value("dig_speed", DIG_SPEED)   # dirt is slower than an open tunnel
+		in_open = n == 0 and tiles_this_frame == 0
+	elif speed > 0.0:
+		in_open = true
 	head.velocity = Vector2.from_angle(heading) * speed
 	head.move_and_slide()
 	dust.emitting = _burst_left > 0.0
+	if _trail and _trail.emitting:
+		var left := float(_trail.get_meta("left", 0.0)) - delta
+		_trail.set_meta("left", left)
+		_trail.emitting = left > 0.0
 	_follow()
 	_eat_and_carry(intent.carry, stats, delta)
 	_boop_check()
@@ -495,6 +536,7 @@ func _eat_and_carry(carry_held: bool, stats: WormStats, delta: float) -> void:
 	var pull_r := stats.value("pull_radius")
 	var nearest := INF
 	carry_ready = false
+	_cart_step(carry_held)
 	if carrying != null:
 		if not is_instance_valid(carrying):
 			carrying = null
@@ -536,7 +578,15 @@ func _eat_and_carry(carry_held: bool, stats: WormStats, delta: float) -> void:
 			Audio.play("carry")
 			_pop(look, 1.15)
 			carried.emit(player, data.id)
+		elif carry_held and not f in cart and cart.size() + 1 < int(stats.value("carry_slots", 1.0)):
+			cart.append(f)   # a second (third...) thing rides in the tail part
+			f.call("set_carried", true)
+			Audio.play("carry")
+			_trait_moment("carry_slots")
+			carried.emit(player, data.id)
 		elif not carry_held:
+			if needs_bonus(data):
+				_trait_moment("bite_bonus/" + String(data.flavour))   # only the trait lets it bite this
 			f.call("take")
 			feed(data)
 	if carrying != null:
@@ -585,6 +635,10 @@ func _update_look(_delta: float, stats: WormStats) -> void:
 	if asleep and int(_time * 2.0) != int((_time - _delta) * 2.0):
 		_float_fx(NOTE_TEX, head.position + Vector2(6, -12), Color(0.7, 0.8, 1.0), 1.2)
 	light.enabled = stats.value("light_radius") > 0.0
+	if light.enabled:
+		var lt := _trait_for("light_radius")
+		if lt != null:
+			light.color = lt.color.lerp(Color.WHITE, 0.35)
 	light.texture_scale = maxf(0.01, stats.value("light_radius"))
 	light.energy = 1.1 + 0.15 * sin(_time * 3.0)
 	_sheen_mat.set_shader_parameter("sheen", stats.value("sheen"))
@@ -703,18 +757,121 @@ func swell(amount: float) -> void:
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.0 + (amount - 1.0) * 0.6, 1.0, 0.25).set_trans(Tween.TRANS_BACK)
 
 
-func _on_trait_earned(id: StringName, _equipped: bool) -> void:
+## Earned: the reveal ring in the trait's colour and its sting, once. Equipped, its part pops on in
+## the same frame (traits_changed follows); waiting for a slot, a picture of the part floats up
+## from the head so the cause still shows.
+func _on_trait_earned(id: StringName, equipped: bool) -> void:
 	var t := rules.find_trait(id)
 	if t != null:
 		Audio.play(t.cue)
 		_ring_fx(t.color)
+		reveals[id] = int(reveals.get(id, 0)) + 1
+		if equipped:
+			_revealed_now[id] = true   # the traits_changed that follows must not sting twice
+		else:
+			var tex := t.part_texture(model.stage)
+			if tex != null:
+				_float_fx(tex, head.position + Vector2(0, -16 * _size), Color.WHITE, 1.6)
 	trait_earned.emit(player, id)
 
 
+## Equip / swap / slot growth: parts rebuild (new ones pop) and every newly equipped trait plays
+## its own sting again (no reveal ring: that belongs to the moment it was earned).
 func _on_traits_changed(active: Array[StringName]) -> void:
 	_refresh_parts(true)
 	Audio.play("trait_swap")
+	for id in active:
+		if id in _prev_active or _revealed_now.has(id):
+			continue
+		var t := rules.find_trait(id)
+		if t != null:
+			Audio.play(t.cue)
+	_prev_active = active.duplicate()
+	_revealed_now.clear()
 	traits_changed.emit(player, active)
+
+
+## The active trait that moves this stat (the one whose part shows wins), or null. Data only.
+func _trait_for(stat: String) -> TraitData:
+	var best: TraitData = null
+	for id in model.active:
+		var t := rules.find_trait(id)
+		if t == null or not (t.add.has(stat) or t.mul.has(stat)):
+			continue
+		if best == null or t.part_priority > best.part_priority:
+			best = t
+	return best
+
+
+## A trait doing its job right now (a bite only it allows, a thing only it can carry): its part
+## pops, a small ring in its colour and its sting. Throttled.
+func _trait_moment(stat: String) -> void:
+	var t := _trait_for(stat)
+	if t == null or _moment_cool > 0.0:
+		return
+	_moment_cool = TRAIT_MOMENT_COOLDOWN
+	Audio.play(t.cue)
+	var ring := WormRing.new()
+	ring.color = t.color
+	ring.life = 0.35
+	ring.max_radius = 22.0 * _size
+	ring.position = head.position
+	ring.z_index = 9
+	fx.add_child(ring)
+	for slot in _part_nodes:
+		if _part_nodes[slot].get_meta("trait", &"") == t.id:
+			_pop_part(_part_nodes[slot])
+	moments[t.id] = int(moments.get(t.id, 0)) + 1
+
+
+## Riders in the cart: they sit on the tail while X is held, all drop when it is let go. When the
+## mouth's thing is taken (the burrow), the next rider moves up into the mouth.
+func _cart_step(carry_held: bool) -> void:
+	for i in range(cart.size() - 1, -1, -1):
+		if not is_instance_valid(cart[i]):
+			cart.remove_at(i)
+	if cart.is_empty():
+		return
+	if not carry_held:
+		for f in cart:
+			var what: StringName = f.data.id
+			f.call("set_carried", false, DROP_BLOCK)
+			dropped.emit(player, what)
+		cart.clear()
+		return
+	if carrying == null or not is_instance_valid(carrying):
+		carrying = cart.pop_front()
+		return
+	var tail := _positions[_positions.size() - 1] if not _positions.is_empty() else head.position
+	for i in cart.size():
+		cart[i].global_position = to_global(tail) + (CART_STEP * (i + 1)).rotated(heading) * _size
+
+
+func _make_trail() -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.name = "TraitTrail"
+	p.z_index = -2
+	p.emitting = false
+	p.amount = 16
+	p.lifetime = 0.45
+	p.local_coords = false
+	p.direction = Vector2(-1, 0)
+	p.spread = 35.0
+	p.gravity = Vector2.ZERO
+	p.initial_velocity_min = 8.0
+	p.initial_velocity_max = 20.0
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 3.5
+	return p
+
+
+## The trail behind the head in a trait's colour, for `secs` (skating, a floating burst).
+func _trail_on(t: TraitData, secs: float) -> void:
+	if t == null or _trail == null:
+		return
+	_trail.color = t.color
+	_trail.emitting = true
+	_trail.set_meta("left", maxf(float(_trail.get_meta("left", 0.0)), secs))
 
 
 ## Rebuild every trait part from the resolved stats. pop: parts that are new pop on.
