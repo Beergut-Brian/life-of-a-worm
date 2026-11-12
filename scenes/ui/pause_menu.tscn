@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_panel.tscn" id="6_settings"]
 [ext_resource type="PackedScene" path="res://scenes/ui/confirm_dialog.tscn" id="7_confirm"]
 [ext_resource type="Script" path="res://scenes/ui/kit/wedge.gd" id="8_wedge"]
+[ext_resource type="Script" path="res://scripts/ui/book_tab.gd" id="9_booktab"]
+[ext_resource type="PackedScene" path="res://scenes/ui/book.tscn" id="10_book"]
 
 [sub_resource type="ShaderMaterial" id="blur_mat"]
 shader = ExtResource("4_blur")
@@ -128,6 +130,17 @@ height = 96.0
 height_focused = 140.0
 text_size = 62
 text_size_focused = 108
+
+[node name="BookTab" type="Control" parent="Card"]
+layout_mode = 0
+offset_left = 910.0
+offset_top = 800.0
+offset_right = 1110.0
+offset_bottom = 1000.0
+mouse_filter = 2
+script = ExtResource("9_booktab")
+
+[node name="Book" parent="Card/BookTab" instance=ExtResource("10_book")]
 
 [node name="Hint" type="Control" parent="Card"]
 layout_mode = 0
