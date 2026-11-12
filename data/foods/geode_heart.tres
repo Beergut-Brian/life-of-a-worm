@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"geode_heart"
+flavour = &"crystal"
+growth = 6.0
+size_stage = 5
+color = Color(0.7686, 0.4235, 1.0, 1)
+radius = 12.0
+ring = &"core"
+regrow_time = 900.0
+plants = &""
+look = 9
+accent = Color(1.0, 0.7843, 0.9412, 1)

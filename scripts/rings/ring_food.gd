@@ -3,7 +3,7 @@
 class_name RingFood
 extends FoodData
 
-enum Look { BLOB, SEED, ROOT, MUSHROOM, CRUMB, HONEYDEW, EGG, PEBBLE }
+enum Look { BLOB, SEED, ROOT, MUSHROOM, CRUMB, HONEYDEW, EGG, PEBBLE, CRYSTAL, GEODE }
 
 ## The ring it lives in (RingDef.id): where it is scattered and spawned.
 @export var ring: StringName
