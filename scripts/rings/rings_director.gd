@@ -13,7 +13,8 @@
 ##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after);
 ## - the sky ring above the grass (data/rings/sky_life.tres, SkyLife): its counters, its scattered
 ##   clouds, toy planes and balloons (sky foods, edible from SkyLife.edible_from), and the balloon
-##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie.
+##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie;
+## - the surface ring (data/rings/surface_life.tres, SurfaceLife): its counters and its apples.
 ## Everything it keeps goes in the tin under Save key "rings".
 class_name RingsDirector
 extends Node2D
@@ -26,6 +27,9 @@ const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), prel
 		preload("res://data/rings/core_life.tres")]
 ## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
 const SKY: SkyLife = preload("res://data/rings/sky_life.tres")
+## The surface ring (W-06): its counters (apples, the lawnmower) and the apples on the grass. Its
+## props (the town) are data/props/*.tres, stood by WorldDestruct.
+const SURFACE: SurfaceLife = preload("res://data/rings/surface_life.tres")
 ## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
 static var SECRETS: Array[SecretData] = _load_secrets()
 const BIRD := preload("res://scenes/creatures/bird.tscn")
@@ -149,7 +153,7 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	spawn_point = p_spawn
 	planet_radius_px = float(world.shape.radius) * float(world.shape.cell_size)
 	_rng.seed = p_seed * 7919 + 17
-	ecology = RingEcology.from_lives(LIVES + [SKY], p_seed)
+	ecology = RingEcology.from_lives(LIVES + [SKY, SURFACE], p_seed)
 	_last_clock = world.clock
 	trail = _ant_trail()
 	anthill = trail[trail.size() - 1]
@@ -305,6 +309,13 @@ func _scatter(saved: Array) -> void:
 			break
 		var at := polar(rng.randf_range(-0.12, 0.12), rng.randf_range(SKY.inner + 0.01, SKY.outer - 0.01))
 		placed.append({ "food": SKY.scatter[i % SKY.scatter.size()], "at": at })
+	# the surface's apples, on top of the grass, after the sky (older tins keep their order)
+	for i in SURFACE.scatter_count:
+		if SURFACE.scatter.is_empty():
+			break
+		var at := polar(rng.randf_range(-SURFACE.scatter_spread, SURFACE.scatter_spread),
+				rng.randf_range(SURFACE.scatter_inner, SURFACE.scatter_outer))
+		placed.append({ "food": SURFACE.scatter[i % SURFACE.scatter.size()], "at": at })
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
 		# A slot only takes its saved "eaten" if the same food was saved there (a tin from before a

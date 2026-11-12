@@ -59,6 +59,7 @@ func step(delta: float) -> void:
 		return
 	_t += delta
 	_phase_t += delta
+	_scared = _nearest_can_eat_me()
 	var hover := _hover
 	match phase:
 		Peck.ARRIVE:
@@ -131,7 +132,7 @@ func _draw() -> void:
 		# and the bird's shadow on the grass above
 		var ground := to_local(_hover - _up * HOVER)
 		_ellipse(ground, Vector2(w * 0.8, w * 0.3), Color(0, 0, 0, 0.3))
-	var r := data.radius
+	var r := data.radius * draw_scale()   # cowers (0.85x) when the nearest worm could eat it
 	var flap := sin(_t * (18.0 if phase != Peck.SHADOW else 9.0)) * r * 0.6
 	var col := data.color
 	# wings
@@ -154,6 +155,19 @@ func _draw() -> void:
 		else:
 			draw_circle(c, e + 1.0, Color.WHITE)
 			draw_circle(c, e * 0.5, INK)
+
+
+## K-01: bigger-than-me reads from size. When the worm nearest the bird is big enough to eat it, the
+## bird cowers (draws smaller than that worm's head) instead of looming over it.
+func _nearest_can_eat_me() -> bool:
+	var best: Node = null
+	var best_d := INF
+	for w in _worms():
+		var d: float = w.head_position().distance_to(global_position)
+		if d < best_d:
+			best_d = d
+			best = w
+	return best != null and not data.is_threat_to(best.model.stage)
 
 
 func _ellipse(at: Vector2, radii: Vector2, col: Color) -> void:

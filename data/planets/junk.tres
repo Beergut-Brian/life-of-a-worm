@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="PlanetData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_cyqol"]
+[ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_7n53w"]
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="3_iiijo"]
+
+[sub_resource type="Resource" id="Resource_epxrf"]
+script = ExtResource("1_cyqol")
+id = &"tin_can"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.7647059, 0.7764706, 0.8, 1)
+radius = 32.0
+
+[sub_resource type="Resource" id="Resource_lelqg"]
+script = ExtResource("1_cyqol")
+id = &"old_bolt"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.6509804, 0.5294118, 0.3529412, 1)
+radius = 28.0
+
+[sub_resource type="Resource" id="Resource_n0k0d"]
+script = ExtResource("1_cyqol")
+id = &"scrap_moon"
+flavour = &"star"
+growth = 3.0
+size_stage = 6
+color = Color(0.47843137, 0.4862745, 0.5176471, 1)
+radius = 56.0
+
+[sub_resource type="Resource" id="Resource_yaiyq"]
+script = ExtResource("3_iiijo")
+id = &"anchor_star"
+add = {
+"space_steady": 0.4
+}
+part_slot = &"space"
+color = Color(0.7254902, 0.7372549, 0.7764706, 1)
+
+[resource]
+script = ExtResource("2_7n53w")
+id = &"junk"
+color = Color(0.5529412, 0.56078434, 0.5882353, 1)
+accent = Color(0.36078432, 0.36862746, 0.4, 1)
+radius = 280.0
+foods = Array[ExtResource("1_cyqol")]([SubResource("Resource_epxrf"), SubResource("Resource_lelqg"), SubResource("Resource_n0k0d")])
+drift = 22.0
+star_trait = SubResource("Resource_yaiyq")

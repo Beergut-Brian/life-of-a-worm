@@ -6,6 +6,10 @@ extends Creature
 
 const FADE := 1.5
 const HOLD := 2.0
+## K-01: once the worm under it has outgrown the boot (data.size_stage), the shadow is drawn this
+## small, so even at full strength (sole 1.3 r) it is under a stage-4 worm's head: a boot you have
+## outgrown no longer looms. Bigger-than-me reads from size, never a colour or a number.
+const OUTGROWN := 0.25
 
 var spot := Vector2.ZERO
 var _up := Vector2.UP
@@ -52,11 +56,27 @@ func step(delta: float) -> void:
 	queue_redraw()
 
 
+## True when the worm nearest the boot is big enough that the boot is no threat to it.
+func outgrown() -> bool:
+	if data == null or not is_inside_tree():
+		return false
+	var best: Node = null
+	var best_d := INF
+	for w in _worms():
+		var d: float = w.head_position().distance_to(global_position)
+		if d < best_d:
+			best_d = d
+			best = w
+	return best != null and not data.is_threat_to(best.model.stage)
+
+
 func _draw() -> void:
 	var k := strength()
 	var col := Color(0, 0, 0, 0.32 * k)
 	var r := data.radius if data else 40.0
 	var s := 0.7 + 0.3 * k   # gets bigger as it comes down
+	if outgrown():
+		s *= OUTGROWN
 	# sole + heel, a boot from above
 	var sole := PackedVector2Array()
 	for i in 24:

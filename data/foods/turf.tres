@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"turf"
+flavour = &"root"
+growth = 2.0
+size_stage = 3
+color = Color(0.5451, 0.6902, 0.2902, 1)
+radius = 7.0
+ring = &"surface"
+regrow_time = 0.0
+plants = &""
+look = 0
+accent = Color(0.3686, 0.2667, 0.1490, 1)
