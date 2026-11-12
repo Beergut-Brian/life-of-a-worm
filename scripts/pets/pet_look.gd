@@ -58,14 +58,17 @@ static func ant_crew(ci: CanvasItem, c: Vector2, r: float, dir: float, t: float,
 	for i in 3:
 		var p := c + f * r * (1.2 - i * 1.3) + s * sin(t * 6.0 + i * 2.0) * r * 0.1
 		p += s * absf(sin(t * 12.0 + i)) * r * 0.25 * wiggle
-		var u := r * 0.32
+		var u := r * 0.42
 		for k: float in [-1.0, 1.0]:   # legs, scuttling
 			for j: float in [-1.0, 0.0, 1.0]:
 				var base := p + f * u * j * 0.9
 				ci.draw_line(base, base + s * k * u * 1.6 + f * u * sin(t * 18.0 + j + i) * 0.6, ink, 1.0)
+		for part: Vector3 in [Vector3(-1.4, 0, 1.05), Vector3(0, 0, 0.7), Vector3(1.25, 0, 0.85)]:
+			ci.draw_circle(p + f * u * part.x, u * part.z + 0.8, ink)                  # outline
 		ci.draw_circle(p - f * u * 1.4, u * 1.05, Color(body, a))   # abdomen
 		ci.draw_circle(p, u * 0.7, Color(body, a))                   # thorax
 		ci.draw_circle(p + f * u * 1.25, u * 0.85, Color(body, a))  # head
+		ci.draw_circle(p - f * u * 1.2 - s * u * 0.4, u * 0.35, Color(body.lightened(0.4), a))   # shine
 		for k: float in [-1.0, 1.0]:
 			var fb := p + f * u * 1.8 + s * k * u * 0.4
 			ci.draw_line(fb, fb + f * u * 1.0 + s * k * u * 0.8, ink, 1.0)
@@ -84,10 +87,10 @@ static func _pet_pic(ci: CanvasItem, id: StringName, c: Vector2, sz: float, a: f
 	var look := StringName(String(id).trim_prefix("pet:"))
 	var col := Color(0.9, 0.15, 0.12)
 	if look == &"glowworm":
-		col = Color(0.78, 0.86, 0.55)
+		col = Color(0.55, 0.85, 0.3)
 	elif look == &"ant_crew":
-		col = Color(0.55, 0.22, 0.12)
-	draw(ci, look, c, sz * 0.22, 0.0, 0.0, 0.0, col, a, 1.0 if look == &"glowworm" else 0.0)
+		col = Color(0.85, 0.3, 0.15)
+	draw(ci, look, c, sz * (0.2 if look == &"ant_crew" else 0.3), 0.0, 0.0, 0.0, col, a, 1.0 if look == &"glowworm" else 0.0)
 
 
 static func _job_pic(ci: CanvasItem, id: StringName, c: Vector2, sz: float, a: float) -> void:

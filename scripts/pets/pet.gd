@@ -294,7 +294,7 @@ func _draw() -> void:
 	if meet_t >= 0.0:   # the meet beat: who I am, I love it here, what I do
 		_upright(up)
 		var pop := minf(1.0, meet_t / 0.2)
-		PictoBubble.draw(self, Vector2(0, -r - 6.0), [StringName("pet:" + String(data.look)), &"heart", StringName("job:" + String(data.job))], pop, 0.6)
+		PictoBubble.draw(self, Vector2(0, -r - 14.0), [StringName("pet:" + String(data.look)), &"heart", StringName("job:" + String(data.job))], pop, 0.8)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	elif state == State.HOME and fmod(_anim, 5.0) < 0.6:   # a tiny heart now and then: it's home
 		var h := up * (10.0 + fmod(_anim, 5.0) * 8.0)
