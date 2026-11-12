@@ -21,10 +21,10 @@ const BIN := 6
 const SHAFT_BIN := 5
 ## Look per kind: colour, energy, radius in tiles.
 const LOOK := {
-	Kind.WORM: [Color("fff1d6"), 1.2, 8.0],
+	Kind.WORM: [Color("fff1d6"), 1.4, 8.5],
 	Kind.CRYSTAL: [Color("59e6ff"), 0.95, 6.0],
 	Kind.MUSHROOM: [Color("c48ae0"), 0.8, 4.5],
-	Kind.STRANGE: [Color("b8ff6a"), 0.9, 6.0],
+	Kind.STRANGE: [Color("e8ff6a"), 0.9, 6.0],
 	Kind.CORE: [Color("ff8a2a"), 1.1, 0.0],
 	Kind.SHAFT: [Color("ffe2a8"), 1.0, 26.0],
 }
@@ -32,11 +32,11 @@ const LOOK := {
 const GLOW_TILES := {&"crystal": Kind.CRYSTAL, &"garden_crystal": Kind.CRYSTAL,
 	&"mushroom": Kind.MUSHROOM, &"strangestone": Kind.STRANGE}
 ## Ambient by ring id (RingDef.id), dim not dark: warm in dirt, cool in rock, orange near the core.
-const AMBIENT := {&"surface": Color("fffaf0"), &"topsoil": Color("d6cfba"), &"dirt": Color("c4ac94"),
-	&"deep_rock": Color("a4acc8"), &"core": Color("d8aa8c")}
+const AMBIENT := {&"surface": Color("fffaf0"), &"topsoil": Color("e2dbc6"), &"dirt": Color("d4bea8"),
+	&"deep_rock": Color("b6bed8"), &"core": Color("e6bc9e")}
 const AMBIENT_SKY := Color("ffffff")
 ## Never darker than this, whatever a ring says (kid check K-08: dim, not dark).
-const AMBIENT_FLOOR := 0.55
+const AMBIENT_FLOOR := 0.6
 
 @export var max_lights := 16
 ## Seconds between reassigning the pool to the nearest emitters.
@@ -45,6 +45,8 @@ const AMBIENT_FLOOR := 0.55
 @export var light_height := 24.0
 ## Swap in the Lantern tiles when the world enters (false: lights only).
 @export var tile_art := true
+## Add look B's sky behind the planet (a gradient on a CanvasLayer under the world).
+@export var sky := true
 ## Extra nodes that carry a worm-style light (stand-in eaters in the stress scene).
 var follow: Array[Node2D] = []
 
@@ -65,13 +67,20 @@ var _chunk_bins: Dictionary[Vector2i, Array] = {}
 var _acc := 0.0
 var _ambient := Color.WHITE
 var _crust_from := 0.0
+## Radius ranges (tiles) of the rings that hold glowing tiles; chunks elsewhere are never scanned.
+var _glow_bands: Array[Vector2] = []
 var _radius_px := 0.0
 
 
 func _ready() -> void:
+	if OS.get_cmdline_user_args().has("--lantern=off"):   # frames of the look before D92
+		queue_free()
+		return
 	modulate_node = CanvasModulate.new()
 	modulate_node.name = "Ambient"
 	add_child(modulate_node)
+	if sky:
+		add_child(_sky_layer())
 	for i in max_lights:
 		var l := PointLight2D.new()
 		l.name = "Light%d" % i
@@ -88,6 +97,29 @@ func _ready() -> void:
 		for c in p.get_children():
 			if c is TileWorld:
 				attach(c, false)
+
+
+## Look B's sky ramp, zenith to horizon, on a layer just above the level's flat sky colour.
+func _sky_layer() -> CanvasLayer:
+	var layer := CanvasLayer.new()
+	layer.name = "Sky"
+	layer.layer = -9
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.55, 0.85, 1.0])
+	g.colors = PackedColorArray([Color("2d5f96"), Color("4683bd"), Color("78afd8"), Color("c7e4f2")])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill_from = Vector2(0, 0)
+	t.fill_to = Vector2(0, 1)
+	t.width = 4
+	t.height = 256
+	var rect := TextureRect.new()
+	rect.texture = t
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(rect)
+	return layer
 
 
 func _on_sibling(node: Node) -> void:
@@ -114,6 +146,13 @@ func attach(w: TileWorld, swap_tiles := true) -> void:
 	var rs = w.get(&"rings")
 	if rs != null and rs.rings.size() >= 2:
 		_crust_from = rs.rings[rs.rings.size() - 2].outer * float(rad)
+	_glow_bands.clear()
+	if rs != null:
+		var inner := 0.0
+		for r: RingDef in rs.rings:
+			if GLOW_TILES.has(r.tile) or GLOW_TILES.has(r.alt_tile):
+				_glow_bands.append(Vector2(inner, r.outer) * float(rad))
+			inner = r.outer
 	emitters.clear()
 	_chunk_bins.clear()
 	if _radius_px > 0.0:
@@ -197,8 +236,26 @@ func _remove_shaft(cell: Vector2i) -> void:
 		emitters.erase(key)
 
 
+## Only chunks whose band meets a glowing ring or the crust are scanned (DiskShape: key.x = band).
+func _scan_chunk(key: Vector2i) -> bool:
+	var band = world.shape.get(&"band")
+	if band == null or _glow_bands.is_empty() and _crust_from <= 0.0:
+		return true
+	var r0 := float(key.x * band)
+	var r1 := r0 + float(band)
+	if _crust_from > 0.0 and r1 >= _crust_from - 1.0:
+		return true
+	for b in _glow_bands:
+		if r1 >= b.x and r0 <= b.y:
+			return true
+	return false
+
+
 func _on_chunk_loaded(key: Vector2i) -> void:
 	var keys: Array = []
+	if not _scan_chunk(key):
+		_chunk_bins[key] = keys
+		return
 	for c: Vector2i in world.shape.chunk_cells(key):
 		var id := world.get_tile(c)
 		if id > 0:
@@ -331,7 +388,9 @@ func assign(focus: Vector2, view_radius: float) -> void:
 		if e.kind == Kind.CORE:
 			d = maxf(0.0, focus.length() - reach)
 		if d <= view_radius:
-			cand.append({e = e, d = d, kind = e.kind})
+			# the core and daylight shafts outrank small glows at the same distance
+			var rank := d * (0.3 if e.kind == Kind.CORE or e.kind == Kind.SHAFT else 1.0)
+			cand.append({e = e, d = rank, kind = e.kind})
 	cand.sort_custom(func(a, b): return a.d < b.d)
 	picks.append_array(cand)
 	active_lights = mini(picks.size(), lights.size())

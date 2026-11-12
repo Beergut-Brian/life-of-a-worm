@@ -18,6 +18,9 @@ var _mat: ShaderMaterial
 
 
 func _ready() -> void:
+	if OS.get_cmdline_user_args().has("--lantern=off"):   # frames of the look before D92
+		strength = 0.0
+		visible = false
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
 	_mat.set_shader_parameter(&"strength", strength)

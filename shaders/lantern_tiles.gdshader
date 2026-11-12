@@ -14,7 +14,7 @@ uniform vec2 world_origin = vec2(0.0);
 uniform float near_reach = 3.0;        // tiles
 uniform float far_reach = 7.0;         // tiles
 uniform float max_dark = 0.5;
-uniform vec3 deep_tint : source_color = vec3(0.50, 0.47, 0.62);
+uniform vec3 deep_tint : source_color = vec3(0.64, 0.61, 0.74);
 
 varying vec2 world_pos;
 
@@ -32,13 +32,12 @@ void fragment() {
 	if (has_overview) {
 		vec2 cell = world_pos / cell_size;
 		float s = 0.0;
+		// 8 taps on two staggered rings (near on even, far on odd directions): cheap and soft
 		for (int k = 0; k < 8; k++) {
 			float a = float(k) * 0.7853982 + 0.39;
-			vec2 d = vec2(cos(a), sin(a));
-			s += solid_at(cell + d * near_reach);
-			s += solid_at(cell + d * far_reach);
+			s += solid_at(cell + vec2(cos(a), sin(a)) * (k % 2 == 0 ? near_reach : far_reach));
 		}
-		s /= 16.0;
+		s /= 8.0;
 		float dark = smoothstep(0.55, 1.0, s) * max_dark;
 		c.rgb = mix(c.rgb, c.rgb * deep_tint, dark / max(max_dark, 0.001) * max_dark * 2.0);
 	}
