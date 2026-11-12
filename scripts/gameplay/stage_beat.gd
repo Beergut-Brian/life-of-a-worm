@@ -42,7 +42,8 @@ func watch(w: Worm) -> void:
 
 func _on_stage_changed(player: int, from: int, to: int) -> void:
 	var w := Worm.of(player)
-	if w != null and to > from:
+	# A drop-in hatchling starting at its partner's stage minus one is not a stage-up.
+	if w != null and to > from and w.model.last_cause != &"hatch":
 		play(w, from, to)
 
 

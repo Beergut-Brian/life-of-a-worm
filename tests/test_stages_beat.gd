@@ -121,3 +121,11 @@ func test_the_dock_scene_follows_once_per_tin() -> void:
 	assert_bool(story.is_playing() or story.has_seen(&"stage_2")).is_true()
 	assert_str(String(story.current())).is_equal("stage_2")
 	story.skip()
+
+
+func test_a_hatchling_starting_at_a_stage_plays_no_beat() -> void:
+	var w := _level.spawn_worm(Players.P1)
+	_level.stage_beat.watch(w)
+	w.model.start_at_stage(3)
+	assert_int(w.model.stage).is_equal(3)
+	assert_int(_level.stage_beat.history.size()).is_equal(0)

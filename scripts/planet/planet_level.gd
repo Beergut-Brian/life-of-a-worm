@@ -422,7 +422,7 @@ func _on_worm_eaten(_player: int) -> void:
 ## ring's pulse, the dock cutscene), then a save.
 func _on_stage_changed(player: int, from: int, to: int) -> void:
 	var w := Worm.of(player)
-	if w and to > from:
+	if w and to > from and w.model.last_cause != &"hatch":
 		stage_beat.play(w, from, to)
 	print("stage_up: %s %d -> %d (%s)" % [WORM_NAMES[player], from, to, w.model.last_cause if w else &""])
 	save_now()
