@@ -44,7 +44,8 @@ var warned := {}
 var _knocks: Array[Dictionary] = []   # {worm, v, t}
 var _cool := {}                       # player -> seconds left before it can be bumped again
 var _ground := {}                     # column key -> ground radius px
-var _mowed := {}                      # cells this mower mowed
+## Cells any mower mowed (shared, so a second mower never sinks into the first one's strip).
+static var _mowed := {}
 var _pause := 0.0
 var _honk := 0.0
 var _flash := 0.0
@@ -106,11 +107,18 @@ func cell_px() -> float:
 	return float(world.shape.cell_size) if world else 16.0
 
 
-## Ground radius (px from the core) under this angle: the top of the solid ground, cached per tile
-## column so the strip it mows does not lower its line; re-read if something else ate the top.
+## Ground radius (px from the core) under this angle: the highest ground under its two wheels (a
+## wide mower straddles a narrow hole), each column cached so the strip it mows does not lower
+## its line; a column is re-read if something else ate its top.
 func ground_r(a: float) -> float:
 	if world == null:
 		return line_r
+	var r0 := float(world.shape.radius) * cell_px()
+	var span := (data.radius if data else 24.0) * 0.7 / r0
+	return maxf(_column_r(a), maxf(_column_r(a - span), _column_r(a + span)))
+
+
+func _column_r(a: float) -> float:
 	var r0 := float(world.shape.radius) * cell_px()
 	var key := roundi(a * r0 / cell_px())
 	if _ground.has(key):
@@ -320,7 +328,7 @@ func _mow() -> void:
 		return
 	var r := ground_r(angle)
 	var cell := world.shape.cell_at(up() * (r - cell_px() * 0.5))
-	if _mowed.has(cell) or world.get_tile(cell) != world.id_of(&"grass"):
+	if world.get_tile(cell) != world.id_of(&"grass"):
 		return
 	if not world.dig(cell).is_empty():
 		_mowed[cell] = true
