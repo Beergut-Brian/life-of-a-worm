@@ -4,6 +4,8 @@
 ##   * timestamped edits on the world's own simulated clock, so eaten tiles regrow;
 ##   * castings, a second layer written wherever a worm eats (drawn under the tiles, saved);
 ##   * gardens: a seed dropped in castings grows a patch that keeps refilling and spreading;
+##   * food sizes: a tile that grows back in castings comes back bigger (RingDef.castings_size),
+##     worth more growth and drawn plump; a ring never runs out (RingSet.scarce_share);
 ##   * a planet overview texture (1 px per 2 tiles) for the planet shot and the stage-6 chomp.
 class_name PolarWorld
 extends TileWorld
@@ -12,14 +14,23 @@ signal tile_eaten(cell: Vector2i, block: StringName, player: int)
 signal tile_regrown(cell: Vector2i, block: StringName)
 signal garden_planted(cell: Vector2i, flavour: StringName)
 signal garden_grew(cell: Vector2i, flavour: StringName)
+## A tile bigger than size 1 (grown back in castings) was eaten; tile_eaten fired just before.
+signal big_tile_eaten(cell: Vector2i, player: int, size: int)
 
 const CASTINGS_Z := -2
+## Plump overlay on tiles that grew back bigger: above the tiles, under worms and pickups.
+const SIZES_Z := 1
+## A big bite plays its cue at most this often (a worm swallows many tiles a second).
+const BIG_CUE_GAP := 0.3
 ## Overview: one pixel per this many tiles.
 const OVERVIEW_STEP := 2
 
 var clock := 0.0
 ## Planet seconds per real second. 1 in play; the demo speeds it up so regrowth shows in a frame.
 var time_scale := 1.0
+## True while the planet is not being played (the jar view, the planet shot): the clock stands
+## still, so nothing regrows or grows. ChompDirector also disables the world node then.
+var frozen := false
 var rings: RingSet
 ## Chunks visited by the regrowth pass per physics frame (round robin over the live ones), so the
 ## pass is low frequency per chunk and never one big spike.
@@ -51,6 +62,13 @@ var _times: Dictionary[Vector2i, Dictionary] = {}    # chunk key -> {cell: clock
 var _castings: Dictionary[Vector2i, Dictionary] = {} # chunk key -> {cell: true}
 var _cast_layers: Dictionary[Vector2i, TileMapLayer] = {}
 var _cast_set: TileSet
+var _sizes: Dictionary[Vector2i, Dictionary] = {}    # chunk key -> {cell: size}, only sizes > 1
+var _size_layers: Dictionary[Vector2i, TileMapLayer] = {}
+var _size_set: TileSet
+var _ring_out := PackedInt32Array()                  # ring index -> cells eaten and waiting
+var _ring_cells := PackedFloat32Array()              # ring index -> cells in the ring (area)
+var _scarce_step := PackedInt32Array()               # ring index -> last scarcity step seen
+var _big_cue_at := -INF
 var _gardens: Array[Dictionary] = []                 # {cell, flavour, tile, planted, next, cells}
 var _garden_of: Dictionary[Vector2i, int] = {}       # cell -> garden index
 var _stages: Dictionary[int, int] = {}
@@ -91,9 +109,12 @@ func setup_planet(p_rings: RingSet, radius: int, p_seed: int, band := 32) -> voi
 	_times.clear()
 	_next_due.clear()
 	_castings.clear()
+	_sizes.clear()
 	_gardens.clear()
 	_garden_of.clear()
+	_count_rings()
 	_cast_set = _build_cast_set()
+	_size_set = _build_size_set()
 	if not chunk_loaded.is_connected(_on_chunk_loaded):
 		chunk_loaded.connect(_on_chunk_loaded)
 		chunk_freed.connect(_on_chunk_freed)
@@ -154,11 +175,16 @@ func eat_tile(cell: Vector2i, player: int) -> bool:
 	if not _tile_edible(stage_of(player), id):
 		dig_blocked.emit(cell, block, player)
 		return false
+	var size := food_size(cell)
 	set_tile(cell, 0)
 	_set_time(cell, clock)
+	_clear_size(cell)
 	_add_castings(cell)
 	_overview_set(cell, rings.castings_hue)
 	tile_eaten.emit(cell, block, player)
+	if size > 1:
+		_feed_big(cell, player, size)
+		big_tile_eaten.emit(cell, player, size)
 	return true
 
 
@@ -181,6 +207,7 @@ func eat_circle(pos: Vector2, radius_px: float, player: int) -> int:
 ## at the slow outside-castings rate.
 func _on_tile_dug(cell: Vector2i, _block: StringName, _player: int) -> void:
 	_set_time(cell, clock)
+	_clear_size(cell)
 	_overview_set(cell, Color(0, 0, 0, 0))
 
 
@@ -195,6 +222,8 @@ func _set_time(cell: Vector2i, t: float) -> void:
 	if d == null:
 		d = {}
 		_times[key] = d
+	if not d.has(cell):
+		_ring_out[_gen.ring_index(cell)] += 1
 	d[cell] = t
 	_next_due.erase(key)
 
@@ -202,7 +231,8 @@ func _set_time(cell: Vector2i, t: float) -> void:
 func _clear_time(cell: Vector2i) -> void:
 	var key := shape.chunk_of(cell)
 	var d = _times.get(key)
-	if d != null:
+	if d != null and d.has(cell):
+		_ring_out[_gen.ring_index(cell)] -= 1
 		d.erase(cell)
 		if d.is_empty():
 			_times.erase(key)
@@ -213,10 +243,11 @@ func _clear_time(cell: Vector2i) -> void:
 func regrow_time(cell: Vector2i) -> float:
 	if not shape.contains(cell) or _gen.base_tile(cell) == 1:
 		return INF
-	var base := ring_of(cell).regrow_time
+	var ri := _gen.ring_index(cell)
+	var base := rings.rings[ri].regrow_time
 	if base <= 0.0:
 		return INF
-	return base * (rings.castings_factor / castings_speed if has_castings(cell) else 1.0)
+	return base * scarcity_factor(ri) * (rings.castings_factor / castings_speed if has_castings(cell) else 1.0)
 
 
 func track_eater(node: Node2D) -> void:
@@ -231,8 +262,11 @@ func untrack_eater(node: Node2D) -> void:
 
 
 func advance(delta: float) -> void:
+	if frozen:
+		return
 	clock += delta * time_scale
 	var t0 := Time.get_ticks_usec()
+	_check_scarcity()
 	_regrow_some(regrow_chunks_per_frame)
 	_grow_gardens()
 	regrow_frame_ms_max = maxf(regrow_frame_ms_max, (Time.get_ticks_usec() - t0) / 1000.0)
@@ -268,10 +302,12 @@ func _regrow_some(budget: int) -> int:
 		var due: Array[Vector2i] = []
 		var next := INF
 		for cell: Vector2i in d:
-			var base := rings.rings[_gen.ring_index(cell)].regrow_time
+			var ri := _gen.ring_index(cell)
+			var base := rings.rings[ri].regrow_time
 			if base <= 0.0 or _garden_of.has(cell):
 				continue
-			var at: float = d[cell] + base * (rings.castings_factor / castings_speed if cast.has(cell) else 1.0)
+			var at: float = d[cell] + base * scarcity_factor(ri) \
+					* (rings.castings_factor / castings_speed if cast.has(cell) else 1.0)
 			if clock >= at:
 				due.append(cell)
 			else:
@@ -299,6 +335,9 @@ func _regrow(cell: Vector2i) -> void:
 	var id := base_tile_of(cell)
 	set_tile(cell, id)
 	_clear_time(cell)  # castings stay under the regrown tile: eaten again, it comes back fast again
+	var size := regrow_size(cell)
+	if size > 1:
+		_set_size(cell, size)
 	_overview_set(cell, _colors[id])
 	tile_regrown.emit(cell, palette[id].id)
 
@@ -328,6 +367,160 @@ func _near_eater(cell: Vector2i) -> bool:
 		if local_pos(e).distance_squared_to(p) < r * r:
 			return true
 	return false
+
+
+# --- food sizes and a ring that never runs out -------------------------------------------------
+
+## Size of the food in a cell: 1 for a plain tile, more for one that grew back in castings.
+func food_size(cell: Vector2i) -> int:
+	var d = _sizes.get(shape.chunk_of(cell))
+	return int(d.get(cell, 1)) if d != null else 1
+
+
+## The size a cell's tile reaches when it grows back: its ring's castings_size in castings, else 1.
+## Garden cells keep their own rules (size 1).
+func regrow_size(cell: Vector2i) -> int:
+	if not has_castings(cell) or _garden_of.has(cell):
+		return 1
+	return maxi(1, ring_of(cell).castings_size)
+
+
+## Cells in each tile ring are counted once (annulus area in cells; good enough for a share).
+func _count_rings() -> void:
+	var n := rings.rings.size()
+	_ring_out.resize(n)
+	_ring_out.fill(0)
+	_scarce_step.resize(n)
+	_scarce_step.fill(0)
+	_ring_cells.resize(n)
+	var inner := 0.0
+	for i in n:
+		var outer := rings.rings[i].outer * float(_disk.radius)
+		_ring_cells[i] = PI * (outer * outer - inner * inner)
+		inner = outer
+	_ring_cells[0] = maxf(1.0, _ring_cells[0] - PI * rings.strangestone_radius * rings.strangestone_radius)
+
+
+## Cells of ring ri eaten (or dug) and not grown back yet, anywhere on the planet.
+func ring_eaten(ri: int) -> int:
+	return _ring_out[ri] if ri >= 0 and ri < _ring_out.size() else 0
+
+
+## Share of ring ri's cells that are eaten and waiting, 0..1.
+func ring_eaten_share(ri: int) -> float:
+	if ri < 0 or ri >= _ring_cells.size():
+		return 0.0
+	return clampf(float(_ring_out[ri]) / maxf(1.0, _ring_cells[ri]), 0.0, 1.0)
+
+
+## Tiles of ring ri still there to eat, anywhere on the planet (cells minus eaten and waiting).
+func food_left(ri: int) -> int:
+	return maxi(0, int(_ring_cells[ri]) - _ring_out[ri])
+
+
+## A ring is never exhausted: past RingSet.scarce_share eaten, its regrow times shrink toward
+## RingSet.scarce_factor, so the emptier a ring gets the faster it fills. 1 while it is well fed.
+func scarcity_factor(ri: int) -> float:
+	var share := ring_eaten_share(ri)
+	if share <= rings.scarce_share:
+		return 1.0
+	var t := (share - rings.scarce_share) / maxf(0.0001, 1.0 - rings.scarce_share)
+	return lerpf(1.0, rings.scarce_factor, clampf(t, 0.0, 1.0))
+
+
+## A ring that just got scarcer (in tenths) wakes the chunks it has skipped, so the shorter times
+## apply at once instead of at the old due time.
+func _check_scarcity() -> void:
+	for i in _ring_out.size():
+		var step := int(ring_eaten_share(i) * 10.0)
+		if step != _scarce_step[i]:
+			if step > _scarce_step[i]:
+				_next_due.clear()
+			_scarce_step[i] = step
+
+
+func _set_size(cell: Vector2i, size: int) -> void:
+	var key := shape.chunk_of(cell)
+	var d = _sizes.get(key)
+	if d == null:
+		d = {}
+		_sizes[key] = d
+	d[cell] = size
+	var layer: TileMapLayer = _size_layers.get(key)
+	if layer:
+		layer.set_cell(cell, 0, Vector2i(mini(size, 3) - 2, 0))
+
+
+func _clear_size(cell: Vector2i) -> void:
+	var key := shape.chunk_of(cell)
+	var d = _sizes.get(key)
+	if d == null or not d.has(cell):
+		return
+	d.erase(cell)
+	if d.is_empty():
+		_sizes.erase(key)
+	var layer: TileMapLayer = _size_layers.get(key)
+	if layer:
+		layer.erase_cell(cell)
+
+
+func big_tile_count() -> int:
+	var n := 0
+	for k in _sizes:
+		n += _sizes[k].size()
+	return n
+
+
+## A big tile is worth more: (size - 1) x RingSet.size_growth extra plain tiles' growth, in the
+## ring's flavour, to the worm that ate it (on top of the worm's own bite_tile), with a cue.
+func _feed_big(cell: Vector2i, player: int, size: int) -> void:
+	var flavour := ring_of(cell).flavour
+	for w in Worm.all():
+		if w.player != player or w.world != self or w.model == null:
+			continue
+		var g: float = w.model.stats.value("tile_growth", Worm.TILE_GROWTH)
+		w.model.add_growth(g * rings.size_growth * float(size - 1), flavour)
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _big_cue_at >= BIG_CUE_GAP:
+		_big_cue_at = now
+		Audio.play("chomp_bite")
+
+
+## The plump look, drawn in code (no art): a soft light dome over the tile, a dark rim under it and
+## two shine dots, in white and black at low alpha so it suits every ring's hue. Column 0 is
+## size 2, column 1 size 3 and up (fuller dome, a third dot).
+func _build_size_set() -> TileSet:
+	var cs := shape.cell_size
+	var img := Image.create_empty(cs * 2, cs, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for v in 2:
+		var x0 := v * cs
+		var c := Vector2(cs * 0.5, cs * 0.5)
+		var r := cs * (0.42 + 0.06 * v)
+		for y in cs:
+			for x in cs:
+				var p := Vector2(x + 0.5, y + 0.5)
+				var d := p.distance_to(c) / r
+				if d > 1.0:
+					continue
+				var top := clampf((c.y - p.y) / r, -1.0, 1.0)
+				var col := Color(1, 1, 1, 0.10 + 0.22 * maxf(0.0, top) * (1.0 - d))
+				if d > 0.82:
+					col = Color(0, 0, 0, 0.28) if p.y > c.y else Color(1, 1, 1, 0.30)
+				img.set_pixel(x0 + x, y, col)
+		img.fill_rect(Rect2i(x0 + int(cs * 0.3), int(cs * 0.26), 2, 2), Color(1, 1, 1, 0.85))
+		img.fill_rect(Rect2i(x0 + int(cs * 0.5), int(cs * 0.2), 1, 1), Color(1, 1, 1, 0.7))
+		if v == 1:
+			img.fill_rect(Rect2i(x0 + int(cs * 0.64), int(cs * 0.3), 1, 1), Color(1, 1, 1, 0.7))
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(cs, cs)
+	var src := TileSetAtlasSource.new()
+	src.texture = ImageTexture.create_from_image(img)
+	src.texture_region_size = Vector2i(cs, cs)
+	ts.add_source(src, 0)
+	for v in 2:
+		src.create_tile(Vector2i(v, 0))
+	return ts
 
 
 # --- castings ----------------------------------------------------------------------------------
@@ -385,6 +578,17 @@ func _on_chunk_loaded(key: Vector2i) -> void:
 			layer.set_cell(cell, 0, Vector2i(_cast_variant(cell), 0))
 	add_child(layer)
 	_cast_layers[key] = layer
+	var sl := TileMapLayer.new()
+	sl.name = "Sizes_%d_%d" % [key.x, key.y]
+	sl.tile_set = _size_set
+	sl.z_index = SIZES_Z
+	sl.collision_enabled = false
+	var sd = _sizes.get(key)
+	if sd != null:
+		for cell: Vector2i in sd:
+			sl.set_cell(cell, 0, Vector2i(mini(int(sd[cell]), 3) - 2, 0))
+	add_child(sl)
+	_size_layers[key] = sl
 	_loads_this_call += 1
 
 
@@ -394,6 +598,11 @@ func _on_chunk_freed(key: Vector2i) -> void:
 		_cast_layers.erase(key)
 		remove_child(layer)
 		layer.queue_free()
+	var sl: TileMapLayer = _size_layers.get(key)
+	if sl:
+		_size_layers.erase(key)
+		remove_child(sl)
+		sl.queue_free()
 
 
 ## Dark rich soil with lighter crumbs, four variants. No collision: castings never block.
@@ -583,6 +792,11 @@ func to_save() -> Dictionary:
 		for cell: Vector2i in _castings[key]:
 			cast.append_array([cell.x, cell.y])
 	data["castings"] = cast
+	var sizes := []
+	for key in _sizes:
+		for cell: Vector2i in _sizes[key]:
+			sizes.append_array([cell.x, cell.y, int(_sizes[key][cell])])
+	data["sizes"] = sizes
 	var gardens := []
 	for g in _gardens:
 		gardens.append([g.cell.x, g.cell.y, String(g.flavour), int(round(g.planted * 10.0))])
@@ -597,6 +811,9 @@ func load_save(data: Dictionary) -> void:
 	_times.clear()
 	_next_due.clear()
 	_castings.clear()
+	_sizes.clear()
+	_ring_out.fill(0)
+	_scarce_step.fill(0)
 	_gardens.clear()
 	_garden_of.clear()
 	var t: Array = data.get("times", [])
@@ -609,6 +826,13 @@ func load_save(data: Dictionary) -> void:
 		if not _castings.has(key):
 			_castings[key] = {}
 		_castings[key][cell] = true
+	var sz: Array = data.get("sizes", [])   # tins from before food sizes have none: all size 1
+	for i in range(0, sz.size() - 2, 3):
+		var cell := Vector2i(int(sz[i]), int(sz[i + 1]))
+		var key := shape.chunk_of(cell)
+		if not _sizes.has(key):
+			_sizes[key] = {}
+		_sizes[key][cell] = int(sz[i + 2])
 	super(data)
 	for g in data.get("gardens", []):
 		var cell := Vector2i(int(g[0]), int(g[1]))
