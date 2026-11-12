@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="PetData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/pets/pet_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="2"]
+
+[sub_resource type="Resource" id="food"]
+script = ExtResource("2")
+id = &"ant_crew"
+flavour = &"bug"
+growth = 1.0
+size_stage = 1
+color = Color(0.85, 0.3, 0.15, 1)
+radius = 6.0
+
+[resource]
+script = ExtResource("1")
+id = &"ant_crew"
+food = SubResource("food")
+job = &"tend"
+fetch = &""
+every = 60.0
+trip = 0.0
+max_waiting = 0
+color = Color(0.85, 0.3, 0.15, 1)
+regrow = 120.0
+look = &"ant_crew"
+max_kept = 1
+wild_max = 1
+walk_speed = 24.0
+tend_range = 30.0
+work = 1.5
+nudge = 8.0

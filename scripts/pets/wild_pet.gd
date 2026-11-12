@@ -1,4 +1,4 @@
-## A wild pet in the dirt (a ladybird): a small creature that potters about its pocket. To a worm it
+## A wild pet in the dirt (a ladybird, a glow-worm, an ant crew): a small creature that potters about its pocket. To a worm it
 ## is food like any small thing (eat it), or hold X and carry it home alive: the burrow makes it a
 ## pet (Burrow.bring sees pet_id()). Also a creature the tackle box can meet (group "creature").
 class_name WildPet
@@ -40,7 +40,8 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if pet == null:
 		return
-	LadybirdLook.draw(self, Vector2(0, sin(_t * 3.0) * 0.5), pet.food.radius, _dir, _t, 1.0 if _carried else 0.0, pet.color)
+	var glow := 0.7 if pet.look == &"glowworm" else 0.0   # a wild glow-worm glows a little: easy to find
+	PetLook.draw(self, pet.look, Vector2(0, sin(_t * 3.0) * 0.5), pet.food.radius, _dir, _t, 1.0 if _carried else 0.0, pet.color, 1.0, glow, 1.0 if _carried else 0.0)
 	if _carried:   # wide eyes: carried, alive, delighted
 		var f := Vector2.from_angle(_dir)
 		for k: float in [-1.0, 1.0]:
