@@ -930,3 +930,31 @@ func advance(delta: float) -> void           # shelf (clink) -> lid pops (jar_op
 - `planet_id` for a tin is `<profile>_<slot>_<seed>` (was `<profile>_<seed>`, which let two tins
   with the same seed share one jar). `PlanetChomp` uses it when the planet has no id.
 - Audio cues `jar_clink`, `jar_open`, `jar_enter` have no files yet (grey beeps).
+
+### Dock story follow-up (worm-story-2)
+
+The trait beat (Y-16 / P-14). `StageBeat` owns it, so the level needs no new code.
+
+```gdscript
+# TraitBeat (scripts/gameplay/trait_beat.gd), StageBeat.trait_beat
+signal beat(player: int, trait_id: StringName)
+const LEAN := 1.4       # camera.lean_in += 1 for this long (PolarCamera; the fit never cuts a worm off)
+const GAP := 1.8        # two trait / stage moments never share the bubble spot: later ones queue
+var camera: PolarCamera # StageBeat hands it its own camera in _ready()
+var history: Array[Dictionary]               # {player, trait, recipe}
+func watch(w: Worm) -> void                  # StageBeat watches every Worm already in the tree
+                                             # and every one added later (SceneTree.node_added)
+func hold(secs: float) -> void               # StageBeat.play() holds trait beats for WHY_LIFE
+func play(w: Worm, id: StringName) -> void   # shake 0.35, burst in TraitData.color, lean, TraitWhy
+
+# TraitWhy (scripts/gameplay/trait_why.gd): the wordless "why" bubble over the worm
+var worm: Worm; var trait_data: TraitData; var rules: WormRules; var life := 1.8
+func recipe() -> Array   # [[flavour colour, count], ...] from TraitData.requires, sorted by flavour
+```
+
+- The worm itself still plays the trait's cue and its colour ring (`Worm._on_trait_earned`); the
+  beat adds the camera and the picture: one bead per required segment in its flavour colour, an
+  arrow, the trait's first part texture (else a star in `TraitData.color`).
+- Dock scenes: a background clue (`call clue` with `secs > 0`) always happens with the camera on
+  it. Anchors used for it: `pond` (ripple), `tree`, `shed`, `hill`, `wide`, `sky` (star), `moon`.
+  The dock draws the ripple as a long dark shape under the water, spreading rings and bubbles.
