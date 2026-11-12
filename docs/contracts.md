@@ -565,6 +565,37 @@ Hooks these files wait on (owned by other lanes): `RingsDirector.LIVES` to load 
 for the lava blob (knock-back on contact, never steering); `RingFood.Look` shapes for crystal,
 nugget and fossil. Audio cues `rock_beetle_clack`, `rock_beetle_windup`, `lava_blob_blorp`,
 `lava_blob_swell` have no files yet (grey beeps).
+### Collection book (worm-book-1)
+
+`scenes/ui/book.tscn` (`Book`, a CanvasLayer, layer 70) with one `scenes/ui/book_page.tscn` (`BookPage`)
+per section, opened from the pause menu: `PauseMenu/Card/BookTab` (`BookTab`, a new child node; the
+pause menu's own script and buttons are unchanged). Y (`tackle`) on the pause menu opens it for
+whoever pressed; B or Y shuts it and the pause menu comes back. The pause menu hides while it is open.
+The book reads, it never writes: entries from the data registries, the found-set from the tin.
+
+```gdscript
+# BookCatalog (scripts/ui/book_catalog.gd, static)
+const SECTIONS = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes"]
+func files(section) -> PackedStringArray     # every data file the section reads
+func entries(section) -> Array[Dictionary]    # {id, data (Resource or cutscene Dictionary), path}
+func found_set(tree) -> Dictionary            # section -> Array[StringName]; live TackleLog first,
+                                              # else Save "home_slice" -> "tackle" -> "found";
+                                              # cutscenes also take Save "story_seen" / Story.seen
+func count(entries, found) -> int
+# Sources: foods = data/foods FoodData; creatures = data/creatures CreatureData + data/pets PetData;
+# traits = data/traits TraitData; secrets = data/secrets SecretData; cutscenes = data/cutscenes/*.json
+# (Story.SCENES order). A new data file appears in the book with no code change.
+
+# Book
+signal opened(player: int); signal closed(); signal moved(section, cursor, on_tabs)
+func open(player); func close(restore := true); func nav(dx, dy); func confirm()
+var host: CanvasItem      # hidden while open (the pause menu)
+var pause_tree := true    # the tree stays paused while the book is open: the stick never moves a worm
+```
+
+Cues (placeholder beeps until the Audio lane adds them): `book_open`, `book_close`, `book_flip`,
+`book_tick`, `book_look`, and the existing `bonk` (cursor against an edge) and `boop` (A on an
+unfound sketch).
 
 ### Pets 2 (pets-2)
 
