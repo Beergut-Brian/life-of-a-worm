@@ -24,6 +24,8 @@ const PAGE_COLORS := { &"foods": Color("f08a3c"), &"creatures": Color("e0483a"),
 const SKIES := [Color("f6b98a"), Color("9fd0f0"), Color("8cc8f4"), Color("8cc8f4"), Color("f09a6a"), Color("e07a5a"), Color("26305a"), Color("1b2244")]
 ## Seconds after opening before input counts (the Y that opened it is not a close).
 const GRACE := 0.2
+## How long the "that's why" sparkle stays on a newly found secret's sketch.
+const WHY_TIME := 3.0
 
 var tlog: TackleLog
 var player := -1
@@ -38,6 +40,11 @@ var _opened_at := 0.0
 var _wiggle := 0.0
 var _flip := 0.0
 var _pin := {}            # page -> seconds since its lure was pinned (the lure bounces in)
+## Secrets found since the box was last opened: the next open turns to the secrets page on the first
+## of them and sparkles it (the "that's why" callback to the find bubble, same picture).
+var why: Array[StringName] = []
+var _why_id: StringName = &""
+var _why_t := -1.0
 
 
 func _init() -> void:
@@ -55,6 +62,12 @@ func _ready() -> void:
 	visible = false
 	if tlog:
 		tlog.page_completed.connect(func(p: StringName) -> void: _pin[p] = 0.0)
+		tlog.unlocked.connect(_on_unlocked)
+
+
+func _on_unlocked(p: StringName, id: StringName) -> void:
+	if p == &"secrets" and not why.has(id):
+		why.append(id)
 
 
 func open(p: int) -> void:
@@ -68,9 +81,19 @@ func open(p: int) -> void:
 		tlog.sync_seen()
 		tlog.fresh = 0
 	cursor = clampi(cursor, 0, maxi(0, _list().size() - 1))
+	_why_t = -1.0
+	if not why.is_empty() and tlog:
+		_why_id = why[0]
+		why.clear()
+		page = TackleLog.PAGES.find(&"secrets")
+		cursor = maxi(0, _list().find(_why_id))
+		_why_t = 0.0
+		_wiggle = 0.6
 	if pause_tree and is_inside_tree():
 		get_tree().paused = true
 	Audio.play("box_open")
+	if _why_t >= 0.0:
+		Audio.play("box_why")
 	opened.emit(p)
 
 
@@ -127,6 +150,10 @@ func confirm() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_wiggle = maxf(0.0, _wiggle - delta)
+	if _why_t >= 0.0:
+		_why_t += delta
+		if _why_t > WHY_TIME:
+			_why_t = -1.0
 	_flip = maxf(0.0, _flip - delta * 3.0)
 	for p in _pin:
 		_pin[p] += delta
@@ -277,6 +304,8 @@ func _draw_page() -> void:
 				c += Vector2(sin(_t * 50.0) * 6.0 * _wiggle, 0)
 		if got:
 			_doodle(c, p, id, i)
+			if p == &"secrets" and id == _why_id and _why_t >= 0.0:
+				_why_sparkle(c)
 		else:
 			_doodle_ring(c, 58.0, Color(PENCIL, 0.35), i * 13, 3.0, true)
 			PictoBubble.picture(_root, &"question", c, 50.0, 0.25)
@@ -314,17 +343,23 @@ func _doodle(c: Vector2, p: StringName, id: StringName, i: int) -> void:
 			else:
 				_star(c, 30.0, Color.WHITE)
 		&"secrets":
-			if id == &"ant_city":
-				_scribble_disc(c + Vector2(0, 20), 50.0, Color("b07a4a"), i)
-				for a in 5:
-					var ap := c + Vector2(-34 + a * 17, 30 + sin(_t * 4.0 + a) * 3.0)
-					_root.draw_circle(ap, 5.0, PENCIL)
-					_root.draw_circle(ap + Vector2(6, 0), 4.0, PENCIL)
-				_root.draw_rect(Rect2(c + Vector2(-10, -16), Vector2(20, 16)), PENCIL)   # a door in the mound
+			if SecretLook.has(id):   # the same picture as the find bubble over the place
+				_scribble_disc(c, 54.0, Color(PAGE_COLORS[&"secrets"], 0.35), i)
+				SecretLook.draw(_root, id, c, 104.0, 1.0, _t)
 			else:
 				_star(c, 50.0, PAGE_COLORS[&"secrets"])
 		&"cutscenes":
 			_dock_doodle(c, 70.0, i, true, 1.0)
+
+
+## "That's why": a gold ring pulses out of the newly found secret's sketch, with stars round it.
+func _why_sparkle(c: Vector2) -> void:
+	var f := fmod(_why_t * 1.2, 1.0)
+	var a := 1.0 - _why_t / WHY_TIME
+	_root.draw_arc(c, 60.0 + f * 40.0, 0.0, TAU, 40, Color(PAGE_COLORS[&"secrets"], (1.0 - f) * a), 6.0)
+	for k in 5:
+		var p := c + Vector2.from_angle(k * TAU / 5.0 + _why_t * 1.5) * 84.0
+		_star(p, 12.0 + 3.0 * sin(_why_t * 8.0 + k), Color(PAGE_COLORS[&"secrets"], a))
 
 
 func _traits() -> Array:

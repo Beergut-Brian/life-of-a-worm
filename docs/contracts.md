@@ -597,6 +597,104 @@ Cues (placeholder beeps until the Audio lane adds them): `book_open`, `book_clos
 `book_tick`, `book_look`, and the existing `bonk` (cursor against an edge) and `boop` (A on an
 unfound sketch).
 
+### Pets 2 (pets-2)
+
+Glow-worm lamp and ant crew (`feature/pets-2`). Both are `PetData` in `data/pets/`, carried home
+alive by the existing carry rule (`Burrow.bring` sees `pet_id()`), saved by id like the ladybird.
+
+```gdscript
+# PetData additions (all exported, defaults keep the ladybird unchanged)
+look: StringName            # &"ladybird" | &"glowworm" | &"ant_crew" (PetLook, placeholder drawn in code)
+max_kept: int               # at most this many of the kind in one burrow (ant crew 1)
+wild_max: int               # the wild one does not come back while this many live at home (ant crew 1)
+# job &"lamp": lamp_radius (tiles), lamp_energy, lamp_color, dark_rings: Array[StringName], wiggle_every
+# job &"tend": walk_speed (px/s), tend_range (tiles), work (s at the bed), nudge (planet s pulled forward)
+
+# Pet additions
+signal tended(id: StringName, cell: Vector2i)   # the ant crew nudged the seed bed at cell
+signal lamp_changed(lit: bool)
+func meet() -> void                             # the meet beat: bubble [pet][heart][job], then the job
+func is_dark() -> bool                          # Burrow.night, or home in one of data.dark_rings
+static func seed_bed_at(w: PolarWorld, cell: Vector2i) -> int   # garden index, -1 if not a live seed bed
+static func nudge_garden(w: PolarWorld, gi: int, secs: float)  # gardens()[gi].next -= secs
+
+# Burrow additions
+var night: bool             # hook for a future day/night clock; nothing sets it yet
+var met: Array[StringName]  # kinds that had their meet beat; saved as "met" in the burrow entry
+func can_keep(id) -> bool; func pet_count(id) -> int
+# bring(): first of a kind -> Pet.meet(); a kind at its cap -> a hello (cue pet_hello), the wild one
+# goes back to the wild, brought_home still says &"pet".
+
+# HomeSlice: wild glow-worms and the ant crew live in `wild_more` (tin key "wild_more":
+# [x, y, gone_at, id]); `wild` stays ladybirds only. Old tins get them on load.
+```
+
+Cues (placeholder beeps, none is a pain sound): `pet_meet`, `pet_hello`, `pet_lamp`, `pet_walk`, `pet_tend`.
+### Secrets 2 (secrets-2)
+
+`feature/secrets-2`, PLAN-STATUS X-03, X-04. A hidden place is now data only: drop a
+`SecretData` in `data/secrets/` and its food in `data/foods/`; `RingsDirector` and the tackle box
+both glob those folders.
+
+```gdscript
+# SecretData (scripts/rings/secret_data.gd), new fields (defaults keep ant_city.tres unchanged)
+@export var carve_stage := 2                  # the bite stage the hall is dug with (4 opens rock)
+@export var rooms: PackedVector3Array         # side rooms: x tiles to the side, y tiles up, z radius (tiles)
+@export var extra_food: StringName = &"bug_egg"   # one more food in the first room; &"" = none
+
+# RingsDirector
+static var SECRETS: Array[SecretData]         # every data/secrets/*.tres, sorted by id (was a const of one)
+static func secret(id) -> SecretData
+static func rooms_of(s, centre) -> Array[Vector3]   # (offset x, offset y, radius) in px
+var carved: Dictionary                        # secret ids dug in this tin; save key "carved"
+# Tins saved before "carved" existed count as having only ant_city: the rest are dug on load.
+# Side rooms get keep zones too (they never regrow shut). --rings-shot=secret:<id> stages a find.
+
+# SecretSpot: the find beat (RingsDirector.discover calls it, every secret including the ant city)
+func play_found_beat() -> void                # PictoBubble over the hall for ~5.4 s:
+func beat_pictures() -> Array[StringName]     # [&"secret:<id>", &"secret_food:<food>", &"secret_box"]
+var beat_t: float                             # < 0 when not playing
+
+# SecretLook (scripts/rings/secret_look.gd): the one small picture per secret, placeholder in code
+static func register() -> void                # PictoBubble prefixes "secret:", "secret_food:", id &"secret_box"
+static func draw(ci, id, c, s, a := 1.0, t := 0.0) -> void
+const KNOWN := [&"ant_city", &"sunken_rowboat", &"fossil_hall"]   # others draw a gold star
+
+# TackleBox: the "that's why" callback
+var why: Array[StringName]                    # secrets unlocked since the last open
+# open(): if why is not empty, turns to the secrets page, cursor on the first new one, wiggles it,
+# a gold ring and stars pulse round it for WHY_TIME (3 s), and plays cue "box_why".
+```
+
+| Secret | Ring | Where (angle, depth) | Hall | Unique food (`data/foods/`) | Page |
+| --- | --- | --- | --- | --- | --- |
+| `sunken_rowboat` | dirt (aquifer pool at its foot) | -0.42, 0.50 | 7 tiles + 2 rooms | `ship_biscuit` (water, stage 1, x5) | `secret_sunken_rowboat` |
+| `fossil_hall` | deep_rock | 0.55, 0.30 | 8 tiles + 2 rooms, dug at stage 4 | `amber` (crystal, stage 4, x5) | `secret_fossil_hall` |
+
+New audio cue with no file yet (grey beep): `box_why`. The finds reuse `secret_found`.
+
+### Crust burst (stages-reconcile-1)
+
+The surface crust from `data/stages.tres`: the first stage whose `StageData.crust_ring` is set
+(stage 5, `&"surface"`) can eat that ring; below it the ring bonks (`dig_blocked`). Its eaten tiles
+never regrow, so the disk shrinks. The first bite through is the breakthrough, once per worm per tin.
+
+```gdscript
+# StageData: @export var crust_ring: StringName                 # &"" = this stage breaks no crust
+# StageTable: crust_stage() -> int (-1: none), crust_ring() -> StringName,
+#             apply_crust(rings: RingSet) -> RingSet             # a copy: crust edible_from = crust_stage, regrow 0
+# Worm:
+signal breakthrough(player: int)                                 # first crust bite in this tin (GAME.md contract)
+# CrustBurst (scripts/gameplay/crust_burst.gd; PlanetLevel.crust)
+signal breakthrough(player: int)
+var broken: Array[int]          # players that broke through in this tin
+var eaten: int                  # crust tiles eaten for good in this tin
+func can_burst(stage: int) -> bool
+func cap(base_zoom_index: int) -> int    # one step wider for PULL_TIME after a breakthrough
+func steer_camera(base_zoom_index: int)  # PlanetLevel calls it each frame: sets max_fit_index = cap(),
+                                         # lowers min_fit_index during the pull-back, then restores it
+# Tin save key "crust": {"broken": [player, ...], "eaten": int}. Cue: "breakthrough".
+```
 ### Planet jar audit (worm-jar-1)
 
 Additions to `JarStore` (`scripts/jars/jars.gd`); the API above is unchanged.

@@ -1,0 +1,114 @@
+[gd_resource type="Resource" script_class="StageTable" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/stage_table.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/worm/stage_data.gd" id="2"]
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("2")
+stage = 1
+name_hint = "Grub"
+segments = 0
+needs_apex = false
+zoom_index = 6
+size = 1.0
+collision_radius = 6.0
+edible_size = 1
+opens_ring = &"dirt"
+feature_id = &""
+slots = 0
+in_disk = true
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("2")
+stage = 2
+name_hint = ""
+segments = 6
+needs_apex = true
+zoom_index = 5
+size = 1.18
+collision_radius = 7.0
+edible_size = 2
+opens_ring = &"topsoil"
+feature_id = &"feelers"
+slots = 1
+in_disk = true
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("2")
+stage = 3
+name_hint = ""
+segments = 10
+needs_apex = true
+zoom_index = 4
+size = 1.36
+collision_radius = 8.0
+edible_size = 3
+opens_ring = &""
+feature_id = &"cheek_puffs"
+slots = 2
+in_disk = true
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("2")
+stage = 4
+name_hint = ""
+segments = 15
+needs_apex = true
+zoom_index = 4
+size = 1.54
+collision_radius = 9.0
+edible_size = 4
+opens_ring = &"deep_rock"
+feature_id = &"back_ridge"
+slots = 3
+in_disk = true
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("2")
+stage = 5
+name_hint = ""
+segments = 20
+needs_apex = true
+zoom_index = 3
+size = 1.72
+collision_radius = 10.0
+edible_size = 5
+opens_ring = &"core"
+feature_id = &"tail_tuft"
+slots = 4
+in_disk = true
+crust_ring = &"surface"
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("2")
+stage = 6
+name_hint = ""
+segments = 24
+needs_apex = true
+zoom_index = 3
+size = 1.9
+collision_radius = 11.0
+edible_size = 6
+opens_ring = &""
+feature_id = &"planet_jaw"
+slots = 5
+in_disk = false
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("2")
+stage = 7
+name_hint = ""
+segments = 40
+needs_apex = true
+zoom_index = 3
+size = 2.08
+collision_radius = 12.0
+edible_size = 7
+opens_ring = &""
+feature_id = &"star_shine"
+slots = 5
+in_disk = false
+
+[resource]
+script = ExtResource("1")
+stages = Array[ExtResource("2")]([SubResource("s1"), SubResource("s2"), SubResource("s3"), SubResource("s4"), SubResource("s5"), SubResource("s6"), SubResource("s7")])

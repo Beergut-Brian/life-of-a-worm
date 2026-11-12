@@ -14,6 +14,8 @@ signal stage_changed(player: int, from: int, to: int)
 signal carried(player: int, what: StringName)
 signal dropped(player: int, what: StringName)
 signal eaten_by(player: int, creature: StringName)
+## First bite through the crust in this tin (CrustBurst emits it, once per worm per tin).
+signal breakthrough(player: int)
 signal booped(player: int, other: int)
 ## Hold B (wiggle) for WARP_HOLD s: the level decides where to (home, or the far partner).
 signal warp_requested(player: int)
@@ -21,9 +23,6 @@ signal warp_requested(player: int)
 signal tackle_pressed(player: int)
 
 const ART := "res://assets/proto/worm/"
-const SEGMENT_TEX := preload("res://assets/proto/worm/segment.png")
-const BAND_TEX := preload("res://assets/proto/worm/band.png")
-const HEAD_TEX := preload("res://assets/proto/worm/head.png")
 const HEART_TEX := preload("res://assets/proto/worm/heart.png")
 const NOTE_TEX := preload("res://assets/proto/worm/note.png")
 const STAR_TEX := preload("res://assets/proto/worm/star.png")
@@ -33,17 +32,23 @@ const BOOP_COOLDOWN := 1.2
 const BONK_COOLDOWN := 0.5
 const DROP_BLOCK := 0.8
 const CHOMP_CUES := 5
+## Growth per tile swallowed when no trait sets "tile_growth" (data/BALANCE.md reads it).
+const TILE_GROWTH := 0.05
+## Mouth bite radius in px at stage 1 (times the stage size): the tunnel the worm eats.
+const BITE_RADIUS := 12.0
+## Speed factor while digging new ground when no stat sets "dig_speed".
+const DIG_SPEED := 0.65
 ## Where a part of each slot sits. Slots are data names, not traits.
-const SLOT_OFFSET := { &"head": Vector2(2, -1), &"crown": Vector2(-2, -12), &"back": Vector2(0, -8), &"tail": Vector2(-7, 0) }
+const SLOT_OFFSET := { &"head": Vector2(2, -1), &"crown": Vector2(-2, -12), &"above": Vector2(-2, -24), &"back": Vector2(0, -8), &"under": Vector2(0, 8), &"tail": Vector2(-7, 0) }
 const BACK_EVERY := 3
 const WARP_HOLD := 2.0
 ## Seconds between chomp cues while tunnelling (the tunnel loop carries the rest).
 const TILE_CHOMP_EVERY := 0.3
-## Body size per stage (visual and collision): stage 1 = 1.0, each stage + SIZE_STEP.
+## The step data/stages.tres uses for body size (stage 1 = 1.0, + SIZE_STEP a stage). Size itself is
+## read from the stage row (StageData.size); this is kept for tests that reason about radii.
 const SIZE_STEP := 0.18
 
 static var _all: Array[Worm] = []
-static var _faces := {}
 
 @export var player := 0
 ## Optional brain for demos and tests: func(worm) -> Dictionary with the keys of _read_intent().
@@ -91,6 +96,11 @@ var _tile_chomp := 0.0
 var _warp_fired := false
 var _ring_node: Node2D
 var _size := 1.0
+var _feature: Sprite2D
+## The stage the worm is drawn at (mirrors model.stage; the look reads it).
+var stage: int:
+	get:
+		return model.stage if model != null else 1
 
 @onready var head: CharacterBody2D = $Head
 @onready var head_sprite: Sprite2D = $Head/Look/Sprite
@@ -135,7 +145,7 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	_all.erase(self)
 	if _all.is_empty():
-		_faces.clear()   # static texture cache: drop it with the last worm (no leak line at exit)
+		WormHooks.release()   # static texture caches go with the last worm (no leak line at exit)
 
 
 func _ready() -> void:
@@ -149,10 +159,12 @@ func _ready() -> void:
 	model.traits_changed.connect(_on_traits_changed)
 	_sheen_mat = ShaderMaterial.new()
 	_sheen_mat.shader = SHEEN_SHADER
-	var col: Color = Players.COLOR[player]
-	head_sprite.texture = HEAD_TEX
-	head_sprite.modulate = col
 	head_sprite.material = _sheen_mat
+	_feature = Sprite2D.new()
+	_feature.name = "Feature"
+	_feature.z_index = 1
+	look.add_child(_feature)
+	_restyle_head()
 	face.texture = _face_tex(0)
 	light.texture = _light_texture()
 	dust.color = Color(0.85, 0.72, 0.55)
@@ -189,7 +201,7 @@ func _on_tile_eaten(cell: Vector2i, _block: StringName, p: int) -> void:
 
 ## One tile swallowed: a little growth in the ring's flavour, a share to the partner.
 func bite_tile(flavour: StringName) -> void:
-	var g := model.stats.value("tile_growth", 0.05)
+	var g := model.stats.value("tile_growth", TILE_GROWTH)
 	model.add_growth(g, flavour)
 	tiles_this_frame += 1
 	tiles_total += 1
@@ -204,9 +216,9 @@ func bite_tile(flavour: StringName) -> void:
 		crumbs.emitting = true
 
 
-## Body scale for the stage: bigger worm, bigger bite, wider tunnel.
+## Body scale for the stage (data/stages.tres): bigger worm, bigger bite, wider tunnel.
 func size_factor() -> float:
-	return 1.0 + SIZE_STEP * (model.stage - 1)
+	return model.stage_info().size
 
 
 func _apply_size() -> void:
@@ -218,7 +230,10 @@ func _apply_size() -> void:
 	var sh := $Head/Shape as CollisionShape2D
 	if sh and sh.shape is CircleShape2D:
 		sh.shape = sh.shape.duplicate()
-		(sh.shape as CircleShape2D).radius = 6.0 * _size
+		(sh.shape as CircleShape2D).radius = model.stage_info().collision_radius
+	for n in _seg_nodes:
+		(n as WormSegment).stage = model.stage
+	_restyle_head()
 	if world:
 		world.set_stage(player, model.stage)
 
@@ -358,7 +373,7 @@ func get_eaten(creature: StringName, out_at = null) -> void:
 
 func can_eat(food: FoodData) -> bool:
 	var bonus := model.stats.value("bite_bonus/" + String(food.flavour))
-	return food.size_stage <= model.stage + int(round(bonus))
+	return food.size_stage <= model.stage_info().edible_size + int(round(bonus))
 
 
 func _physics_process(delta: float) -> void:
@@ -416,9 +431,9 @@ func _physics_process(delta: float) -> void:
 		# The bite is centred just ahead of the head and wide enough to clear it, so the tunnel
 		# never snags the head on a tile corner (about 1.5 tiles wide at stage 1).
 		var bite_at := world.to_local(head.global_position + Vector2.from_angle(heading) * 6.0 * _size)
-		var n := world.eat_circle(bite_at, 12.0 * _size, player)
+		var n := world.eat_circle(bite_at, BITE_RADIUS * _size, player)
 		if n > 0 or tiles_this_frame > 0:
-			speed *= stats.value("dig_speed", 0.65)   # dirt is slower than an open tunnel
+			speed *= stats.value("dig_speed", DIG_SPEED)   # dirt is slower than an open tunnel
 	head.velocity = Vector2.from_angle(heading) * speed
 	head.move_and_slide()
 	dust.emitting = _burst_left > 0.0
@@ -599,11 +614,25 @@ func _update_look(_delta: float, stats: WormStats) -> void:
 		_float_fx(STAR_TEX, head.position + Vector2.from_angle(_time * 8.0) * 10.0, Color(1, 1, 1), 0.3)
 
 
+const MOODS: Array[StringName] = [&"idle", &"open", &"wide"]
+
+
 func _face_tex(open_amt: int) -> Texture2D:
-	var key := "%sface_p%d_%d.png" % [ART, player + 1, open_amt]
-	if not _faces.has(key):
-		_faces[key] = load(key)
-	return _faces[key]
+	var mood: StringName = &"sleep" if asleep else MOODS[clampi(open_amt, 0, MOODS.size() - 1)]
+	return WormHooks.look().face_texture(player, stage, mood)
+
+
+## Head sprite and the stage's feature (both from WormLook), redrawn on a stage change.
+func _restyle_head() -> void:
+	var look_api := WormHooks.look()
+	var tex: Texture2D = look_api.segment_texture(player, stage, &"head")
+	head_sprite.texture = tex
+	head_sprite.scale = Vector2.ONE * (20.0 / tex.get_width() if tex and tex.get_width() > 0 else 1.0)
+	head_sprite.modulate = Color.WHITE
+	if _feature != null:
+		_feature.texture = look_api.feature_texture(stage)
+		_feature.position = Vector2(0, -11)
+		_feature.visible = _feature.texture != null
 
 
 func _light_texture() -> Texture2D:
@@ -621,21 +650,12 @@ func _light_texture() -> Texture2D:
 
 
 func _add_segment_node(flavour: StringName, pop := true) -> void:
-	var node := Node2D.new()
-	node.z_index = -1 - _seg_nodes.size()
-	var base := Sprite2D.new()
-	base.texture = SEGMENT_TEX
-	base.modulate = Players.COLOR[player]
-	base.material = _sheen_mat
-	node.add_child(base)
-	var band := Sprite2D.new()
-	band.name = "Band"
-	band.texture = BAND_TEX
-	band.visible = flavour != &""
-	band.modulate = rules.flavour_color(flavour)
-	band.material = _sheen_mat
-	node.add_child(band)
+	var node := WormSegment.new(player, model.stage, flavour, _sheen_mat)
+	# Under the head, each segment under the one before it: by draw order, not z_index (a z of
+	# -1 - i sank every segment past the fifth behind the planet's castings and back wall).
+	node.z_index = -1
 	body.add_child(node)
+	body.move_child(node, 0)
 	_seg_nodes.append(node)
 	if pop:
 		node.set_meta("pop", 0.1)
@@ -669,6 +689,18 @@ func _on_stage_changed(from: int, to: int) -> void:
 	Audio.play("stage_up")
 	_pop(look, 1.6)
 	stage_changed.emit(player, from, to)
+
+
+## The stage-up swell: the head balloons and a fat wave runs down the body to the tail.
+func swell(amount: float) -> void:
+	_pop(look, amount)
+	_ring_fx(Players.COLOR[player])
+	for i in _seg_nodes.size():
+		var node := _seg_nodes[i]
+		var tw := create_tween()
+		tw.tween_interval(0.035 * i)
+		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.0, 1.0 + (amount - 1.0) * 0.6, 0.1)
+		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.0 + (amount - 1.0) * 0.6, 1.0, 0.25).set_trans(Tween.TRANS_BACK)
 
 
 func _on_trait_earned(id: StringName, _equipped: bool) -> void:
@@ -707,14 +739,14 @@ func _refresh_parts(pop: bool) -> void:
 		var info: Dictionary = parts[slot]
 		var is_new: bool = pop and before.get(slot, &"") != info.trait
 		match slot:
-			&"head", &"crown":
+			&"head", &"crown", &"above":
 				var s := _part_sprite(info, SLOT_OFFSET.get(slot, Vector2.ZERO))
 				s.z_index = 2
 				look.add_child(s)
 				_part_nodes[slot] = s
 				if is_new:
 					_pop_part(s)
-			&"back":
+			&"back", &"under":
 				for i in range(1, _seg_nodes.size(), BACK_EVERY):
 					var s := _part_sprite(info, SLOT_OFFSET[slot])
 					s.z_index = -1
