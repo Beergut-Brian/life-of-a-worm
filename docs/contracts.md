@@ -1058,3 +1058,39 @@ Sound: earn = `TraitData.cue` + reveal ring, once. Any later equip (`traits_chan
 the cue again, no ring. At work = the cue, a small ring, the part pops (throttled 0.4 s).
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
+
+### Lawnmower (worm-lawnmower-1)
+
+`feature/worm-lawnmower-1` (PLAN-STATUS L-12). The surface's mower: a creature that drives the
+ground line, very loud, mows grass, and bumps a worm off the grass. Never food, never eats, never
+steers a worm (the bump is a push added to the head; the stick still drives).
+
+```gdscript
+# LawnmowerData extends CreatureData (scripts/creatures/lawnmower_data.gd; data/creatures/lawnmower.tres)
+# CreatureData fields used: id &"lawnmower", size_stage 5, radius 24, ring &"surface", speed 28,
+#   telegraph 1.2 (warning before a bump), notice 170 (px ahead it warns), bark "threat_near"
+@export var bump := 90.0              # px knock: up off the grass and away along its way, ~0.4 s
+@export var cue := "boot_rumble"      # engine loop (Audio.loop_player), the whole time it drives
+@export var bump_cue := "space_bump"  # every bump
+@export var loud_db := 6.0 ; @export var hear := 900.0   # engine dB beside a worm, silent by `hear` px
+@export var drive := 240.0            # px of surface either side of its spawn, then it turns round
+@export var bump_cooldown := 1.6      # s before the same worm can be bumped again
+@export_file("*.tscn") var scene      # res://scenes/creatures/lawnmower.tscn
+@export var live_max := 1 ; @export var spawn_depth := Vector2(0.97, 0.999)
+func give_body(ecology: RingEcology) -> PopulationRule   # swaps the ecology's "lawnmower" rule for a copy
+                                                         # with live = scene, live_max, live_scale 1
+# RingsDirector: const LAWNMOWER: LawnmowerData; setup() calls LAWNMOWER.give_body(ecology) once, so
+# the surface ring's own counter (surface_life.tres, unchanged: live_max 0) spawns the body via fit_live.
+
+# Lawnmower extends Creature (scripts/creatures/lawnmower.gd)
+signal bumped(player: int, push: Vector2)
+signal beat_requested(player: int, at: Vector2)   # the cause beat: shadow flash + camera shake / lean_in
+signal mowed(cell: Vector2i)                      # one grass tile mowed (world.dig; regrows as usual)
+var angle, home_angle, drive_dir, mowed_count, bumps, beats
+func is_available() -> bool          # false: never food (not in group "food"); take() does nothing
+func ground_r(a: float) -> float     # its line: highest ground under both wheels, mowed cells count as ground
+func bump(w: Worm) -> Vector2        # the push it applied; worm stage > 5 is never bumped (it turns round)
+func request_beat(w: Worm) -> void   # camera: level.camera via the "rings" group, else the viewport's PolarCamera
+```
+
+Cues: all existing files (`boot_rumble`, `threat_near`, `space_bump`); none added.
