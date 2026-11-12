@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lava_blob"
+flavour = &"crystal"
+growth = 5.0
+size_stage = 6
+color = Color(1.0000, 0.5412, 0.1647, 1)
+radius = 20.0
+behaviour = 0
+ring = &"core"
+telegraph = 1.5
+bark = "lava_blob_blorp"
+windup_cue = "lava_blob_swell"
+speed = 10.0
+notice = 0.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0000, 0.8471, 0.4196, 1)
