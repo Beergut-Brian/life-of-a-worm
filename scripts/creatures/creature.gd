@@ -251,7 +251,7 @@ func _eat_worm(w: Node2D) -> void:
 	_gulp = GULP_TIME
 	_gulp_dir = dir
 	_gulp_color = Players.COLOR.get(w.player, _gulp_color)
-	Audio.play("creature_gulp")
+	Audio.play("creature_munch")  # existing file; creature_gulp had none (audio-1 has no gulp cue)
 	ate_worm.emit(w.player)
 	_set_mode(Mode.FULL)
 	target = null
@@ -267,7 +267,7 @@ func _on_outgrown() -> void:
 	_startle = STARTLE_TIME
 	if mode == Mode.STALK or mode == Mode.WINDUP:
 		_set_mode(Mode.IDLE)
-	Audio.play("outgrown")
+	Audio.play("boing")  # existing file; outgrown startle (comic, not a pain sound)
 
 
 ## Eaten: if the worm eating me used to be chased by my kind, this is its first bite of one.
