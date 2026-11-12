@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scenes/ui/kit/wedge.gd" id="8_wedge"]
 [ext_resource type="Script" path="res://scripts/ui/book_tab.gd" id="9_booktab"]
 [ext_resource type="PackedScene" path="res://scenes/ui/book.tscn" id="10_book"]
+[ext_resource type="Script" path="res://scenes/ui/icon_button.gd" id="11_icon"]
 
 [sub_resource type="ShaderMaterial" id="blur_mat"]
 shader = ExtResource("4_blur")
@@ -130,6 +131,16 @@ height = 96.0
 height_focused = 140.0
 text_size = 62
 text_size_focused = 108
+
+[node name="DoorIcon" type="Control" parent="Card"]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 942.0
+offset_right = 240.0
+offset_bottom = 1070.0
+mouse_filter = 2
+script = ExtResource("11_icon")
+icon = 2
 
 [node name="BookTab" type="Control" parent="Card"]
 layout_mode = 0
