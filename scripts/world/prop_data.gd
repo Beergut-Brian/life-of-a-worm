@@ -20,3 +20,10 @@ extends Resource
 @export_range(1, 20) var chunks := 4
 ## Where it stands: radians round the planet from the start point (one prop per entry).
 @export var angles := PackedFloat32Array()
+## How it is drawn (PropLook, placeholder shapes until the art round): which footprint cells get
+## tiles and the simple marks on top (&"crate" braces, &"tree", &"fence", &"house", &"car", &"cow",
+## &"hill", &"water_tower", &"diner", &"court", &"dock_shed"). Collision stays the whole footprint.
+@export var look: StringName = &"crate"
+## The top top_rows rows are drawn with this tile row instead (a roof, a canopy, a tank); &"" = tile.
+@export var top_tile: StringName = &""
+@export_range(0, 20) var top_rows := 0
