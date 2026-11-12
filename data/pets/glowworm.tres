@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="PetData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/pets/pet_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="2"]
+
+[sub_resource type="Resource" id="food"]
+script = ExtResource("2")
+id = &"glowworm"
+flavour = &"bug"
+growth = 1.0
+size_stage = 1
+color = Color(0.78, 0.86, 0.55, 1)
+radius = 4.5
+
+[resource]
+script = ExtResource("1")
+id = &"glowworm"
+food = SubResource("food")
+job = &"lamp"
+fetch = &""
+every = 0.0
+trip = 0.0
+max_waiting = 0
+color = Color(0.78, 0.86, 0.55, 1)
+regrow = 120.0
+look = &"glowworm"
+max_kept = 3
+wild_max = 0
+lamp_radius = 5.0
+lamp_energy = 0.9
+lamp_color = Color(1, 0.93, 0.55, 1)
+dark_rings = Array[StringName]([&"dirt", &"deep_rock", &"core"])
+wiggle_every = 5.0
