@@ -1058,3 +1058,29 @@ Sound: earn = `TraitData.cue` + reveal ring, once. Any later equip (`traits_chan
 the cue again, no ring. At work = the cue, a small ring, the part pops (throttled 0.4 s).
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
+
+### Session flow (worm-session-1)
+
+`feature/worm-session-1` (PLAN-STATUS P-06, P-07, P-09, C-03, C-08, C-14).
+
+```gdscript
+# Game (scripts/autoload/Game.gd): pause() remembers whether the tree was already paused (an open
+# tackle box, a rewatched cutscene); resume() puts that back instead of unpausing under it.
+# start_round(), restart() and to_lobby() always leave the tree unpaused.
+
+# main.gd: while Game.state == PAUSED, every node under the level with PROCESS_MODE_ALWAYS is set to
+# PAUSABLE and any CanvasLayer under it is hidden; both are restored on the next state change.
+# A lane adding an always-processing overlay under the level gets this for free; one that must keep
+# running under the pause menu does not belong under the level.
+
+# PauseMenu: $Card/DoorIcon (scenes/ui/icon_button.gd, Icon.DOOR) is lit while focus == DOOR.
+
+# FarCamera (scripts/planet/far_camera.gd), owned by PlanetLevel as `far_camera`:
+var split: bool        # true while the worms don't fit the widest zoom (camera.min_fit_index)
+var anchor: int        # the player the camera follows while split, else -1
+static func fits(camera: PolarCamera, worms: Array, slack := 1.0) -> bool
+func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2D]
+# PlanetLevel._refresh_camera_targets() runs every physics frame and sets camera.targets from it.
+# Anchor: solo -> Players.solo_focus; co-op -> the bigger worm; a tie keeps the current anchor
+# (P1 first). Rejoins at 85% of the widest view. camera.centre_override still wins (secrets).
+```
