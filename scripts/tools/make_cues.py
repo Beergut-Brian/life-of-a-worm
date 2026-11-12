@@ -1530,7 +1530,7 @@ PREVIEW = ["chomp_1_1", "chomp_2_1", "chomp_3_1", "chomp_4", "chomp_5", "tunnel"
            "stage_up", "threat_near", "eaten", "now_i_eat_you", "breakthrough", "planet_gone",
            "space_drift", "amb_dirt", "amb_topsoil", "amb_deep_rock", "amb_core", "amb_surface"]
 PREVIEW += [s for s in FILES if s not in PREVIEW and not re.match(r"chomp_[123]_[23]$", s)]
-LOOP_PREVIEW_SEC = 3.0
+LOOP_PREVIEW_SEC = 2.5
 
 
 def pop(rng, f0=600.0):
@@ -1663,10 +1663,10 @@ def loudness(r):
 
 
 def preview(path, tmp):
-    """Stitch PREVIEW with 0.3 s gaps; loops play LOOP_PREVIEW_SEC with a fade."""
+    """Stitch PREVIEW with 0.25 s gaps; loops play LOOP_PREVIEW_SEC with a fade."""
     parts = []
     gap = os.path.join(tmp, "gap.wav")
-    write_wav(gap, silence(0.3))
+    write_wav(gap, silence(0.25))
     for stem in PREVIEW:
         src = out_path(stem)
         if FILES[stem][1] == "loop":
