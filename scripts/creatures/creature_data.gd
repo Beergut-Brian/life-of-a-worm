@@ -27,6 +27,9 @@ enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP }
 @export var hat := Color.TRANSPARENT
 ## Second colour (shell shine, wing).
 @export var accent := Color.WHITE
+## A Jarling (a library character met in the world): never food, never a threat, drawn with the
+## soft "friend" outline. Every other creature becomes food once the worm outgrows it.
+@export var jarling := false
 
 
 func telegraph_time() -> float:

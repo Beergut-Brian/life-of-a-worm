@@ -98,8 +98,10 @@ func test_beetle_winds_up_a_full_second_before_it_can_eat() -> void:
 	assert_int(Audio.played.get("beetle_windup", 0)).is_greater_equal(1)
 
 
+## A worm its own size (stage 2) is ignored, not fled (GAME.md "Equal size ignores you";
+## tests/test_creatures_size.gd): the beetle runs from a worm bigger than it.
 func test_beetle_runs_from_a_worm_that_outgrew_it() -> void:
-	var w := _worm(Vector2.ZERO, 2)
+	var w := _worm(Vector2.ZERO, 3)
 	var b := _make(BEETLE, w.head_position() + Vector2(40, 0))
 	var d0 := b.global_position.distance_to(w.head_position())
 	for i in 60:
