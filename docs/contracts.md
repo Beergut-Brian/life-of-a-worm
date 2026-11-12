@@ -691,5 +691,7 @@ var broken: Array[int]          # players that broke through in this tin
 var eaten: int                  # crust tiles eaten for good in this tin
 func can_burst(stage: int) -> bool
 func cap(base_zoom_index: int) -> int    # one step wider for PULL_TIME after a breakthrough
+func steer_camera(base_zoom_index: int)  # PlanetLevel calls it each frame: sets max_fit_index = cap(),
+                                         # lowers min_fit_index during the pull-back, then restores it
 # Tin save key "crust": {"broken": [player, ...], "eaten": int}. Cue: "breakthrough".
 ```
