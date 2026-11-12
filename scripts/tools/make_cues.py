@@ -1315,6 +1315,91 @@ def world_sprout(rng):
     return at_len(chirp(500, 1100, 0.1, ((1, 1.0, 0.0), (2, 0.2, 0.0))), 0.2)
 
 
+def trait_floaty(rng):
+    x = silence(1.0)
+    air = svf(noise(0.45, rng), lambda t: 500 + 1800 * t / 0.45, 1.0, "band")
+    mix(x, envelope(air, lambda t: math.sin(math.pi * t / 0.45)), 0.0, 0.4)           # cloud puff
+    mix(x, whistle(400, 800, 0.4, rng, curve=1.0, vib=0.03, breath=0.05), 0.0, 0.35)  # floats up
+    mix(x, earned(rng), 0.45, 1.0)
+    return x
+
+
+def trait_skater(rng):
+    x = silence(0.9)
+    sk = svf(noise(0.3, rng), lambda t: 4500 - 1500 * t / 0.3, 3.0, "band")
+    mix(x, envelope(sk, lambda t: math.sin(math.pi * t / 0.3) ** 0.7), 0.0, 0.5)     # blade swish
+    mix(x, struck(1600, 0.05, rng, METAL, click=0.2), 0.02, 0.25)
+    mix(x, earned(rng), 0.38, 1.0)
+    return x
+
+
+def trait_garden_cart(rng):
+    x = silence(1.0)
+    for k in range(3):                                                                  # wheel squeak
+        mix(x, chirp(1100, 1400, 0.07), k * 0.13, 0.25)
+    for _ in range(6):
+        mix(x, struck(rng.uniform(300, 600), 0.03, rng, WOOD, click=0.4), rng.uniform(0.0, 0.35), 0.3)
+    mix(x, chirp(400, 900, 0.12), 0.32, 0.4)                                            # sprout
+    mix(x, earned(rng), 0.5, 1.0)
+    return x
+
+
+def pet_meet(rng):
+    """First of a kind comes home: a buzz, a 'hello!' chirp and a heart's twinkle."""
+    x = silence(1.2)
+    mix(x, buzz(170, 0.3, rng), 0.0, 0.4)
+    mix(x, worm_chirp(800, 1200, 0.14, rng, ("o", "i")), 0.25, 0.6)
+    mix(x, notes_seq([(84, 0.45), (88, 0.55), (91, 0.65), (96, 0.75)], rng, BELL, 0.12), 0.0, 0.45)
+    return x
+
+
+def pet_hello(rng):
+    x = silence(0.6)
+    mix(x, notes_seq([(84, 0.0), (79, 0.1)], rng, XYLO, 0.1), 0.0, 0.6)
+    mix(x, buzz(190, 0.2, rng), 0.12, 0.3)
+    return x
+
+
+def pet_walk(rng):            # the ant crew trots: tiny tip-tap feet, quiet (it repeats)
+    x = silence(0.3)
+    for k in range(4):
+        mix(x, struck(rng.uniform(1700, 2100), 0.01, rng, WOOD, click=0.6), k * 0.05, 0.5)
+    return x
+
+
+def pet_tend(rng):            # the ants nudge a seed bed: a little rustle and a growing pip
+    x = silence(0.6)
+    mix(x, grains(rng, 0.2, 10, 1200, 3000, 0.003, 0.008), 0.0, 0.5)
+    mix(x, chirp(500, 900, 0.1), 0.22, 0.4)
+    return x
+
+
+def pet_lamp(rng):            # the glow-worm lights up: a warm soft 'plink' and a hum swell
+    x = silence(0.9)
+    mix(x, struck(midi(88), 0.12, rng, BELL, click=0.02), 0.0, 0.5)
+    mix(x, osc(0.6, 659.3, ((1, 1.0, 0.0), (2, 0.2, 0.0)), amp=lambda t: math.sin(math.pi * t / 0.6)), 0.05, 0.15)
+    return x
+
+
+def ring_open(rng):
+    """After a stage-up a new ring becomes food: a wide shimmering whoomp spreading out."""
+    x = silence(1.6)
+    mix(x, thump(90, 50, 0.6, 0.3), 0.0, 0.6)
+    sw = svf(noise(1.2, rng), lambda t: 2400 - 1800 * t / 1.2, 0.8, "band")
+    mix(x, envelope(sw, lambda t: (1 - t / 1.2) ** 2), 0.0, 0.3)
+    mix(x, chord((60, 67, 72), 0.4, rng, BELL), 0.05, 0.6)
+    mix(x, sparkle(rng, 6, 0.1, 1.0, 0.5, PENT_HI), 0.0, 0.5)
+    return x
+
+
+def box_why(rng):
+    """The tackle box opens on the page that explains what just happened: a curious 'look!'."""
+    x = silence(0.8)
+    mix(x, notes_seq([(79, 0.0), (84, 0.1), (88, 0.2)], rng, XYLO, 0.1), 0.0, 0.5)
+    mix(x, worm_chirp(700, 1100, 0.14, rng, ("u", "i")), 0.3, 0.5)
+    return x
+
+
 # ---------------------------------------------------------------- the file table
 
 def v(fn, *a):
@@ -1366,11 +1451,18 @@ add("wall_open", v(wall_slide, True), trim=-3.0)
 add("wall_close", v(wall_slide, False), trim=-3.0)
 add("trait_swap", trait_swap, trim=-3.0)
 add("tackle_box", tackle_box_latch, trim=-3.0)
-for t in ("drill_head", "glow", "green_thumb", "magnet", "slick", "stone_head", "wriggle"):
+for t in ("drill_head", "glow", "green_thumb", "magnet", "slick", "stone_head", "wriggle", "floaty",
+          "skater", "garden_cart"):
     add("trait_" + t, globals()["trait_" + t], trim=-2.0)
 add("pet_home", pet_home, trim=-3.0)
 add("pet_away", pet_away, trim=-4.0)
 add("pet_fetch", pet_fetch, trim=-3.0)
+add("pet_meet", pet_meet, trim=-2.0)
+add("pet_hello", pet_hello, trim=-3.0)
+add("pet_walk", pet_walk, trim=-9.0)
+add("pet_tend", pet_tend, trim=-6.0)
+add("pet_lamp", pet_lamp, trim=-5.0)
+add("ring_open", ring_open, trim=-1.0)
 
 add("bird_gulp", bird_gulp, trim=-2.0)
 add("boing", boing, trim=-2.0)
@@ -1401,6 +1493,7 @@ add("box_close", box_close, trim=-3.0)
 add("box_flip", page_flip, trim=-5.0)
 add("box_tick", v(tick, 84), trim=-5.0)
 add("box_play", box_play, trim=-3.0)
+add("box_why", box_why, trim=-3.0)
 add("lure_pin", lure_pin, trim=-3.0)
 add("page_new", page_new, trim=-2.0)
 add("book_open", v(book, True), trim=-3.0)

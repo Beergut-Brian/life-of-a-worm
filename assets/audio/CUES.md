@@ -52,12 +52,16 @@ Kid rules: friendly, never a scare, no pain sounds, no minor stingers; `stage_up
 | `trait_slick` | trait earned | slippery fwee and bubbles, earned bell | trait_slick.ogg |
 | `trait_stone_head` | trait earned | stone clonk, earned bell | trait_stone_head.ogg |
 | `trait_wriggle` | trait earned | wobbly kazoo, chirp, maracas, earned bell | trait_wriggle.ogg |
+| `trait_floaty` / `trait_skater` / `trait_garden_cart` | trait earned (hybrids from stages-traits) | cloud puff floating up / blade swish / wheel squeak, rattle and a sprout; each ends on the earned bell | trait_floaty.ogg, trait_skater.ogg, trait_garden_cart.ogg |
+| `ring_open` | `scripts/gameplay/stage_beat.gd` a new ring opens after a stage-up | wide shimmering whoomp, bell chord, sparkles | ring_open.ogg |
 | `solo_focus` | `planet_level.gd` camera focuses one worm | small swish and a ding | solo_focus.ogg |
 | **Burrow, pets, garden, swap shop** | | | |
 | `sleep` | `burrow.gd` into bed | lullaby E-D-C and two sleepy breaths | sleep.ogg |
 | `burrow_grow` | `burrow.gd` the room grows after a stage-up | soft dig-out rumble, rising marimba | burrow_grow.ogg |
 | `home_seed` / `home_trophy` | `burrow.gd` a seed / trophy put down at home | pat and a two-note pip / marimba and bells | home_seed.ogg, home_trophy.ogg |
 | `pet_home` / `pet_away` / `pet_fetch` | `burrow.gd` / `pet.gd` ladybird arrives, flies off, fetches | wing buzz with a happy two-note / buzz fading away / buzz, pop, ta-da | pet_home.ogg, pet_away.ogg, pet_fetch.ogg |
+| `pet_meet` / `pet_hello` | `Pet.meet()` first of a kind / `burrow.gd` a kind at its cap says hello | buzz, 'hello!' chirp, heart twinkle / two-note hi | pet_meet.ogg, pet_hello.ogg |
+| `pet_walk` / `pet_tend` / `pet_lamp` | `pet.gd` the ant crew trots / nudges a seed bed; the glow-worm lights up | tiny tip-tap feet (quiet, it repeats) / rustle and a growing pip / warm plink and hum | pet_walk.ogg, pet_tend.ogg, pet_lamp.ogg |
 | `garden_plant` | `rings_director.gd` a seed planted | pat-pat and a sprout | garden_plant.ogg |
 | `secret_found` | `RingsDirector.discover()` (SecretData.cue) | sparkle glissando, bell chord, wow-chirp | secret_found.ogg |
 | `mole_pop` / `mole_hide` | `swap_shop.gd` the Mole pops out / hides | dirt and a pop / a dive and a pat | mole_pop.ogg, mole_hide.ogg |
@@ -73,6 +77,7 @@ Kid rules: friendly, never a scare, no pain sounds, no minor stingers; `stage_up
 | **Tackle box and book** | | | |
 | `box_open` / `box_close` | `tackle_box.gd` | latch, lid up, lures / lid down, clack | box_open.ogg, box_close.ogg |
 | `box_flip` / `box_tick` / `box_play` | `tackle_box.gd` page turn / found entry / replay a cutscene | page swish / xylophone tick / projector click and chime | box_flip.ogg, box_tick.ogg, box_play.ogg |
+| `box_why` | `tackle_box.gd` the box opens on the page that explains what just happened | curious 'look!' run and chirp | box_why.ogg |
 | `page_new` / `lure_pin` | `tackle_log.gd` a new page / a lure pinned | page in and ding-ding / metal tink | page_new.ogg, lure_pin.ogg |
 | `book_open` / `book_close` / `book_flip` / `book_look` / `book_tick` | `scripts/ui/book.gd` | paper and a thump / page swish / 'ooh' ding / tick | book_open.ogg, book_close.ogg, book_flip.ogg, book_look.ogg, book_tick.ogg |
 | **Planet chomp, space, polar world** (ProtoSfx / WorldSfx play these through Audio once a file exists) | | | |
@@ -144,9 +149,18 @@ Short cues (< 0.6 s) are measured looped 10x ("as loud as the rest while it soun
 | trait_slick.ogg | sfx | 0.90 | -18.0 | -5.8 |
 | trait_stone_head.ogg | sfx | 0.90 | -18.0 | -4.4 |
 | trait_wriggle.ogg | sfx | 1.00 | -17.5 | -4.2 |
+| trait_floaty.ogg | sfx | 1.00 | -17.5 | -5.3 |
+| trait_skater.ogg | sfx | 0.90 | -17.6 | -4.6 |
+| trait_garden_cart.ogg | sfx | 1.00 | -18.0 | -5.1 |
 | pet_home.ogg | sfx | 0.90 | -18.5 | -8.3 |
 | pet_away.ogg | sfx | 0.80 | -20.1 | -4.3 |
 | pet_fetch.ogg | sfx | 1.00 | -18.7 | -8.0 |
+| pet_meet.ogg | sfx | 1.20 | -18.0 | -6.2 |
+| pet_hello.ogg | sfx | 0.60 | -17.5 | -6.0 |
+| pet_walk.ogg | sfx | 0.30 | -24.7 | -10.6 |
+| pet_tend.ogg | sfx | 0.60 | -21.9 | -10.2 |
+| pet_lamp.ogg | sfx | 0.90 | -21.0 | -4.8 |
+| ring_open.ogg | sfx | 1.60 | -17.3 | -1.1 |
 | bird_gulp.ogg | sfx | 0.40 | -18.0 | -2.8 |
 | boing.ogg | sfx | 0.55 | -17.9 | -6.7 |
 | bird_offended.ogg | sfx | 0.60 | -18.2 | -7.9 |
@@ -174,6 +188,7 @@ Short cues (< 0.6 s) are measured looped 10x ("as loud as the rest while it soun
 | box_flip.ogg | sfx | 0.30 | -21.5 | -8.3 |
 | box_tick.ogg | sfx | 0.25 | -21.3 | -8.0 |
 | box_play.ogg | sfx | 0.90 | -18.3 | -5.5 |
+| box_why.ogg | sfx | 0.80 | -19.0 | -7.9 |
 | lure_pin.ogg | sfx | 0.50 | -19.9 | -5.9 |
 | page_new.ogg | sfx | 1.00 | -18.1 | -5.9 |
 | book_open.ogg | sfx | 0.50 | -19.0 | -3.1 |
