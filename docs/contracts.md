@@ -565,3 +565,33 @@ Hooks these files wait on (owned by other lanes): `RingsDirector.LIVES` to load 
 for the lava blob (knock-back on contact, never steering); `RingFood.Look` shapes for crystal,
 nugget and fossil. Audio cues `rock_beetle_clack`, `rock_beetle_windup`, `lava_blob_blorp`,
 `lava_blob_swell` have no files yet (grey beeps).
+
+### Planet jar audit (worm-jar-1)
+
+Additions to `JarStore` (`scripts/jars/jars.gd`); the API above is unchanged.
+
+```gdscript
+# JarStore additions
+const FOUND_SET := [["tackle"], ["home_slice", "tackle"]]    # Old Reel's tackle box: the tin's
+const TIN_ONLY := FOUND_SET + [["solo"], ["settings"]]       # never written into a jar file
+func peek(planet_id: StringName) -> Dictionary               # the jar's save without opening it ({} if none)
+static func current_planet_id(seed: int) -> StringName       # "<profile>[_<slot>]_<seed>", e.g. p1_tin2_5150
+static func strip_tin_only(data: Dictionary) -> Dictionary   # a copy without TIN_ONLY keys
+static func found_set_of(data: Dictionary) -> Dictionary     # {"tackle": v, "home_slice/tackle": v}
+
+# JarOpenView (scripts/jars/jar_open_view.gd, scenes/jars/jar_open.tscn): opening a jar, shown
+signal entered(planet_id: StringName)        # after JarStore.open(): Save is now the jar's profile
+@export var next_scene := ""                 # change to this scene after entered ("" = host decides)
+func show_jar(store: JarStore, id: StringName) -> bool   # false if no such jar
+func advance(delta: float) -> void           # shelf (clink) -> lid pops (jar_open) -> dive (jar_enter)
+                                             # -> open at ENTER_AT (2.4 s). No words, no input needed.
+```
+
+- Snapshot and close read the **open save's slot file** (`Save.path_for(Save.slot)`), so a jar taken
+  from bait tin 2 is tin 2's planet; close returns to the same profile **and slot**.
+- The jar file never holds the found-set or settings. `open()` lends the opening tin's found-set into
+  the jar profile; `close()` hands it back to the tin with whatever was found inside, so finds in a
+  jar count in the tin's tackle box.
+- `planet_id` for a tin is `<profile>_<slot>_<seed>` (was `<profile>_<seed>`, which let two tins
+  with the same seed share one jar). `PlanetChomp` uses it when the planet has no id.
+- Audio cues `jar_clink`, `jar_open`, `jar_enter` have no files yet (grey beeps).
