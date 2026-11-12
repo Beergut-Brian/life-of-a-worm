@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PropData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/prop_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/foods/plank.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"dock_shed"
+size = Vector2i(6, 3)
+tile = &"clay"
+hits = 4
+size_stage = 4
+chunk = ExtResource("2")
+chunks = 5
+angles = PackedFloat32Array(0.2)
+look = &"dock_shed"
+top_tile = &"topsoil"
+top_rows = 1

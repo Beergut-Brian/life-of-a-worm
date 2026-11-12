@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"twig"
+flavour = &"root"
+growth = 2.0
+size_stage = 3
+color = Color(0.5412, 0.3529, 0.1961, 1)
+radius = 6.0
+ring = &"surface"
+regrow_time = 0.0
+plants = &""
+look = 2
+accent = Color(0.4353, 0.7490, 0.2902, 1)
