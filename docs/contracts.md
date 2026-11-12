@@ -839,6 +839,46 @@ func sweep_loose() -> void                                 # every 0.5 s: new lo
 ```
 
 New cues with no file yet (grey beep): `prop_crack`, `prop_break`, `loose_land`. The bonk reuses `bonk`.
+
+### Stage 6 in the planet and the space stage (worm-chomp-space-1)
+
+`PlanetLevel.chomp` (`ChompDirector`, `scripts/chomp/chomp_director.gd`) runs stage 6 inside the real
+planet. Trigger: a worm at stage >= 6 with its head more than `RADIUS + 2` tiles from the centre for
+`OUT_TIME` (0.6 s). Never inside a jar (`JarStore.stage6_allowed()`). The jar id for a tin is
+`<profile>[_<slot>]_<seed>` (the same as feature/worm-jar-1's `JarStore.current_planet_id`).
+
+```gdscript
+# ChompDirector (PlanetLevel.chomp)
+signal shot_opened(player: int)       # cut to the fixed planet shot, the picture asks
+signal shot_closed()                  # B: not yet; back to the disk, nothing changed
+signal entered_space()                # after the chomp, or on opening an eaten tin
+enum State { WATCH, SHOT, SPACE }
+var chomp: PlanetChomp                # while the shot is up
+var space: SpaceStage                 # once in space
+var jar_dir := ""                     # tests only ("" = user://jars)
+static func eaten() -> bool           # Save "planet_eaten"
+func busy() -> bool                   # SHOT or SPACE: PlanetLevel's frame only autosaves
+func open_shot(w: Worm) -> bool       # level.save_now() first, so the jar copies the tin as it is
+func close_shot() -> void
+func enter_space(fade := true) -> void
+func planet_id() -> String
+
+# PlanetChomp additions (set before add_child)
+signal declined()                     # B on the picture
+var source_texture: Texture2D; var source_id: String; var source_colors: Array[Color]
+var worm_color: Color; var keep_planet_save := false   # the real tin keeps "planet"
+func decline() -> bool
+
+# SpaceStage (scenes/levels/space_stage.tscn, prototype; one drifting SpacePlanet, no hunting)
+const HOLD := 0.9; const EASE := 2.6; const SPACE_ZOOM := 0.7
+var players: Array[int]; var worms: Array[SpaceWorm]; var planet: SpacePlanet; var camera: Camera2D
+func gravity_on() -> bool             # always false
+func step_camera(delta) -> void       # planet shot -> follow the worms; rotation stays 0
+
+# Tin save keys: "planet_eaten": true and "stage": 7 after the chomp; "planet" is kept.
+# Cues: the chomp's ProtoSfx cues (confirm_hold, confirm_yes, confirm_cancel, jar_clink,
+# chomp_bite, planet_gone); "warp" on arriving in space.
+```
 ### Centipede (worm-creatures-2)
 
 `feature/worm-creatures-2` (PLAN-STATUS L-08). Adds `CreatureData.Behaviour.WAVE` (appended, so
