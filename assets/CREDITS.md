@@ -141,3 +141,15 @@ All drawn in code by `assets/proto/worm/make_art.py` (Python + Pillow), original
 | `proto/worm/part_magnet.png` | `make_art.py` (Pillow) | Horseshoe tail part | Project's own |
 | `proto/worm/part_sheen.png` | `make_art.py` (Pillow) | Glossy highlight skin part | Project's own |
 | `proto/worm/heart.png`, `note.png`, `star.png` | `make_art.py` (Pillow) | Boop heart, wiggle note, dizzy / share star | Project's own |
+
+## Gulp and Burp, the worm heroes (art-worms-1, 2026-11-12)
+
+Designs from GAME.md. Built 3D-first: master in `art/worms/worms_master.blend` (made by `art/worms/build_masters.py`, Blender, original shapes), then every sprite placed pixel by pixel at its final size by `art/worms/tools/draw_pixels.py` (Python + Pillow) to the master's proportions and colours. No references, no downscales.
+
+| File | Tool / source | What | License |
+| --- | --- | --- | --- |
+| `characters/gulp/s{1,2,3}/head.png`, `body.png`, `tail.png` | `draw_pixels.py` (Pillow) | Gulp (P1, green) head, body and tail segments per stage; stage 3 head wears the bow | Project's own |
+| `characters/burp/s{1,2,3}/head.png`, `body.png`, `tail.png` | `draw_pixels.py` (Pillow) | Burp (P2, red) head, body and tail segments per stage; stage 3 head wears the cap | Project's own |
+| `characters/{gulp,burp}/s{1,2,3}/band.png`, `tail_band.png` | `draw_pixels.py` (Pillow) | Neutral-light diet stripe, tinted by `WormLook.flavour_tint` | Project's own |
+| `characters/{gulp,burp}/s{1,2,3}/face_*.png` | `draw_pixels.py` (Pillow) | Face overlays: idle, ajar, open, chomp 1-3, squash, happy, worried, sleep | Project's own |
+| `characters/gulp/s3/feature.png`, `characters/burp/s3/feature.png` | `draw_pixels.py` (Pillow) | Stage 3 bow (Gulp) and cap (Burp) as icons | Project's own |
