@@ -630,3 +630,45 @@ func can_keep(id) -> bool; func pet_count(id) -> int
 ```
 
 Cues (placeholder beeps, none is a pain sound): `pet_meet`, `pet_hello`, `pet_lamp`, `pet_walk`, `pet_tend`.
+### Secrets 2 (secrets-2)
+
+`feature/secrets-2`, PLAN-STATUS X-03, X-04. A hidden place is now data only: drop a
+`SecretData` in `data/secrets/` and its food in `data/foods/`; `RingsDirector` and the tackle box
+both glob those folders.
+
+```gdscript
+# SecretData (scripts/rings/secret_data.gd), new fields (defaults keep ant_city.tres unchanged)
+@export var carve_stage := 2                  # the bite stage the hall is dug with (4 opens rock)
+@export var rooms: PackedVector3Array         # side rooms: x tiles to the side, y tiles up, z radius (tiles)
+@export var extra_food: StringName = &"bug_egg"   # one more food in the first room; &"" = none
+
+# RingsDirector
+static var SECRETS: Array[SecretData]         # every data/secrets/*.tres, sorted by id (was a const of one)
+static func secret(id) -> SecretData
+static func rooms_of(s, centre) -> Array[Vector3]   # (offset x, offset y, radius) in px
+var carved: Dictionary                        # secret ids dug in this tin; save key "carved"
+# Tins saved before "carved" existed count as having only ant_city: the rest are dug on load.
+# Side rooms get keep zones too (they never regrow shut). --rings-shot=secret:<id> stages a find.
+
+# SecretSpot: the find beat (RingsDirector.discover calls it, every secret including the ant city)
+func play_found_beat() -> void                # PictoBubble over the hall for ~5.4 s:
+func beat_pictures() -> Array[StringName]     # [&"secret:<id>", &"secret_food:<food>", &"secret_box"]
+var beat_t: float                             # < 0 when not playing
+
+# SecretLook (scripts/rings/secret_look.gd): the one small picture per secret, placeholder in code
+static func register() -> void                # PictoBubble prefixes "secret:", "secret_food:", id &"secret_box"
+static func draw(ci, id, c, s, a := 1.0, t := 0.0) -> void
+const KNOWN := [&"ant_city", &"sunken_rowboat", &"fossil_hall"]   # others draw a gold star
+
+# TackleBox: the "that's why" callback
+var why: Array[StringName]                    # secrets unlocked since the last open
+# open(): if why is not empty, turns to the secrets page, cursor on the first new one, wiggles it,
+# a gold ring and stars pulse round it for WHY_TIME (3 s), and plays cue "box_why".
+```
+
+| Secret | Ring | Where (angle, depth) | Hall | Unique food (`data/foods/`) | Page |
+| --- | --- | --- | --- | --- | --- |
+| `sunken_rowboat` | dirt (aquifer pool at its foot) | -0.42, 0.50 | 7 tiles + 2 rooms | `ship_biscuit` (water, stage 1, x5) | `secret_sunken_rowboat` |
+| `fossil_hall` | deep_rock | 0.55, 0.30 | 8 tiles + 2 rooms, dug at stage 4 | `amber` (crystal, stage 4, x5) | `secret_fossil_hall` |
+
+New audio cue with no file yet (grey beep): `box_why`. The finds reuse `secret_found`.
