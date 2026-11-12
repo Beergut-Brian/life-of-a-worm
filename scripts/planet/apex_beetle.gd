@@ -111,7 +111,7 @@ func step(delta: float) -> void:
 		Mode.LUNGE:
 			_move(facing * LUNGE_SPEED * delta)
 			if target and is_instance_valid(target) and not is_food_for(target):
-				if target.cam_position().distance_to(position) < radius + BITE:
+				if target.cam_position().distance_to(position) < radius + BITE and not Gulp.is_safe(target):
 					_gulp(target)
 					return
 			if _mode_t >= LUNGE:
@@ -139,6 +139,7 @@ func bitten_by(w: Worm) -> void:
 	_set_mode(Mode.GONE)
 	visible = false
 	remove_from_group("creatures")
+	GrinCloseup.show_for(w)   # first bite of a former threat: the grin (the level plays the sting)
 	eaten.emit(w.player)
 
 
@@ -149,7 +150,8 @@ func is_gone() -> bool:
 func _gulp(w: Worm) -> void:
 	# Out of the far end: behind the beetle, on the side away from where it bit.
 	var out := global_position - facing * (radius + 14.0)
-	w.get_eaten(id, out)
+	if not Gulp.eat(id, w, out):
+		return   # still sparkling from the last gulp: the lunge goes on past it
 	_set_mode(Mode.FULL)
 	ate_worm.emit(w.player)
 
