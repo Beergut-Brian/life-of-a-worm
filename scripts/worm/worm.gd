@@ -643,8 +643,11 @@ func _light_texture() -> Texture2D:
 
 func _add_segment_node(flavour: StringName, pop := true) -> void:
 	var node := WormSegment.new(player, model.stage, flavour, _sheen_mat)
-	node.z_index = -1 - _seg_nodes.size()
+	# Under the head, each segment under the one before it: by draw order, not z_index (a z of
+	# -1 - i sank every segment past the fifth behind the planet's castings and back wall).
+	node.z_index = -1
 	body.add_child(node)
+	body.move_child(node, 0)
 	_seg_nodes.append(node)
 	if pop:
 		node.set_meta("pop", 0.1)

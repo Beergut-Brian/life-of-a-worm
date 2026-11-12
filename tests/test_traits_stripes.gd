@@ -20,7 +20,7 @@ func _worm() -> Worm:
 
 func _segments(w: Worm) -> Array[WormSegment]:
 	var out: Array[WormSegment] = []
-	for n in w.body.get_children():
+	for n in w._seg_nodes:   # head end first
 		if n is WormSegment and not n.is_queued_for_deletion():
 			out.append(n)
 	return out
@@ -91,3 +91,22 @@ func test_stripes_survive_save_and_load() -> void:
 	var segs := _segments(back)
 	assert_str(String(segs[-1].flavour)).is_equal("water")
 	assert_str(String(segs[-2].flavour)).is_equal("bug")
+
+
+func test_a_long_worm_draws_every_segment_above_the_planet() -> void:
+	var w := _worm()
+	for i in 16:
+		w.feed(_food(&"bug" if i % 2 == 0 else &"water"))
+	var segs := _segments(w)
+	assert_int(segs.size()).is_equal(w.model.segments.size())
+	for s in segs:
+		# the planet's castings sit at z -2 and its back wall at -4 under worms at z 3:
+		# a segment's own z must never sink the tail below them
+		assert_int(s.z_index).is_equal(-1)
+	# head end drawn last (on top): the oldest segment is the last child
+	var kids := w.body.get_children().filter(func(n: Node) -> bool: return n is WormSegment)
+	assert_int(kids.find(_first_segment(w))).is_equal(kids.size() - 1)
+
+
+func _first_segment(w: Worm) -> WormSegment:
+	return w._seg_nodes[0] as WormSegment

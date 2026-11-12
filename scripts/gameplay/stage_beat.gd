@@ -71,7 +71,7 @@ func play(w: Worm, from: int, to: int) -> void:
 	var ring := _ring_radius(info.opens_ring)
 	if ring > 0.0:
 		var t := get_tree().create_timer(RING_DELAY, false) if is_inside_tree() else null
-		var entry := { "radius": ring, "color": _ring_color(info.opens_ring), "t": -RING_DELAY }
+		var entry := { "radius": ring, "color": _ring_color(info.opens_ring), "t": -RING_DELAY, "worm": w }
 		_rings.append(entry)
 		if t:
 			t.timeout.connect(func() -> void: Audio.play("ring_open"))
@@ -135,6 +135,30 @@ func _process(delta: float) -> void:
 
 ## The opened ring's edge glows: three bright pulses running round the whole planet.
 func _draw() -> void:
+	_draw_rings()
+
+
+## Three bouncing chevrons from the worm toward the opened ring (it is often off screen).
+func _pointer(e: Dictionary, c: Color, pulse: float, _px: float) -> void:
+	var w: Worm = e.worm
+	if not is_instance_valid(w):
+		return
+	var head := w.head_position()
+	var r := head.length()
+	if r < 1.0 or absf(r - e.radius) < 40.0:
+		return
+	var dir := head / r * signf(e.radius - r)
+	var side := dir.orthogonal()
+	var base := head + dir * (115.0 + 12.0 * pulse) * w.size_factor()   # past the "why" bubble
+	var col := Color(1.0, 0.9, 0.3, maxf(c.a, 0.7))
+	for i in 3:
+		var tip := base + dir * (14.0 * i + 12.0)
+		var pts := PackedVector2Array([tip - dir * 10.0 + side * 10.0, tip, tip - dir * 10.0 - side * 10.0])
+		draw_polyline(pts, Color(0.1, 0.07, 0.05, col.a), 7.0)
+		draw_polyline(pts, col, 4.0)
+
+
+func _draw_rings() -> void:
 	var px := 1.0 / (camera.zoom.x if camera else 1.0)
 	for e in _rings:
 		if e.t < 0.0:
@@ -147,6 +171,7 @@ func _draw() -> void:
 		var glow := c
 		glow.a *= 0.35
 		draw_arc(Vector2.ZERO, e.radius, 0.0, TAU, 720, glow, 22.0 * px)
+		_pointer(e, c, pulse, px)
 		# sparkles running round the edge
 		for i in 48:
 			var a: float = TAU * i / 48.0 + e.t * 0.8

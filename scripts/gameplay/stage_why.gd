@@ -28,11 +28,12 @@ func _process(delta: float) -> void:
 
 func _follow() -> void:
 	if is_instance_valid(worm):
-		var up := -worm.head_position().normalized() if worm.head_position().length() > 1.0 else Vector2.UP
+		# "up" is away from the planet's core (the camera keeps it at the top of the screen)
+		var up := worm.head_position().normalized() if worm.head_position().length() > 1.0 else Vector2.UP
 		var k := clampf((_t - life * 0.7) / (life * 0.3), 0.0, 1.0)
-		position = worm.head_position() + up * lerpf(44.0 * worm.size_factor(), 0.0, ease(k, 2.0))
+		position = worm.head_position() + up * lerpf(60.0 * worm.size_factor(), 0.0, ease(k, 2.0))
 		rotation = up.angle() + PI / 2.0
-		scale = Vector2.ONE * lerpf(1.0, 0.2, k)
+		scale = Vector2.ONE * lerpf(1.5, 0.2, k)
 
 
 func _draw() -> void:
