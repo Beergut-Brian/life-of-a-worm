@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="PlanetData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_xxasj"]
+[ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_4pb1x"]
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="3_0yr0t"]
+
+[sub_resource type="Resource" id="Resource_lj7w2"]
+script = ExtResource("1_xxasj")
+id = &"snowball"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.95686275, 0.9843137, 1, 1)
+radius = 30.0
+
+[sub_resource type="Resource" id="Resource_7mqmc"]
+script = ExtResource("1_xxasj")
+id = &"ice_cube"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.62352943, 0.8627451, 0.9490196, 1)
+radius = 36.0
+
+[sub_resource type="Resource" id="Resource_lbico"]
+script = ExtResource("1_xxasj")
+id = &"frost_moon"
+flavour = &"star"
+growth = 3.0
+size_stage = 6
+color = Color(0.84705883, 0.93333334, 0.972549, 1)
+radius = 52.0
+
+[sub_resource type="Resource" id="Resource_j1nrr"]
+script = ExtResource("3_0yr0t")
+id = &"frost_star"
+add = {
+"space_speed": 60.0
+}
+part_slot = &"space"
+color = Color(0.49803922, 0.8901961, 1, 1)
+
+[resource]
+script = ExtResource("2_4pb1x")
+id = &"ice"
+color = Color(0.7490196, 0.9019608, 0.9607843, 1)
+accent = Color(0.43529412, 0.7019608, 0.8509804, 1)
+radius = 170.0
+foods = Array[ExtResource("1_xxasj")]([SubResource("Resource_lj7w2"), SubResource("Resource_7mqmc"), SubResource("Resource_lbico")])
+drift = 30.0
+star_trait = SubResource("Resource_j1nrr")
