@@ -7,6 +7,7 @@ extends GdUnitTestSuite
 
 const SUITE := "swap"
 const PLANET := preload("res://scenes/levels/planet.tscn")
+const CLEAR_PX := 64.0   # nothing the level put down stays this close to the worm's mouth at the Mole
 
 var _level: PlanetLevel
 var _intent := {}
@@ -87,8 +88,14 @@ func _shop() -> SwapShop:
 	return _level.home_slice.shop
 
 
+## Moves the worm to the Mole's counter and clears the counter: a fresh planet takes a random seed
+## (randi), and about 1 in 10 scatter a pickup (grub, pebble, seed, boulder) within reach of the
+## mouth there; the worm would carry, eat or bonk that instead of what the test puts down.
 func _to_mole(w: Worm) -> void:
 	w.warp_to(_shop().mole_position() + (_shop().position.normalized().orthogonal() * 20.0))
+	for f in get_tree().get_nodes_in_group(&"food"):
+		if f.has_method("take") and f.global_position.distance_to(w.mouth_position()) < CLEAR_PX:
+			f.take()
 
 
 func test_the_mole_is_never_food() -> void:
