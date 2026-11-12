@@ -135,9 +135,9 @@ text_size_focused = 108
 [node name="DoorIcon" type="Control" parent="Card"]
 layout_mode = 0
 offset_left = 112.0
-offset_top = 942.0
+offset_top = 932.0
 offset_right = 240.0
-offset_bottom = 1070.0
+offset_bottom = 1060.0
 mouse_filter = 2
 script = ExtResource("11_icon")
 icon = 2
