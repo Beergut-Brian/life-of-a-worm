@@ -673,6 +673,28 @@ var why: Array[StringName]                    # secrets unlocked since the last 
 
 New audio cue with no file yet (grey beep): `box_why`. The finds reuse `secret_found`.
 
+### Crust burst (stages-reconcile-1)
+
+The surface crust from `data/stages.tres`: the first stage whose `StageData.crust_ring` is set
+(stage 5, `&"surface"`) can eat that ring; below it the ring bonks (`dig_blocked`). Its eaten tiles
+never regrow, so the disk shrinks. The first bite through is the breakthrough, once per worm per tin.
+
+```gdscript
+# StageData: @export var crust_ring: StringName                 # &"" = this stage breaks no crust
+# StageTable: crust_stage() -> int (-1: none), crust_ring() -> StringName,
+#             apply_crust(rings: RingSet) -> RingSet             # a copy: crust edible_from = crust_stage, regrow 0
+# Worm:
+signal breakthrough(player: int)                                 # first crust bite in this tin (GAME.md contract)
+# CrustBurst (scripts/gameplay/crust_burst.gd; PlanetLevel.crust)
+signal breakthrough(player: int)
+var broken: Array[int]          # players that broke through in this tin
+var eaten: int                  # crust tiles eaten for good in this tin
+func can_burst(stage: int) -> bool
+func cap(base_zoom_index: int) -> int    # one step wider for PULL_TIME after a breakthrough
+func steer_camera(base_zoom_index: int)  # PlanetLevel calls it each frame: sets max_fit_index = cap(),
+                                         # lowers min_fit_index during the pull-back, then restores it
+# Tin save key "crust": {"broken": [player, ...], "eaten": int}. Cue: "breakthrough".
+```
 ### Creature behaviour (worm-creatures-1)
 
 `feature/worm-creatures-1` (PLAN-STATUS L-04, S-07, L-15, L-16, L-17). Code in `scripts/creatures/`.

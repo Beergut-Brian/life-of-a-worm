@@ -26,3 +26,6 @@ extends Resource
 @export var slots := 0
 ## Played in the one disk scene (stages 1 to 5); 6 is the scripted chomp, 7 the space scene.
 @export var in_disk := true
+## From this stage the worm bites through this ring: the crust (S-08). Below it the ring is not
+## food (the worm bonks off it); its eaten tiles never grow back, so the disk shrinks. &"" = none.
+@export var crust_ring: StringName

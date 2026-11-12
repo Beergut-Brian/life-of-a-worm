@@ -14,6 +14,8 @@ signal stage_changed(player: int, from: int, to: int)
 signal carried(player: int, what: StringName)
 signal dropped(player: int, what: StringName)
 signal eaten_by(player: int, creature: StringName)
+## First bite through the crust in this tin (CrustBurst emits it, once per worm per tin).
+signal breakthrough(player: int)
 signal booped(player: int, other: int)
 ## Hold B (wiggle) for WARP_HOLD s: the level decides where to (home, or the far partner).
 signal warp_requested(player: int)
@@ -30,6 +32,12 @@ const BOOP_COOLDOWN := 1.2
 const BONK_COOLDOWN := 0.5
 const DROP_BLOCK := 0.8
 const CHOMP_CUES := 5
+## Growth per tile swallowed when no trait sets "tile_growth" (data/BALANCE.md reads it).
+const TILE_GROWTH := 0.05
+## Mouth bite radius in px at stage 1 (times the stage size): the tunnel the worm eats.
+const BITE_RADIUS := 12.0
+## Speed factor while digging new ground when no stat sets "dig_speed".
+const DIG_SPEED := 0.65
 ## Where a part of each slot sits. Slots are data names, not traits.
 const SLOT_OFFSET := { &"head": Vector2(2, -1), &"crown": Vector2(-2, -12), &"above": Vector2(-2, -24), &"back": Vector2(0, -8), &"under": Vector2(0, 8), &"tail": Vector2(-7, 0) }
 const BACK_EVERY := 3
@@ -193,7 +201,7 @@ func _on_tile_eaten(cell: Vector2i, _block: StringName, p: int) -> void:
 
 ## One tile swallowed: a little growth in the ring's flavour, a share to the partner.
 func bite_tile(flavour: StringName) -> void:
-	var g := model.stats.value("tile_growth", 0.05)
+	var g := model.stats.value("tile_growth", TILE_GROWTH)
 	model.add_growth(g, flavour)
 	tiles_this_frame += 1
 	tiles_total += 1
@@ -423,9 +431,9 @@ func _physics_process(delta: float) -> void:
 		# The bite is centred just ahead of the head and wide enough to clear it, so the tunnel
 		# never snags the head on a tile corner (about 1.5 tiles wide at stage 1).
 		var bite_at := world.to_local(head.global_position + Vector2.from_angle(heading) * 6.0 * _size)
-		var n := world.eat_circle(bite_at, 12.0 * _size, player)
+		var n := world.eat_circle(bite_at, BITE_RADIUS * _size, player)
 		if n > 0 or tiles_this_frame > 0:
-			speed *= stats.value("dig_speed", 0.65)   # dirt is slower than an open tunnel
+			speed *= stats.value("dig_speed", DIG_SPEED)   # dirt is slower than an open tunnel
 	head.velocity = Vector2.from_angle(heading) * speed
 	head.move_and_slide()
 	dust.emitting = _burst_left > 0.0
