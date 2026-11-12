@@ -3,12 +3,19 @@
 ## delivers files. Dropping <cue>.ogg (or <cue>_1.ogg ...) into assets/audio/sfx/ replaces it.
 ## Known cues get a shape that hints at the feel in GAME.md's Audio table; any other cue gets a
 ## plain beep whose pitch comes from its name (so two different cues never sound the same).
+##
+## 2026-11-12 (worm-audio-1): every cue the game plays now has a designed file
+## (scripts/tools/make_cues.py, assets/audio/CUES.md), so this is only a safety net for a cue
+## added later. Menu-kit cues (ui_move, ui_confirm, player_join, ...) go to UiSound's designed
+## synth, never a beep. `beeped` counts every real beep so tests can prove none happens.
 class_name GreyBeep
 extends RefCounted
 
 const RATE := 22050
 
 static var _cache: Dictionary = {}
+## cue -> times a placeholder beep was handed out (tests/test_worm_audio.gd reads it).
+static var beeped: Dictionary = {}
 
 
 ## Recipe per cue: [[start Hz, end Hz, seconds, noise 0..1], ...] played one after another.
@@ -49,6 +56,9 @@ static func clear() -> void:
 
 
 static func stream(cue: String) -> AudioStreamWAV:
+	if UiSound.CUES.has(cue):
+		return UiSound.stream(cue)   # the shared menu kit's designed sound, not a beep
+	beeped[cue] = int(beeped.get(cue, 0)) + 1
 	if _cache.has(cue):
 		return _cache[cue]
 	var parts := recipe(cue)
