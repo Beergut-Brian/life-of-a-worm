@@ -672,3 +672,49 @@ var why: Array[StringName]                    # secrets unlocked since the last 
 | `fossil_hall` | deep_rock | 0.55, 0.30 | 8 tiles + 2 rooms, dug at stage 4 | `amber` (crystal, stage 4, x5) | `secret_fossil_hall` |
 
 New audio cue with no file yet (grey beep): `box_why`. The finds reuse `secret_found`.
+
+### Creature behaviour (worm-creatures-1)
+
+`feature/worm-creatures-1` (PLAN-STATUS L-04, S-07, L-15, L-16, L-17). Code in `scripts/creatures/`.
+Reads `WormGrowth` / `WormStats` / `StageData`; never changes them.
+
+```gdscript
+# CreatureSense (static): the size table
+enum React { FLEE, IGNORE, AMBLE, FRIEND }
+static func react(creature_stage, worm_size, jarling := false) -> React   # < FLEE, > AMBLE, == IGNORE
+static func worm_size(w, data) -> int     # stage_info().edible_size + round(stats "bite_bonus/<flavour>")
+static func of(data, w) -> React; static func is_food(data, w) -> bool; static func is_threat(data, w) -> bool
+# is_food(data, w) == w.can_eat(data) for every non-Jarling (tested over all stages and creatures).
+
+# Creature (adds)
+func react_to(w) -> CreatureSense.React
+func is_jarling() -> bool                  # CreatureData.jarling; group &"jarlings", never &"food"
+func is_gulping() -> bool                  # drawn mid-gulp for 0.7 s after it eats a worm (the cause)
+
+# Gulp (static): the one eaten path; the beetle, the bird and the apex beetle all use it
+static func eat(creature_id, w, far_end: Vector2, from = null) -> bool   # false while w sparkles
+static func is_safe(w) -> bool             # EatenSparkle on w.head, 0.5 s
+static func landing(w, far_end) -> Vector2 # partner within 160 px: beside them; else nearest open
+                                           # tile within 96 px of far_end; else far_end
+
+# Outgrown (per worm, Outgrown.of(w)): species once a threat in sight (260 px)
+signal flipped(species)                    # first time seen as food in sight: once per species
+signal first_bite(species)                 # first one eaten: once per species
+# Tin key `outgrown`: {"<player>": {"threat": [...], "flipped": [...], "bitten": [...]}}
+
+# GrinCloseup (CanvasLayer 55): static show_for(w, prey_data = null); 1.6 s inset, P1 left, P2 right
+```
+
+**Data.** `CreatureData.jarling: bool` (default false, a new field in the script only; no
+`data/creatures/*.tres` changed). A Jarling is never food, never a threat, never in Outgrown, and is
+drawn with the soft warm friend outline (the Mole's `MoleLook.FRIEND` colour).
+
+**Reaction by size** (GAME.md "Bugs and threats", taken literally): a worm bigger than a creature
+makes it flee slowly (slower than half the worm's speed); a worm its own size is ignored (no flee,
+no stalk) but it is still food (`Worm.can_eat`, equal = food); a smaller worm is ambled toward by a
+TRUNDLE creature with `notice > 0` (others just carry on). This replaces slice-rings-1's "equal size
+runs away".
+
+**Audio cues** (new; grey beeps until audio lands): `outgrown` (the creature's startle when a worm
+outgrows its kind: a surprised squeak, never pain), `creature_gulp` (comic gulp when a creature
+swallows a worm). `now_i_eat_you` now also plays on the first bite of any outgrown species.
