@@ -37,6 +37,9 @@ var max_regrow_per_frame := 48
 var castings_speed := 1.0
 var garden_speed := 1.0
 var build_overview := true
+## Look B ground (Art lane, scripts/look/ring_tile_art.gd): textured, normal-mapped autotiles and a
+## see-through castings floor. Off: the flat placeholder tiles (set before setup_planet).
+var use_ring_art := true
 
 ## Measurements (stress scene reads them).
 var chunk_build_ms: PackedFloat32Array = []
@@ -85,6 +88,8 @@ func setup_planet(p_rings: RingSet, radius: int, p_seed: int, band := 32) -> voi
 	for f in rings.garden_tiles:
 		_tile_ring[_ids[rings.garden_tiles[f]]] = -2
 	water_hz = 0.0  # no water on this planet yet; the aquifer prototype turns it on
+	if tile_art == null and use_ring_art:
+		tile_art = RingTileArt.new(palette, collision_layer)
 	chunk_radius = 2  # 5x5 per tracked node
 	setup(_disk, _gen, palette, p_seed)
 	clock = 0.0
@@ -398,6 +403,8 @@ func _on_chunk_freed(key: Vector2i) -> void:
 
 ## Dark rich soil with lighter crumbs, four variants. No collision: castings never block.
 func _build_cast_set() -> TileSet:
+	if tile_art is RingTileArt:
+		return (tile_art as RingTileArt).castings_tile_set()
 	var cs := shape.cell_size
 	var img := Image.create_empty(cs * 4, cs, false, Image.FORMAT_RGBA8)
 	var base := rings.castings_hue
