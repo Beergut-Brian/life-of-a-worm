@@ -160,8 +160,8 @@ func test_opening_a_jar_shows_the_planet_in_it_then_loads() -> void:
 	assert_bool(jars.is_in_jar()).is_false()
 	assert_float(v.dive()).is_greater(0.5)
 	assert_int(Audio.played.get("jar_clink", 0)).is_equal(1)
-	assert_int(Audio.played.get("jar_open", 0)).is_equal(1)
-	assert_int(Audio.played.get("jar_enter", 0)).is_equal(1)
+	assert_int(Audio.played.get("burst", 0)).is_equal(1)     # lid pop (reuses burst until jar_open exists)
+	assert_int(Audio.played.get("tunnel", 0)).is_equal(1)    # dive (reuses tunnel until jar_enter exists)
 	for i in 20:
 		v.advance(dt)
 	assert_bool(v.opened).is_true()
