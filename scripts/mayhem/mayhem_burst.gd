@@ -1,7 +1,8 @@
 ## K-09: the cartoon burst when a house, cow or car is eaten. Code-drawn, no art files, no text:
 ## a white pop ring, a puff of round confetti, little squares and four-point stars in the prop's
 ## own colours, each inked, flying out and up and then falling toward the core with the disk's
-## gravity (world.shape.gravity_at, like LooseFall), spinning, fading, gone in LIFE seconds.
+## gravity (world.shape.gravity_at, like LooseFall) and settling on the first solid tile, spinning,
+## fading, gone in LIFE seconds.
 ## Lives on the world (it turns with the planet). Frees itself.
 class_name MayhemBurst
 extends Node2D
@@ -18,7 +19,7 @@ var world: TileWorld
 ## Half the prop's size, px: the confetti starts spread over it.
 var spread := 24.0
 var t := 0.0
-## Each piece: {p, v, col, r, kind (0 dot, 1 square, 2 star), spin, a}.
+## Each piece: {p, v, col, r, kind (0 dot, 1 square, 2 star), spin, a, rest}.
 var bits: Array[Dictionary] = []
 var _rng := RandomNumberGenerator.new()
 
@@ -39,6 +40,7 @@ func _ready() -> void:
 			"kind": i % 3,
 			"spin": _rng.randf_range(-9.0, 9.0),
 			"a": _rng.randf_range(0.0, TAU),
+			"rest": false,
 		})
 
 
@@ -60,6 +62,13 @@ func _gravity(local_p: Vector2) -> Vector2:
 	return -_up() * FALLBACK_G
 
 
+## True when this point (this node's frame) is inside a solid tile of the world.
+func _solid(local_p: Vector2) -> bool:
+	if world == null or world.get("shape") == null:
+		return false
+	return world.is_solid(world.shape.cell_at(world.to_local(to_global(local_p))))
+
+
 func _process(delta: float) -> void:
 	step(delta)
 
@@ -68,8 +77,14 @@ func _process(delta: float) -> void:
 func step(delta: float) -> bool:
 	t += delta
 	for b in bits:
+		if b.rest:
+			continue
 		b.v = (b.v as Vector2) * (1.0 - 0.6 * delta) + _gravity(b.p) * delta
-		b.p = (b.p as Vector2) + (b.v as Vector2) * delta
+		var next: Vector2 = (b.p as Vector2) + (b.v as Vector2) * delta
+		if _solid(next) and not _solid(b.p):
+			b.rest = true   # landed on the ground, like every loose thing
+			continue
+		b.p = next
 		b.a = float(b.a) + float(b.spin) * delta
 	queue_redraw()
 	if t >= LIFE:
