@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/rings/rings_director.gd" id="2_rings"]
 [ext_resource type="Script" path="res://scripts/lighting/lantern.gd" id="9_lantern"]
 [ext_resource type="Script" path="res://scripts/world/world_destruct.gd" id="3_destruct"]
+[ext_resource type="Script" path="res://scripts/mayhem/mayhem.gd" id="10_mayhem"]
 
 [node name="Planet" type="Node2D"]
 script = ExtResource("1_planet")
@@ -13,6 +14,9 @@ script = ExtResource("2_rings")
 
 [node name="Destruct" type="Node2D" parent="."]
 script = ExtResource("3_destruct")
+
+[node name="Mayhem" type="Node" parent="."]
+script = ExtResource("10_mayhem")
 
 [node name="Lantern" type="Node2D" parent="."]
 script = ExtResource("9_lantern")
