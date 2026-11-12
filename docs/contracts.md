@@ -901,3 +901,24 @@ Who it chases is `CreatureSense` alone (AMBLE: a worm smaller than 3). It gives 
 won't chase again for `rest_time`. Flees a bigger worm at 0.45x speed (under half a worm's).
 Cues: bark `threat_near`, wind-up `beetle_windup`, give-up `bird_offended` (borrowed: no
 centipede cue file yet). Live in `dirt_life.tres` (species `centipede`, eats grubs, live_max 2).
+### Traits you can see (worm-traits-visible-1)
+
+`feature/worm-traits-visible-1` (PLAN-STATUS D-15, P-15, U-15). Worm code still names no trait;
+every effect is found through the stat a trait changes (`Worm._trait_for(stat)`: the active trait
+with that stat in `add` or `mul`, highest `part_priority` first).
+
+```gdscript
+# Worm (scripts/worm/worm.gd), new public state:
+var cart: Array[Node2D]     # riders beyond the mouth's `carrying` (carry_slots - 1 of them)
+var reveals: Dictionary     # trait id -> reveal rings shown (earn only)
+var moments: Dictionary     # trait id -> times shown at work (bite_bonus bite, cart rider)
+var in_open: bool           # last frame ate no tile (open tunnel or air)
+func needs_bonus(food: FoodData) -> bool   # edible only because of a bite_bonus stat
+# Stats now read by the worm: "glide" (burst x(1 + glide) when it starts in open ground),
+# "skate" (open-ground speed x(1 + 0.35 * skate)), "carry_slots" (things held with X).
+```
+
+Sound: earn = `TraitData.cue` + reveal ring, once. Any later equip (`traits_changed` adding it) =
+the cue again, no ring. At work = the cue, a small ring, the part pops (throttled 0.4 s).
+Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
+A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
