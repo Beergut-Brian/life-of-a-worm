@@ -14,6 +14,8 @@ signal stage_changed(player: int, from: int, to: int)
 signal carried(player: int, what: StringName)
 signal dropped(player: int, what: StringName)
 signal eaten_by(player: int, creature: StringName)
+## First bite through the crust in this tin (CrustBurst emits it, once per worm per tin).
+signal breakthrough(player: int)
 signal booped(player: int, other: int)
 ## Hold B (wiggle) for WARP_HOLD s: the level decides where to (home, or the far partner).
 signal warp_requested(player: int)

@@ -31,6 +31,8 @@ var burrow: Burrow
 var beetle: ApexBeetle
 ## The stage-up beat (scripts/gameplay/stage_beat.gd; zoom caps per stage come from data/stages.tres).
 var stage_beat: StageBeat
+## The crust burst (scripts/gameplay/crust_burst.gd; the crust ring and its stage come from data/stages.tres).
+var crust: CrustBurst
 var hud: PlanetHud
 ## The home half of the vertical slice (scripts/burrow/home_slice.gd): trophies, pets, tackle box,
 ## the Mole's swap shop and their hints.
@@ -74,7 +76,8 @@ func _ready() -> void:
 	world = PolarWorld.new()
 	world.name = "World"
 	world.add_to_group(&"world")
-	world.setup_planet(RINGS, RADIUS, planet_seed, 32)
+	# The crust ring is edible only from its stage and never regrows (data/stages.tres crust_ring).
+	world.setup_planet(StageTable.default_table().apply_crust(RINGS), RADIUS, planet_seed, 32)
 	add_child(world)
 	if not saved.is_empty():
 		world.load_save(saved)
@@ -125,6 +128,13 @@ func _ready() -> void:
 	stage_beat.camera = camera
 	stage_beat.world = world
 	add_child(stage_beat)
+	crust = CrustBurst.new()
+	crust.camera = camera
+	add_child(crust)
+	crust.watch(world)
+	crust.breakthrough.connect(func(_p: int) -> void: save_now())
+	if not saved.is_empty():
+		crust.from_dict(Save.get_value(CrustBurst.SAVE_KEY, {}))
 	hud = PlanetHud.new()
 	hud.level = self
 	add_child(hud)
@@ -341,7 +351,7 @@ func _physics_process(delta: float) -> void:
 				tok = "y"
 			_glyphs[w.player].token = tok
 	hud.set_context(any_carry, burrow.has_home, any_burrow)
-	camera.max_fit_index = stage_beat.zoom_cap()
+	camera.max_fit_index = crust.cap(stage_beat.zoom_cap())
 	_tunnel_step(digging > 0, delta)
 	_bonk_t = maxf(0.0, _bonk_t - delta)
 	for e in _foods:
@@ -448,6 +458,8 @@ func save_now() -> void:
 	Save.set_value("apex", beetle.to_dict())
 	Save.set_value("foods", _foods_to_save())
 	Save.set_value("played", played)
+	if crust:
+		Save.set_value(CrustBurst.SAVE_KEY, crust.to_dict())
 	if home_slice:
 		Save.set_value(HomeSlice.SAVE_KEY, home_slice.to_dict())
 	Save.flush()
