@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="SkyLife" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/sky_life.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
+[ext_resource type="Resource" path="res://data/foods/cloud_puff.tres" id="f0"]
+[ext_resource type="Resource" path="res://data/foods/toy_plane.tres" id="f1"]
+[ext_resource type="Resource" path="res://data/foods/sky_balloon.tres" id="f2"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("2")
+id = &"cloud_puff"
+ring = &"sky"
+start = 40.0
+plant = true
+growth_rate = 0.03
+capacity = 60.0
+death = 0.0
+efficiency = 0.5
+immigration = 0.004
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.0
+live_max = 0
+live = "res://data/foods/cloud_puff.tres"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("2")
+id = &"toy_plane"
+ring = &"sky"
+start = 4.0
+plant = false
+growth_rate = 0.0
+capacity = 8.0
+death = 0.003
+efficiency = 0.5
+immigration = 0.012
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.0
+live_max = 0
+live = "res://data/foods/toy_plane.tres"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("2")
+id = &"sky_balloon"
+ring = &"sky"
+start = 6.0
+plant = false
+growth_rate = 0.0
+capacity = 12.0
+death = 0.002
+efficiency = 0.5
+immigration = 0.01
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.0
+live_max = 0
+live = "res://data/foods/sky_balloon.tres"
+depth_min = 0.0
+depth_max = 0.0
+
+[resource]
+script = ExtResource("1")
+ring = &"sky"
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2")])
+scatter = Array[ExtResource("3")]([ExtResource("f0"), ExtResource("f0"), ExtResource("f1"), ExtResource("f2"), ExtResource("f0"), ExtResource("f1")])
+scatter_count = 9
+inner = 1.03
+outer = 1.45
+edible_from = 5
+regrow_time = 150.0
+balloon_angle = 0.035
+balloon_height = 1.1
+balloon_string = 110.0
+balloon_tie = &"balloon_tie"
+balloon_color = Color(0.9098, 0.2824, 0.2275, 1)
