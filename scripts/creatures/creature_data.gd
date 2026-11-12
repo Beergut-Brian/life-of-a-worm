@@ -4,7 +4,8 @@
 class_name CreatureData
 extends FoodData
 
-enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP }
+## WAVE: a wavy chaser that gives up fast (CentipedeData, scripts/creatures/centipede.gd).
+enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE }
 
 @export var behaviour := Behaviour.WIGGLE
 ## The ring it lives in (RingDef.id).

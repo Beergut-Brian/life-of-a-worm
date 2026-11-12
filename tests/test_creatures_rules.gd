@@ -10,7 +10,7 @@ const BEETLE := preload("res://scenes/creatures/beetle.tscn")
 const GRUB := preload("res://scenes/creatures/grub.tscn")
 const BIRD := preload("res://scenes/creatures/bird.tscn")
 const DT := 1.0 / 60.0
-const CREATURES := ["grub", "ant", "beetle", "bird", "boot"]
+const CREATURES := ["grub", "ant", "beetle", "bird", "boot", "centipede"]
 const HEAD_R := 8.0   # a stage-1 worm's head (16 px segment); grows Worm.SIZE_STEP per stage
 
 

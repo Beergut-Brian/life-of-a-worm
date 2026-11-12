@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="CentipedeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/centipede_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"centipede"
+flavour = &"bug"
+growth = 3.5
+size_stage = 3
+color = Color(0.78, 0.42, 0.16, 1)
+radius = 13.0
+behaviour = 5
+ring = &"dirt"
+telegraph = 1.1
+bark = "threat_near"
+windup_cue = "beetle_windup"
+speed = 44.0
+notice = 160.0
+strike = 30.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0, 0.82, 0.45, 1)
+wave_amplitude = 10.0
+wave_rate = 0.9
+chase_time = 3.0
+give_up_distance = 200.0
+rest_time = 3.0
+sneaker = Color(0.96, 0.96, 0.94, 1)
+sneaker_stripe = Color(0.9, 0.3, 0.25, 1)
+segments = 5
