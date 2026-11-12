@@ -38,6 +38,7 @@ static func recipe(cue: String) -> Array:
 		"warp_charge": return [[300.0, 600.0, 0.3, 0.0]]
 		"segment_pop": return [[600.0, 1100.0, 0.06, 0.0]]
 		"hatch", "egg_crack": return [[900.0, 400.0, 0.05, 0.7], [500.0, 900.0, 0.12, 0.0]]
+		"breakthrough": return [[220.0, 70.0, 0.35, 0.9], [1400.0, 1900.0, 0.06, 0.0], [1700.0, 2200.0, 0.06, 0.0], [1500.0, 2000.0, 0.06, 0.0]]
 		"bonk": return [[180.0, 120.0, 0.08, 0.3]]
 		"boop": return [[660.0, 880.0, 0.1, 0.0]]
 		"beetle_windup": return [[90.0, 260.0, 1.0, 0.15]]

@@ -77,6 +77,7 @@ opens_ring = &"core"
 feature_id = &"tail_tuft"
 slots = 4
 in_disk = true
+crust_ring = &"surface"
 
 [sub_resource type="Resource" id="s6"]
 script = ExtResource("2")
