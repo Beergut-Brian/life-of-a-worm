@@ -229,10 +229,19 @@ func _draw_pond() -> void:
 	draw_rect(Rect2(-20, 60, 500, 60), Color("2c4a5e"))
 	var r := float(state.ripple)
 	if r > 0.01:
+		# Something big moves under the water: a long dark shape, rings spreading, bubbles popping.
+		var c := Vector2(230, 6)
+		for i in 8:
+			var p := c + Vector2(-34 + i * 9 + sin(_t * 0.8) * 6, 22 + sin(_t * 2.0 + i * 0.6) * 2)
+			draw_circle(p, (6.0 - absf(i - 3.5) * 0.6) * r, Color(0.08, 0.16, 0.24, 0.55 * r))
 		for k in 3:
 			var f := fmod(_t * 0.6 + k / 3.0, 1.0)
-			var rad := 4.0 + f * 26.0
-			draw_arc(Vector2(230, 6), rad, PI, TAU, 24, Color(0.85, 0.95, 1.0, r * (1.0 - f)), 1.0)
+			var rad := 4.0 + f * 40.0
+			draw_arc(c, rad, PI, TAU, 32, Color(0.85, 0.95, 1.0, r * (1.0 - f)), 2.0)
+			draw_line(c + Vector2(-rad, 0), c + Vector2(rad, 0), Color(0.85, 0.95, 1.0, 0.5 * r * (1.0 - f)), 1.0)
+		for k in 4:
+			var f := fmod(_t * 0.9 + k / 4.0, 1.0)
+			draw_arc(c + Vector2(-8 + k * 5, 18 - f * 16), 1.5, 0, TAU, 8, Color(0.9, 0.97, 1.0, r * (1.0 - f * 0.5)), 1.0)
 
 
 func _draw_bank() -> void:
