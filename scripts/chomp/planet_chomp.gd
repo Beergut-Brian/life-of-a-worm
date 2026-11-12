@@ -117,7 +117,7 @@ func _load_planet() -> void:
 	else:
 		planet = PlanetStandIn.generate("", 1)
 	if planet.id == "":
-		planet.id = "%s_%d" % [Save.profile, planet.seed_value]
+		planet.id = String(JarStore.current_planet_id(int(Save.get_value("seed", planet.seed_value))))
 	var t0 := Time.get_ticks_usec()
 	planet_texture = planet.texture(TEX_SIZE)
 	texture_ms = (Time.get_ticks_usec() - t0) / 1000.0
