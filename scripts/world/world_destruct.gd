@@ -13,7 +13,7 @@ const SCENES_DIR := "res://scenes/props/"
 const SWEEP_EVERY := 0.5
 
 ## Food ids that are loose: they fall when the ground under them is eaten.
-@export var loose_foods: Array[StringName] = [&"pebble"]
+@export var loose_foods: Array[StringName] = [&"pebble", &"apple"]
 
 var world: TileWorld
 var level: Node

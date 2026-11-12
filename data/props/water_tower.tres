@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PropData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/prop_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/foods/scrap.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"water_tower"
+size = Vector2i(4, 7)
+tile = &"stone"
+hits = 6
+size_stage = 4
+chunk = ExtResource("2")
+chunks = 7
+angles = PackedFloat32Array(0.06)
+look = &"water_tower"
+top_tile = &""
+top_rows = 0

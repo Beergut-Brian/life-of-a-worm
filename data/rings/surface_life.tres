@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="SurfaceLife" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/surface_life.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/world/prop_data.gd" id="4"]
+[ext_resource type="Resource" path="res://data/foods/apple.tres" id="f0"]
+[ext_resource type="Resource" path="res://data/props/tree.tres" id="p0"]
+[ext_resource type="Resource" path="res://data/props/fence.tres" id="p1"]
+[ext_resource type="Resource" path="res://data/props/cow.tres" id="p2"]
+[ext_resource type="Resource" path="res://data/props/hill.tres" id="p3"]
+[ext_resource type="Resource" path="res://data/props/house.tres" id="p4"]
+[ext_resource type="Resource" path="res://data/props/car.tres" id="p5"]
+[ext_resource type="Resource" path="res://data/props/water_tower.tres" id="p6"]
+[ext_resource type="Resource" path="res://data/props/diner.tres" id="p7"]
+[ext_resource type="Resource" path="res://data/props/court.tres" id="p8"]
+[ext_resource type="Resource" path="res://data/props/dock_shed.tres" id="p9"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("2")
+id = &"apple"
+ring = &"surface"
+start = 30.0
+plant = true
+growth_rate = 0.03
+capacity = 50.0
+death = 0.0
+efficiency = 0.5
+immigration = 0.004
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.0
+live_max = 0
+live = "res://data/foods/apple.tres"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("2")
+id = &"lawnmower"
+ring = &"surface"
+start = 1.0
+plant = false
+growth_rate = 0.0
+capacity = 2.0
+death = 0.0
+efficiency = 0.5
+immigration = 0.001
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.0
+live_max = 0
+live = ""
+depth_min = 0.0
+depth_max = 0.0
+
+[resource]
+script = ExtResource("1")
+ring = &"surface"
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1")])
+scatter = Array[ExtResource("3")]([ExtResource("f0")])
+scatter_count = 8
+edible_from = 4
+edible_to = 5
+regrow_time = 120.0
+scatter_inner = 1.003
+scatter_outer = 1.008
+scatter_spread = 0.4
+props = Array[ExtResource("4")]([ExtResource("p0"), ExtResource("p1"), ExtResource("p2"), ExtResource("p3"), ExtResource("p4"), ExtResource("p5"), ExtResource("p6"), ExtResource("p7"), ExtResource("p8"), ExtResource("p9")])
