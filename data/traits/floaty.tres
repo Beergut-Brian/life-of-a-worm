@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+; Float (D-09). The id is "floaty" because "float" is a GDScript type name and trips the no-trait-ids check.
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/proto/worm/part_cloud.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"floaty"
+requires = {"cloud": 4}
+add = {"glide": 1.0}
+mul = {}
+part_slot = &"above"
+part_textures = Array[Texture2D]([ExtResource("2")])
+part_priority = 0
+part_spin = 0.0
+cue = "trait_floaty"
+color = Color(0.8706, 0.9255, 1, 1)

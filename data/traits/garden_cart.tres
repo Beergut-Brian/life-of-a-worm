@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/proto/worm/part_cart.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"garden_cart"
+requires = {"root": 5, "junk": 4}
+add = {"carry_slots": 2.0, "garden_yield": 0.5}
+mul = {}
+part_slot = &"tail"
+part_textures = Array[Texture2D]([ExtResource("2")])
+part_priority = 1
+part_spin = 0.0
+cue = "trait_garden_cart"
+color = Color(0.6902, 0.4549, 0.2353, 1)

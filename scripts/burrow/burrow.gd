@@ -4,7 +4,9 @@
 ##
 ## Carried home (hold X), a thing becomes:
 ##  - a seed: a garden in the castings by the door;
-##  - a small creature (a WildPet): a pet with a job (PetData), living by the bed;
+##  - a small creature (a WildPet): a pet with a job (PetData), living by the bed. The first of a
+##    kind plays the meet beat (Pet.meet). One past its kind's cap (PetData.max_kept, the ant crew
+##    1) says hello to the one at home and runs back to the wild: still a "pet" homecoming;
 ##  - anything else: a trophy on a shelf. A shelf is any ledge the worm has dug inside the room (an
 ##    air cell with solid ground under it, toward the core); the trophy lands on the free ledge
 ##    nearest the worm. With no free ledge a notch is dug in the floor, so nobody is ever refused.
@@ -51,6 +53,10 @@ var seeds: Array[Dictionary] = []      # {flavour, cell}
 var pets: Array[Node2D] = []
 ## Seeds the pets brought, waiting by the bed (ArenaFood nodes; eat them or carry them out).
 var pantry: Array[Node2D] = []
+## Pet kinds that have already had their meet beat in this tin (saved).
+var met: Array[StringName] = []
+## Night hook for the glow-worm lamp (Pet.is_dark): a day/night clock sets it; nothing does yet.
+var night := false
 ## The biggest stage a worm of this tin has reached: the room's size.
 var stage := 1
 var families: Array[TrophyFamily] = []
@@ -167,10 +173,21 @@ func note_pickup(w: Worm, inside: bool) -> void:
 func bring(w: Worm, food: Node2D) -> StringName:
 	var data: FoodData = food.data
 	var kind := &"trophy"
-	if food.has_method("pet_id") and pets.size() < MAX_PETS:
+	var pid: StringName = food.call("pet_id") if food.has_method("pet_id") else &""
+	if pid != &"" and can_keep(pid):
 		kind = &"pet"
-		add_pet(food.call("pet_id"))
+		var p: Node2D = add_pet(pid)
 		Audio.play("pet_home")
+		if p and not met.has(pid):
+			met.append(pid)
+			p.meet()
+	elif pid != &"" and pet_count(pid) > 0:
+		kind = &"pet"   # one of its kind lives here already: a hello, then back to the wild
+		for p in pets:
+			if p.data.id == pid:
+				p.meet_t = Pet.MEET_SECS * 0.5
+				break
+		Audio.play("pet_hello")
 	elif data.id == &"seed" and world and _plant(data.flavour):
 		kind = &"seed"
 		Audio.play("home_seed")
@@ -335,6 +352,23 @@ func add_pet(id: StringName, t := 0.0) -> Node2D:
 	return p
 
 
+func pet_count(id: StringName) -> int:
+	var n := 0
+	for p in pets:
+		if p.data.id == id:
+			n += 1
+	return n
+
+
+## Room for one more pet of kind `id` (the total cap, and its own PetData.max_kept)?
+func can_keep(id: StringName) -> bool:
+	var path := PETS % id
+	if pets.size() >= MAX_PETS or not ResourceLoader.exists(path):
+		return false
+	var d: PetData = load(path)
+	return pet_count(id) < d.max_kept
+
+
 func pet_ids() -> Array[StringName]:
 	var out: Array[StringName] = []
 	for p in pets:
@@ -392,6 +426,7 @@ func to_dict() -> Dictionary:
 	return { "has_home": has_home, "home": [home.x, home.y],
 		"trophies": trophies.map(func(t): return String(t)), "cells": cells,
 		"seeds": seeds.duplicate(true), "pets": pet_list, "pantry": pantry.size(),
+		"met": met.map(func(m): return String(m)),
 		"stage": stage, "fallback": _fallback }
 
 
@@ -417,8 +452,14 @@ func from_dict(d: Dictionary) -> void:
 	for p in pets:
 		p.queue_free()
 	pets.clear()
+	met.clear()
+	for m in d.get("met", []):
+		met.append(StringName(m))
 	for e in d.get("pets", []):
 		add_pet(StringName(e.get("id", "")), float(e.get("t", 0.0)))
+		var id := StringName(e.get("id", ""))
+		if not met.has(id):   # a tin from before the meet beat: these were met already
+			met.append(id)
 	for f in pantry:
 		f.queue_free()
 	pantry.clear()
@@ -457,10 +498,15 @@ func _draw() -> void:
 	draw_rect(Rect2(-30, y - 8, 60, 16), Color("2a1a14"), false, 2.0)
 	var x := -24.0
 	for w in Worm.all():
+		# Lit = what the one resolver (WormStats) has active; dark = earned, waiting; rings = free slots.
+		var lit: Array[StringName] = w.model.stats.active
 		for id in w.model.earned:
 			var t := w.rules.find_trait(id)
 			var col := t.color if t else Color.WHITE
-			draw_circle(Vector2(x, y), 4.0, col if w.model.is_active(id) else col.darkened(0.5))
+			draw_circle(Vector2(x, y), 4.0, col if id in lit else col.darkened(0.5))
+			x += 10.0
+		for i in maxi(0, w.model.slots() - lit.size()):
+			draw_arc(Vector2(x, y), 3.5, 0.0, TAU, 12, Color(1, 0.9, 0.7, 0.6), 1.0)
 			x += 10.0
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for i in trophies.size():

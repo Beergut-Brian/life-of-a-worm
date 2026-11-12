@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ship_biscuit"
+flavour = &"water"
+growth = 3.0
+size_stage = 1
+color = Color(0.8784, 0.7451, 0.5098, 1)
+radius = 5.0
+ring = &"dirt"
+regrow_time = 300.0
+plants = &""
+look = 4
+accent = Color(0.4196, 0.7098, 0.9294, 1)

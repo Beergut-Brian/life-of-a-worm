@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"amber"
+flavour = &"crystal"
+growth = 5.0
+size_stage = 4
+color = Color(1.0, 0.6588, 0.1490, 1)
+radius = 10.0
+ring = &"deep_rock"
+regrow_time = 600.0
+plants = &""
+look = 5
+accent = Color(1.0, 0.8941, 0.5490, 1)

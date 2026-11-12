@@ -1,0 +1,172 @@
+## The small picture of each hidden place (placeholder, drawn in code, no words): the same sketch in
+## the find bubble over the hall and on the tackle box's secrets page, so the page reads as "that's
+## the place you found". Also the bubble's food and tackle-box pictures.
+## PictoBubble ids (register() once; safe to call again): "secret:<id>", "secret_food:<food>",
+## &"secret_box". Unknown secret ids draw a gold star.
+class_name SecretLook
+extends RefCounted
+
+const INK := Color("3a2a44")
+const WATER := Color("4f9be0")
+const WOOD := Color("a0683a")
+const WOOD_DARK := Color("6e4526")
+const TIN := Color("3f6f5a")
+const BONE := Color("efe4c8")
+const ROCK := Color("6f7586")
+const GOLD := Color("ffd23f")
+
+## The pictures this file can draw (secret ids).
+const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall"]
+
+
+static func register() -> void:
+	PictoBubble.register_prefix("secret:", func(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float) -> void:
+		draw(ci, StringName(String(id).trim_prefix("secret:")), c, s, a))
+	PictoBubble.register_prefix("secret_food:", _food_pic)
+	PictoBubble.register(&"secret_box", _box_pic)
+
+
+static func has(id: StringName) -> bool:
+	return id in KNOWN
+
+
+## The picture of secret `id` centred at c in a box of side s, alpha a, t = seconds (bubbles bob).
+static func draw(ci: CanvasItem, id: StringName, c: Vector2, s: float, a := 1.0, t := 0.0) -> void:
+	var u := s / 22.0
+	match id:
+		&"ant_city":
+			_ant_city(ci, c, u, a, t)
+		&"sunken_rowboat":
+			_rowboat(ci, c, u, a, t)
+		&"fossil_hall":
+			_fossil_hall(ci, c, u, a, t)
+		_:
+			_star(ci, c, 8.0 * u, Color(GOLD, a), Color(INK, a))
+
+
+static func _ant_city(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var mound := PackedVector2Array()
+	for k in 13:
+		var ang := PI + PI * k / 12.0
+		mound.append(c + Vector2(cos(ang) * 10.0, 6.0 + sin(ang) * 10.0) * u)
+	ci.draw_colored_polygon(mound, Color(INK, a))
+	var inner := PackedVector2Array()
+	for k in 13:
+		var ang := PI + PI * k / 12.0
+		inner.append(c + Vector2(cos(ang) * 8.8, 6.0 + sin(ang) * 8.8) * u)
+	ci.draw_colored_polygon(inner, Color(Color("b07a4a"), a))
+	ci.draw_rect(Rect2(c + Vector2(-2.0, 1.0) * u, Vector2(4.0, 5.0) * u), Color(INK, a))
+	for i in 3:
+		var p := c + Vector2(-6.0 + i * 6.0, 8.0 + sin(t * 4.0 + i) * 0.5) * u
+		ci.draw_circle(p, 1.3 * u, Color(INK, a))
+		ci.draw_circle(p + Vector2(1.6, 0) * u, 1.0 * u, Color(INK, a))
+
+
+## Old Reel's little rowboat on its side in the water, his green tackle tin spilled by it.
+static func _rowboat(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	ci.draw_rect(Rect2(c + Vector2(-10.5, -4.0) * u, Vector2(21.0, 14.5) * u), Color(WATER, 0.55 * a))
+	var wave := PackedVector2Array()
+	for k in 9:
+		wave.append(c + Vector2(-10.5 + k * 21.0 / 8.0, -4.0 + sin(t * 2.0 + k) * 0.6) * u)
+	ci.draw_polyline(wave, Color(Color.WHITE, 0.8 * a), 1.2 * u)
+	var hull := _rot(PackedVector2Array([Vector2(-9, -1), Vector2(7, -1), Vector2(4, 5), Vector2(-6, 5)]), -0.25, c + Vector2(-1, 2) * u, u)
+	ci.draw_colored_polygon(_grow(hull, 1.2 * u), Color(INK, a))
+	ci.draw_colored_polygon(hull, Color(WOOD, a))
+	ci.draw_line(hull[0].lerp(hull[3], 0.5), hull[1].lerp(hull[2], 0.5), Color(WOOD_DARK, a), 1.0 * u)
+	ci.draw_line(c + Vector2(-8, -7) * u, c + Vector2(2, 4) * u, Color(INK, a), 1.6 * u)        # an oar
+	ci.draw_circle(c + Vector2(-8, -7) * u, 1.8 * u, Color(WOOD, a))
+	ci.draw_rect(Rect2(c + Vector2(4.5, 5.0) * u, Vector2(6.0, 4.0) * u), Color(INK, a))         # the tin
+	ci.draw_rect(Rect2(c + Vector2(5.2, 5.6) * u, Vector2(4.6, 2.8) * u), Color(TIN, a))
+	ci.draw_circle(c + Vector2(8.5, 3.6) * u, 1.1 * u, Color(Color("e0483a"), a))                # a lure
+	for i in 2:
+		var b := c + Vector2(-3.0 + i * 6.0, -6.0 - fmod(t * 4.0 + i * 3.0, 5.0)) * u
+		ci.draw_arc(b, 1.1 * u, 0.0, TAU, 10, Color(Color.WHITE, 0.8 * a), 0.8 * u)
+
+
+## A rock arch with a curled shell and a long fish skeleton set in the wall, and a drop of amber.
+static func _fossil_hall(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var arch := PackedVector2Array()
+	for k in 15:
+		var ang := PI + PI * k / 14.0
+		arch.append(c + Vector2(cos(ang) * 11.0, 8.0 + sin(ang) * 14.0) * u)
+	ci.draw_colored_polygon(arch, Color(INK, a))
+	var inner := PackedVector2Array()
+	for k in 15:
+		var ang := PI + PI * k / 14.0
+		inner.append(c + Vector2(cos(ang) * 9.8, 8.0 + sin(ang) * 12.8) * u)
+	ci.draw_colored_polygon(inner, Color(ROCK, a))
+	# a fish skeleton: spine, ribs, a skull and a tail fan
+	var a0 := c + Vector2(-7.0, 0.0) * u
+	var a1 := c + Vector2(6.0, 0.0) * u
+	ci.draw_line(a0, a1, Color(BONE, a), 1.3 * u)
+	for i in 5:
+		var x := lerpf(-4.5, 4.0, i / 4.0)
+		var h := 3.2 - absf(x) * 0.25
+		ci.draw_line(c + Vector2(x, -h) * u, c + Vector2(x, h) * u, Color(BONE, a), 0.9 * u)
+	ci.draw_circle(a1 + Vector2(1.6, 0) * u, 2.2 * u, Color(BONE, a))
+	ci.draw_circle(a1 + Vector2(2.2, -0.6) * u, 0.6 * u, Color(INK, a))
+	ci.draw_colored_polygon(PackedVector2Array([a0, a0 + Vector2(-3, -3) * u, a0 + Vector2(-3, 3) * u]), Color(BONE, a))
+	# a curled shell low on the left
+	_spiral(ci, c + Vector2(-5.0, 6.0) * u, 3.2 * u, Color(BONE, a), 0.9 * u)
+	# a glowing drop of amber on the floor, right
+	var g := 0.6 + 0.4 * sin(t * 3.0)
+	ci.draw_circle(c + Vector2(5.0, 6.0) * u, 2.8 * u, Color(Color("ffa826"), 0.3 * g * a))
+	ci.draw_circle(c + Vector2(5.0, 6.0) * u, 1.7 * u, Color(Color("ffa826"), a))
+
+
+static func _food_pic(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float) -> void:
+	var path := "res://data/foods/%s.tres" % String(id).trim_prefix("secret_food:")
+	var f: FoodData = load(path) if ResourceLoader.exists(path) else null
+	var col := f.color if f else Color.WHITE
+	var r := s * 0.3
+	ci.draw_circle(c, r + s * 0.05, Color(INK, a))
+	ci.draw_circle(c, r, Color(col, a))
+	ci.draw_circle(c + Vector2(-r * 0.35, -r * 0.4), r * 0.3, Color(1, 1, 1, 0.6 * a))
+
+
+## Old Reel's tackle box, lid up, a lure on the peg: "it's in the tackle box now".
+static func _box_pic(ci: CanvasItem, _id: StringName, c: Vector2, s: float, a: float) -> void:
+	var u := s / 22.0
+	ci.draw_rect(Rect2(c + Vector2(-9, -1) * u, Vector2(18, 10) * u), Color(INK, a))
+	ci.draw_rect(Rect2(c + Vector2(-8, 0) * u, Vector2(16, 8) * u), Color(TIN, a))
+	var lid := PackedVector2Array([c + Vector2(-9, -1) * u, c + Vector2(9, -1) * u, c + Vector2(7, -9) * u, c + Vector2(-7, -9) * u])
+	ci.draw_colored_polygon(lid, Color(INK, a))
+	ci.draw_colored_polygon(_grow(lid, -1.0 * u), Color(Color("5d9a7c"), a))
+	ci.draw_line(c + Vector2(-3, 4) * u, c + Vector2(3, 4) * u, Color(INK, a), 1.4 * u)          # handle
+	_star(ci, c + Vector2(0, -5) * u, 2.6 * u, Color(GOLD, a), Color(INK, a))
+
+
+static func _star(ci: CanvasItem, c: Vector2, r: float, col: Color, ol: Color) -> void:
+	var pts := PackedVector2Array()
+	for i in 10:
+		var rr := r if i % 2 == 0 else r * 0.45
+		pts.append(c + Vector2.from_angle(-PI / 2.0 + i * PI / 5.0) * rr)
+	ci.draw_colored_polygon(_grow(pts, r * 0.18), ol)
+	ci.draw_colored_polygon(pts, col)
+
+
+static func _spiral(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float) -> void:
+	var pts := PackedVector2Array()
+	for k in 28:
+		var f := k / 27.0
+		pts.append(c + Vector2.from_angle(f * TAU * 2.2) * r * (1.0 - f * 0.85))
+	ci.draw_polyline(pts, col, w)
+
+
+static func _rot(pts: PackedVector2Array, ang: float, at: Vector2, u: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in pts:
+		out.append(at + (p * u).rotated(ang))
+	return out
+
+
+## Pushes each point of a convex polygon away from its middle by d (an outline behind it).
+static func _grow(pts: PackedVector2Array, d: float) -> PackedVector2Array:
+	var mid := Vector2.ZERO
+	for p in pts:
+		mid += p
+	mid /= maxf(1.0, pts.size())
+	var out := PackedVector2Array()
+	for p in pts:
+		out.append(p + (p - mid).normalized() * d)
+	return out

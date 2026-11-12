@@ -262,3 +262,8 @@ Generated procedurally in Python (Pillow) by the Art lane; no prompts, no image 
 | `audio/sfx/solo_off.ogg` | Synthesised by `scripts/tools/make_cues.py` (Python 3 stdlib + ffmpeg libvorbis; seed `openjar-life-of-a-worm:solo_off`) | `solo_off` cue: octave up / down | Project's own |
 | `audio/sfx/jump.ogg` | Synthesised by `scripts/tools/make_cues.py` (Python 3 stdlib + ffmpeg libvorbis; seed `openjar-life-of-a-worm:jump`) | `jump` cue: chirp up / tick | Project's own |
 | `audio/sfx/action.ogg` | Synthesised by `scripts/tools/make_cues.py` (Python 3 stdlib + ffmpeg libvorbis; seed `openjar-life-of-a-worm:action`) | `action` cue: chirp up / tick | Project's own |
+| `proto/worm/make_slice_parts.py` | Written for feature/stages-traits-1 | Generator for the four PNGs below (Python + Pillow, original shapes, no references) | Project's own |
+| `proto/worm/feature_feelers.png` | `make_slice_parts.py` (Pillow) | Stage-2 feature: two springy feelers on the head (served by the WormLook stub) | Project's own |
+| `proto/worm/part_cloud.png` | `make_slice_parts.py` (Pillow) | Float trait: a cloud puff above the head | Project's own |
+| `proto/worm/part_skates.png` | `make_slice_parts.py` (Pillow) | Skater hybrid: blue blades under the body | Project's own |
+| `proto/worm/part_cart.png` | `make_slice_parts.py` (Pillow) | Garden cart hybrid: a one-wheel cart with a sprout, on the tail | Project's own |

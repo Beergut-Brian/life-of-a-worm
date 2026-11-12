@@ -18,8 +18,6 @@ const START_DEPTH := 0.76
 const AUTOSAVE := 30.0
 ## Planet seconds before an eaten pickup grows back where it was.
 const FOOD_REGROW := 90.0
-## Max zoom step per stage (PolarCamera.ZOOMS index): each stage pulls the camera back a notch.
-const STAGE_ZOOM: Array[int] = [6, 6, 5, 4, 4, 3, 3, 3]
 ## Partner further than this (px) and the warp goes to the partner, not home.
 const PARTNER_FAR := 420.0
 const APEX_FOOD := preload("res://data/foods/grub.tres")
@@ -31,6 +29,8 @@ var world: PolarWorld
 var camera: PolarCamera
 var burrow: Burrow
 var beetle: ApexBeetle
+## The stage-up beat (scripts/gameplay/stage_beat.gd; zoom caps per stage come from data/stages.tres).
+var stage_beat: StageBeat
 var hud: PlanetHud
 ## The home half of the vertical slice (scripts/burrow/home_slice.gd): trophies, pets, tackle box,
 ## the Mole's swap shop and their hints.
@@ -115,12 +115,16 @@ func _ready() -> void:
 	camera = PolarCamera.new()
 	camera.name = "Camera"
 	camera.fit = true
-	camera.max_fit_index = STAGE_ZOOM[1]
-	camera.zoom_index = STAGE_ZOOM[1]
+	camera.max_fit_index = WormRules.default_rules().stage_info(1).zoom_index
+	camera.zoom_index = camera.max_fit_index
 	camera.position = spawn_point
 	add_child(camera)
 	camera.rotation = PolarCamera.up_rotation(spawn_point)
 	camera.make_current()
+	stage_beat = StageBeat.new()
+	stage_beat.camera = camera
+	stage_beat.world = world
+	add_child(stage_beat)
 	hud = PlanetHud.new()
 	hud.level = self
 	add_child(hud)
@@ -337,7 +341,7 @@ func _physics_process(delta: float) -> void:
 				tok = "y"
 			_glyphs[w.player].token = tok
 	hud.set_context(any_carry, burrow.has_home, any_burrow)
-	camera.max_fit_index = STAGE_ZOOM[clampi(max_stage(), 0, STAGE_ZOOM.size() - 1)]
+	camera.max_fit_index = stage_beat.zoom_cap()
 	_tunnel_step(digging > 0, delta)
 	_bonk_t = maxf(0.0, _bonk_t - delta)
 	for e in _foods:
@@ -414,19 +418,13 @@ func _on_worm_eaten(_player: int) -> void:
 		camera.shake = maxf(camera.shake, 0.4)
 
 
-## The stage-up beat: swell (the worm pops), shake, two white frames, the camera pulls back a notch,
-## the cutscene hook, a save.
+## The stage-up beat (StageBeat: swell, flash, shake, the "why" picture, camera pull-back, the new
+## ring's pulse, the dock cutscene), then a save.
 func _on_stage_changed(player: int, from: int, to: int) -> void:
-	hud.flash()
-	if SettingsPanel.screen_shake():
-		camera.shake = 1.0
 	var w := Worm.of(player)
-	if w:
-		w._pop(w.look, 2.2)
-	camera.max_fit_index = STAGE_ZOOM[clampi(max_stage(), 0, STAGE_ZOOM.size() - 1)]
-	print("stage_up: %s %d -> %d" % [WORM_NAMES[player], from, to])
-	if has_node("/root/Story"):
-		get_node("/root/Story").call("play", "stage_%d" % to)
+	if w and to > from and w.model.last_cause != &"hatch":
+		stage_beat.play(w, from, to)
+	print("stage_up: %s %d -> %d (%s)" % [WORM_NAMES[player], from, to, w.model.last_cause if w else &""])
 	save_now()
 
 

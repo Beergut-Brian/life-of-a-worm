@@ -8,7 +8,9 @@
 ##   near the top, the gardener's boot shadow;
 ## - gardens: a carried seed (RingFood.plants) dropped in castings plants a patch; garden bites give
 ##   extra growth in the garden's flavour; Green thumb doubles both castings regrowth and that yield;
-## - the ant-city secret (data/secrets/ant_city.tres): signal secret_found(id), once per tin.
+## - the hidden places (every data/secrets/*.tres: the ant city, the sunken rowboat, the fossil
+##   hall): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
+##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after).
 ## Everything it keeps goes in the tin under Save key "rings".
 class_name RingsDirector
 extends Node2D
@@ -16,7 +18,8 @@ extends Node2D
 signal secret_found(id: StringName)
 
 const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres")]
-const SECRETS: Array[SecretData] = [preload("res://data/secrets/ant_city.tres")]
+## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
+static var SECRETS: Array[SecretData] = _load_secrets()
 const BIRD := preload("res://scenes/creatures/bird.tscn")
 const BOOT := preload("res://scenes/creatures/boot.tscn")
 const SANDWICH_CRUMB := preload("res://data/foods/crumb.tres")
@@ -45,6 +48,8 @@ var ecology: RingEcology
 var spawn_point := Vector2.ZERO
 var planet_radius_px := 4800.0
 var found: Dictionary = {}
+## Secret ids whose halls are dug in this tin (a tin saved before a secret existed digs it on load).
+var carved: Dictionary = {}
 var raining := false
 ## Off in tests that step by hand.
 var auto_tick := true
@@ -68,6 +73,36 @@ var _save_t := 0.0
 var _shot := ""
 var _fx: Array[Dictionary] = []
 var _hooked: Array[Node] = []
+
+
+static func _load_secrets() -> Array[SecretData]:
+	var out: Array[SecretData] = []
+	const DIR := "res://data/secrets/"
+	for f in ResourceLoader.list_directory(DIR):
+		if f.ends_with(".tres"):
+			var r := load(DIR + f)
+			if r is SecretData:
+				out.append(r)
+	out.sort_custom(func(a: SecretData, b: SecretData) -> bool: return String(a.id) < String(b.id))
+	return out
+
+
+static func secret(id: StringName) -> SecretData:
+	for s in SECRETS:
+		if s.id == id:
+			return s
+	return null
+
+
+## Centre (relative to the hall centre, px) and radius (px) of each side room of s.
+static func rooms_of(s: SecretData, centre: Vector2) -> Array[Vector3]:
+	var up := centre.normalized() if centre != Vector2.ZERO else Vector2.UP
+	var side := up.orthogonal()
+	var out: Array[Vector3] = []
+	for r in s.rooms:
+		var o := (side * r.x + up * r.y) * 16.0
+		out.append(Vector3(o.x, o.y, r.z * 16.0))
+	return out
 
 
 func _ready() -> void:
@@ -113,6 +148,8 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	for s in SECRETS:
 		cities[s.id] = polar(s.angle_from_start, s.depth)
 		world.add_keep_zone(cities[s.id], (s.radius_tiles + 3.0) * 16.0)
+		for r in rooms_of(s, cities[s.id]):
+			world.add_keep_zone(cities[s.id] + Vector2(r.x, r.y), r.z + 2.0 * 16.0)
 	if saved.is_empty():
 		_build_new()
 	else:
@@ -122,6 +159,13 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 		_rain_t = float(saved.get("rain_t", 0.0))
 		if not saved.get("built", false):
 			_build_new()
+		else:
+			# Tins from before "carved" was saved had only the ant city.
+			for id in saved.get("carved", ["ant_city"]):
+				carved[StringName(id)] = true
+			for sd in SECRETS:
+				if not carved.has(sd.id):
+					_carve_secret(sd)
 	_scatter(saved.get("statics", []))
 	world.tile_eaten.connect(_on_tile_eaten)
 	world.tile_regrown.connect(_on_tile_regrown)
@@ -167,13 +211,7 @@ func ring_band(ring: StringName) -> Vector2:
 
 func _build_new() -> void:
 	for s in SECRETS:
-		var c: Vector2 = cities[s.id]
-		_carve(c, s.radius_tiles * 16.0)
-		var up := up_at(c)
-		var side := up.orthogonal()
-		for room in [side * 9.0 + up * 2.0, -side * 9.0 + up * 1.0, -up * 6.0]:
-			_carve(c + room * 16.0, 2.6 * 16.0)
-			_carve(c + room * 8.0, 1.6 * 16.0)
+		_carve_secret(s)
 	for i in trail.size() - 1:
 		var a := trail[i]
 		var b := trail[i + 1]
@@ -184,20 +222,31 @@ func _build_new() -> void:
 				world.dig(cell)
 
 
-func _carve(at: Vector2, r: float) -> void:
+## Digs a hidden place's hall, its side rooms and the necks between them.
+func _carve_secret(s: SecretData) -> void:
+	var c: Vector2 = cities[s.id]
+	_carve(c, s.radius_tiles * 16.0, s.carve_stage)
+	for r in rooms_of(s, c):
+		var o := Vector2(r.x, r.y)
+		_carve(c + o, r.z, s.carve_stage)
+		_carve(c + o * 0.5, 1.6 * 16.0, s.carve_stage)
+	carved[s.id] = true
+
+
+func _carve(at: Vector2, r: float, stage := 2) -> void:
 	var c := world.shape.cell_at(at)
 	var n := ceili(r / 16.0)
 	for y in range(-n, n + 1):
 		for x in range(-n, n + 1):
 			var cell := c + Vector2i(x, y)
-			if world.shape.center_of(cell).distance_to(at) <= r and world.is_edible_by(2, cell):
+			if world.shape.center_of(cell).distance_to(at) <= r and world.is_edible_by(stage, cell):
 				world.dig(cell)
 
 
 ## The ant trail: from just right of the start pocket, through the dirt to the ant city, then up to
 ## the anthill on the surface. Ants march it back and forth: follow them and you find the city.
 func _ant_trail() -> PackedVector2Array:
-	var s: SecretData = SECRETS[0]
+	var s: SecretData = secret(&"ant_city")
 	var a := s.angle_from_start
 	var d := s.depth
 	var pts := PackedVector2Array()
@@ -229,7 +278,9 @@ func _scatter(saved: Array) -> void:
 		var c: Vector2 = cities[s.id]
 		for i in s.food_count:
 			placed.append({ "food": food, "at": c + Vector2.from_angle(TAU * i / s.food_count) * s.radius_tiles * 9.0 })
-		placed.append({ "food": load("res://data/foods/bug_egg.tres"), "at": c + up_at(c).orthogonal() * 9.0 * 16.0 + up_at(c) * 32.0 })
+		var rooms := rooms_of(s, c)
+		if s.extra_food != &"" and not rooms.is_empty():
+			placed.append({ "food": load("res://data/foods/%s.tres" % s.extra_food), "at": c + Vector2(rooms[0].x, rooms[0].y) })
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
 		if i < saved.size() and saved[i] is Array and saved[i].size() >= 2 and float(saved[i][1]) >= 0.0:
@@ -644,6 +695,9 @@ func discover(s: SecretData, w: Worm = null) -> void:
 		_pop_fx(cities[s.id] + Vector2.from_angle(TAU * i / 10.0) * 40.0, &"confetti")
 	if w:
 		w._pop(w.look, 1.6)
+	var spot := get_node_or_null("Secret_%s" % s.id) as SecretSpot
+	if spot:
+		spot.play_found_beat()
 	print("secret_found: %s" % s.id)
 	secret_found.emit(s.id)
 	_store()
@@ -660,7 +714,10 @@ func to_dict() -> Dictionary:
 	var f := []
 	for id in found:
 		f.append(String(id))
-	return { "eco": ecology.to_dict(), "found": f, "rain_t": _rain_t, "built": true, "statics": statics }
+	var dug := []
+	for id in carved:
+		dug.append(String(id))
+	return { "eco": ecology.to_dict(), "found": f, "rain_t": _rain_t, "built": true, "statics": statics, "carved": dug }
 
 
 func _store() -> void:
@@ -704,7 +761,7 @@ func _draw() -> void:
 					draw_rect(Rect2(f.at + d - Vector2(2, 2), Vector2(4, 4)), col)
 
 
-# --- real frames (--rings-shot=topsoil|garden|ant_city) --------------------------------------
+# --- real frames (--rings-shot=topsoil|garden|ant_city|secret:<id>) -------------------------
 
 func _stage_shot() -> void:
 	if level == null:
@@ -734,7 +791,21 @@ func _stage_shot() -> void:
 			for i in 80:
 				world.advance(0.5)
 		"ant_city":
-			var cpos: Vector2 = cities[SECRETS[0].id]
+			var cpos: Vector2 = cities[&"ant_city"]
 			w = w if w else level.spawn_worm(Players.P1, cpos, 1)
 			w.warp_to(cpos + up_at(cpos).orthogonal() * 40.0)
 			ecology.counts[&"ant"] = 40.0
+		_ when _shot.begins_with("secret:"):
+			# --rings-shot=secret:<id>: the worm (big enough for the hall's ring) just inside the
+			# hall, so the frames show the find beat as it plays.
+			var s := secret(StringName(_shot.trim_prefix("secret:")))
+			if s == null:
+				return
+			found.erase(s.id)   # frames only: replay the find even if this tin had it
+			var cpos: Vector2 = cities[s.id]
+			var stage := maxi(1, s.carve_stage)
+			var side := up_at(cpos).orthogonal()
+			w = w if w else level.spawn_worm(Players.P1, cpos + side * 40.0, stage)
+			if w.model.stage < stage:
+				w.model.start_at_stage(stage)
+			w.warp_to(cpos + side * 40.0)
