@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="PlanetData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_sn1ac"]
+[ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_8fvbj"]
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="3_qdpae"]
+
+[sub_resource type="Resource" id="Resource_0rvua"]
+script = ExtResource("1_sn1ac")
+id = &"cog"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.7882353, 0.6039216, 0.22745098, 1)
+radius = 32.0
+
+[sub_resource type="Resource" id="Resource_gtf7j"]
+script = ExtResource("1_sn1ac")
+id = &"spring_coil"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.72156864, 0.72156864, 0.7529412, 1)
+radius = 30.0
+
+[sub_resource type="Resource" id="Resource_dpdbd"]
+script = ExtResource("1_sn1ac")
+id = &"clock_moon"
+flavour = &"star"
+growth = 3.0
+size_stage = 6
+color = Color(0.9411765, 0.8392157, 0.5411765, 1)
+radius = 56.0
+
+[sub_resource type="Resource" id="Resource_4xv3r"]
+script = ExtResource("3_qdpae")
+id = &"tick_star"
+add = {
+"space_speed": 20.0,
+"space_steady": 0.25
+}
+part_slot = &"space"
+color = Color(1, 0.8117647, 0.3529412, 1)
+
+[resource]
+script = ExtResource("2_8fvbj")
+id = &"clockwork"
+color = Color(0.84313726, 0.6509804, 0.27058825, 1)
+accent = Color(0.56078434, 0.41568628, 0.13333334, 1)
+radius = 320.0
+foods = Array[ExtResource("1_sn1ac")]([SubResource("Resource_0rvua"), SubResource("Resource_gtf7j"), SubResource("Resource_dpdbd")])
+drift = 20.0
+star_trait = SubResource("Resource_4xv3r")
