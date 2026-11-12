@@ -152,14 +152,14 @@ func test_outgrown_bug_turns_to_food_exactly_once() -> void:
 	_steps(b, 30)
 	assert_array(flips).contains_exactly([&"beetle"])
 	assert_bool(b.can_be_eaten_by(w)).is_true()
-	assert_int(Audio.played.get("outgrown", 0)).is_equal(1)
+	assert_int(Audio.played.get("boing", 0)).is_equal(1)
 	# growing more, or meeting another beetle, never flips it again
 	w.model.start_at_stage(3)
 	var b2 := _make(BEETLE, w.head_position() + Vector2(-200, 0))
 	_steps(b, 30)
 	_steps(b2, 30)
 	assert_array(flips).contains_exactly([&"beetle"])
-	assert_int(Audio.played.get("outgrown", 0)).is_equal(1)
+	assert_int(Audio.played.get("boing", 0)).is_equal(1)
 	# the first bite of one: the sting and the grin, once
 	b.global_position = w.mouth_position()
 	b.take()
@@ -258,7 +258,7 @@ func test_eaten_costs_one_segment_and_sparkles_safe_for_half_a_second() -> void:
 	assert_int(w.model.stage).is_equal(1)
 	assert_bool(b.is_gulping()).is_true()   # the cause is on screen: the beetle mid-gulp
 	assert_int(Audio.played.get("eaten", 0)).is_equal(1)
-	assert_int(Audio.played.get("creature_gulp", 0)).is_equal(1)
+	assert_int(Audio.played.get("creature_munch", 0)).is_equal(1)
 	assert_bool(Gulp.is_safe(w)).is_true()
 	assert_bool(b.threatens(w)).is_false()
 	# a second beetle right there cannot eat it while it sparkles
