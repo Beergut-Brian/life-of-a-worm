@@ -68,15 +68,15 @@ func _draw() -> void:
 			beads.append(r[0])
 	var n := beads.size()
 	var cols := ceili(n / 2.0) if n > 6 else n
-	var step := 5.0 * s
+	var step := 6.5 * s
 	var lit := int(_t / 0.06)
 	for i in n:
 		var row := i / cols if cols > 0 else 0
-		var x := -30.0 * s + step * (i % cols)
-		var y := (0.0 if n <= 6 else (row - 0.5) * 9.0) * s + sin(_t * 10.0 + i) * s
+		var x := -17.0 * s - step * (cols - 1) * 0.5 + step * (i % cols)
+		var y := (0.0 if n <= 6 else (row - 0.5) * 8.0) * s + sin(_t * 10.0 + i) * s
 		var on := i < lit
-		draw_circle(Vector2(x, y), 2.6 * s, beads[i].darkened(0.3) if on else Color(0.8, 0.8, 0.8))
-		draw_circle(Vector2(x, y), 2.0 * s, beads[i] if on else Color(0.9, 0.9, 0.9))
+		draw_circle(Vector2(x, y), 3.2 * s, beads[i].darkened(0.3) if on else Color(0.8, 0.8, 0.8))
+		draw_circle(Vector2(x, y), 2.5 * s, beads[i] if on else Color(0.9, 0.9, 0.9))
 	# arrow
 	draw_line(Vector2(4, 0) * s, Vector2(13, 0) * s, ink, 2.0)
 	draw_colored_polygon(PackedVector2Array([Vector2(16, 0) * s, Vector2(11, -4) * s, Vector2(11, 4) * s]), ink)
