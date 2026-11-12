@@ -13,5 +13,5 @@ radius = 16.0
 ring = &"core"
 regrow_time = 900.0
 plants = &"crystal"
-look = 7
+look = 8
 accent = Color(0.8784, 0.9882, 1.0000, 1)
