@@ -695,3 +695,39 @@ func steer_camera(base_zoom_index: int)  # PlanetLevel calls it each frame: sets
                                          # lowers min_fit_index during the pull-back, then restores it
 # Tin save key "crust": {"broken": [player, ...], "eaten": int}. Cue: "breakthrough".
 ```
+
+### Sky ring (worm-sky-ring-1)
+
+`feature/worm-sky-ring-1`, PLAN-STATUS W-07 (part), X-06. The sky has no tiles: `rings.tres` still
+ends at the surface (the lantern and the generator read its last two rings). The sky ring is one
+data file, a `RingLife` subclass that also carries its band, stage and regrow time.
+
+```gdscript
+# SkyLife extends RingLife (scripts/rings/sky_life.gd; data/rings/sky_life.tres, ring = &"sky")
+@export var inner := 1.03 ; @export var outer := 1.45   # band of air, fractions of the planet radius
+@export var edible_from := 5                             # every sky food has this size_stage
+@export var regrow_time := 150.0                         # every scattered sky food has this regrow_time
+@export var balloon_angle, balloon_height, balloon_string, balloon_tie, balloon_color   # SkyBalloon
+# species: cloud_puff (plant), toy_plane, sky_balloon: counters only (live_max 0), no `eats`,
+# never a .tscn (no threats). scatter: cloud_puff, toy_plane, sky_balloon (data/foods/, ring &"sky").
+
+# RingsDirector
+const SKY: SkyLife                  # loaded beside LIVES; its counters join the ecology
+ring_band(&"sky") -> Vector2(SKY.inner, SKY.outer)
+var balloon: SkyBalloon
+func balloon_popped(player)         # SkyBalloon calls it: store + level.save_now()
+# Sky statics are appended after every other static, so old tins keep their saved order.
+# Rings save key gains "balloon": bool (popped in this tin; missing = not popped).
+# --rings-shot=sky | sky_pop stages a stage-5 worm by the balloon (sky_pop bites the tie at 1.5 s).
+
+# SkyBalloon (scripts/rings/sky_balloon.gd)
+signal popped(player: int)
+const CUE := "segment_pop"
+var is_popped: bool ; var popped_by: int ; var pop_t: float   # < 0 when the beat is not playing
+var tie: RingPickup                  # data/foods/balloon_tie.tres (size_stage 5): eating it pops
+func pop(player := -1)               # once: cue, shake (WormHooks.juice + PolarCamera.shake), burst
+                                     # ring and scraps, the snapped string, worm swell. Never moves a worm.
+```
+
+Hooks still waiting: live sky bodies (the director only spawns into loaded tile chunks, and the
+sky has none); birds (creatures lane); plane and cloud placeholder shapes (`RingFood.Look`).
