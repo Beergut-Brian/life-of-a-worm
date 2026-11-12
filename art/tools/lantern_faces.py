@@ -10,7 +10,8 @@ Sprite sets other lanes swap in (names documented in docs/art-direction.md "This
   assets/sprites/foods/<id>_calm.png, <id>_wide.png   (wide-eyed when a bigger worm nears)
   assets/sprites/creatures/<id>_calm.png, _wide.png, _smug.png
 Faces are A's: big white eyes, 1 px ink, a loud mouth. Machines and vehicles get no face (the boot,
-the lawnmower). Every colour is snapped to art/palette/lantern_deep.gpl plus the slot colours.
+the lawnmower). Body shades are look B's character ramps (pix.char_ramp, lit), ink is B's
+character outline; they are characters, so they are not snapped to the tile palette.
 """
 import os
 import sys

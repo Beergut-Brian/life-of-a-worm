@@ -39,14 +39,14 @@ RAMPS = {
     "dirt": B["rings"]["dirt"],
     "rock": B["rings"]["rock"],
     "core": B["rings"]["core"],
-    "grass": ["#1b2a1c", "#3d5e36", "#5b7e45", "#9fbf63", "#2a3626", "#1e281b"],
-    "clay": ["#3a1e16", "#5e3424", "#8a5236", "#b07a52"],
+    "grass": ["#1b2a1c", "#3d5e36", "#5b7e45", "#d0d48a", "#2a3626", "#1e281b"],  # high was #9fbf63 (P1 12.2)
+    "clay": ["#3a1e16", "#5e3424", "#7e5638", "#b07a52"],  # mid was #8a5236 (P2 19.8)
     "crystal": ["#1e5a70", "#2f98b8", "#59e6ff", "#d2fbff"],
     "ore": ["#7a5418", "#c8962a", "#f2c84a", "#ffeaa0"],
     "mushroom": ["#4a2a5e", "#8a4fb0", "#c48ae0", "#f0d8ff"],
     "stem": ["#8a7a62", "#c8b896", "#efe2c4"],
     "flower": ["#e8b02a", "#ffe066", "#fff8e0"],
-    "strange": ["#2a4a10", "#5c9a22", "#b8ff6a", "#eaffc8"],
+    "strange": ["#1e3a0c", "#2e5a14", "#e8ff6a", "#f6ffd0"],  # was B8FF6A-based (P1 17.9)
     "castings": ["#1a100a", "#2a1a10", "#4a3220"],
     "root": ["#3d2a18", "#6a4a2a"],
     "sprout": ["#2e6a2a", "#5aa040"],
@@ -125,9 +125,9 @@ def solid_tile(ring, feature, mask, var, seed):
                  + (h2(wx, wy, 1) - 0.5) * 0.18)
             # block seams: Terraria-ish dense blocks
             if x == 15 or y == 15:
-                v -= 0.08
+                v -= 0.05
             if x == 0 or y == 0:
-                v += 0.05
+                v += 0.03
             h = 0.6 + vnoise(wx, wy, 4, 3) * 0.35
             if x in (0, 15) or y in (0, 15):
                 h -= 0.2
