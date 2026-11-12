@@ -4,7 +4,8 @@ class_name TestWormLookDeltaE
 extends GdUnitTestSuite
 
 const DIRT := ["2e1c13", "4a2e1f", "6c452c", "93653d", "43301f", "322317"]
-const TOPSOIL := ["1b2a1c", "2a4229", "3d5e36", "5b7e45", "2a3626", "1e281b", "9fbf63"]
+## Grass high is the Lantern lane's fixed `#d0d48a` (was `#9fbf63`, ΔE 12 to any green: art-lantern-1 REPORT).
+const TOPSOIL := ["1b2a1c", "2a4229", "3d5e36", "5b7e45", "2a3626", "1e281b", "d0d48a"]
 const INK := Color("140c12")
 const OK := 20.0
 
