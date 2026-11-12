@@ -141,6 +141,20 @@ All drawn in code by `assets/proto/worm/make_art.py` (Python + Pillow), original
 | `proto/worm/part_magnet.png` | `make_art.py` (Pillow) | Horseshoe tail part | Project's own |
 | `proto/worm/part_sheen.png` | `make_art.py` (Pillow) | Glossy highlight skin part | Project's own |
 | `proto/worm/heart.png`, `note.png`, `star.png` | `make_art.py` (Pillow) | Boop heart, wiggle note, dizzy / share star | Project's own |
+
+## Lantern Deep look (art-lantern-1, Docket D92: B + A's faces + C's dock grade)
+
+Generated procedurally in Python (Pillow) by the Art lane; no prompts, no image models, no third-party art. Every colour from `art/palette/lantern_deep.gpl` (look B's ramps from the D87 options, plus accents) except the fixed slot colours.
+
+| File | Tool / source | What | License |
+| --- | --- | --- | --- |
+| `sprites/tiles/lantern_solid.png`, `lantern_solid_n.png` | `art/tools/lantern_tiles.py` | 16 px solid tiles: 15 kinds x 16 open masks x 4 variants, plus normal map | Project's own |
+| `sprites/tiles/lantern_wall.png`, `lantern_wall_n.png` | `art/tools/lantern_tiles.py` | 16 px back walls: 5 rings x ceiling / none x 4 variants, plus normal map | Project's own |
+| `sprites/tiles/lantern_tiles.json` | `art/tools/lantern_tiles.py` | Row tables for `scripts/lighting/lantern_tile_art.gd` | Project's own |
+| `sprites/light/light_radial.png`, `light_shaft.png` | `art/tools/lantern_tiles.py --lights` | PointLight2D shapes (soft pool, daylight shaft) | Project's own |
+| `sprites/worm/lantern/*.png` | `art/tools/lantern_faces.py` | Worm head, segment, band (white, tinted in code) and A-size faces p1/p2 x 3 mouths; `_n` normals | Project's own |
+| `sprites/foods/*_calm.png`, `*_wide.png` | `art/tools/lantern_faces.py` | Food sprites with calm and wide-eyed faces; `_n` normals | Project's own |
+| `sprites/creatures/*_calm.png`, `*_wide.png`, `*_smug.png` | `art/tools/lantern_faces.py` | Creature sprites (grub, ant, ladybird, beetle, apex beetle, bird) with three faces; `_n` normals | Project's own |
 | `proto/worm/make_slice_parts.py` | Written for feature/stages-traits-1 | Generator for the four PNGs below (Python + Pillow, original shapes, no references) | Project's own |
 | `proto/worm/feature_feelers.png` | `make_slice_parts.py` (Pillow) | Stage-2 feature: two springy feelers on the head (served by the WormLook stub) | Project's own |
 | `proto/worm/part_cloud.png` | `make_slice_parts.py` (Pillow) | Float trait: a cloud puff above the head | Project's own |
