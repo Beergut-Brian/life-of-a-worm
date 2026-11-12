@@ -26,12 +26,43 @@ New characters are proposed in the design sprint and approved by Kaden before an
 
 ## This game
 
-- Technique:
-- Palette (file in `art/`):
-- Reference feel:
-- Characters used:
-- Tile or model scale:
-- Outline weight / rim light:
+The pick (Docket D92, defaulted 2026-11-12 07:00 to the recommendation): **"B Lantern Deep as the
+base look, plus A's faces and C's grade on the dock."** Kaden earlier: a grown-up, adventurous look,
+not one "catered to kids".
+
+- Technique: 2D pixel art, 16 px tiles, nearest filter, whole-pixel camera zoom, lit with Godot 2D
+  lights. Dense 4-shade textured tiles with ore flecks, roots, crystals and glowing mushrooms, a
+  normal map per atlas (`assets/sprites/tiles/`, baked by `art/tools/lantern_tiles.py`), drawn through
+  the addon's `TileArt` hook (`scripts/lighting/lantern_tile_art.gd`: solid tiles by open mask x 4
+  variants, back walls per ring). Light: one `Lantern` node per level (`scripts/lighting/lantern.gd`):
+  a coloured CanvasModulate ambient by ring (warm dirt, cool rock, orange core; dim, never dark,
+  floor 0.6), a capped pool of 16 PointLight2Ds handed to the worms first, then the core, daylight
+  shafts through eaten crust, crystals, the Strangestone and glowing mushrooms. Solid ground
+  darkens away from open air in the tile shader (`shaders/lantern_tiles.gdshader`), read on the GPU
+  from the planet overview texture. No 2D shadows.
+- Faces (from A): huge white eyes, 1 px ink, loud mouths on worms, foods and creatures. P1 one big
+  lidded eye, P2 two small cross-eyed eyes; foods go wide-eyed with an "o" mouth and a sweat drop,
+  threats look smug (half lids, smirk). Never on machines or vehicles (boot, lawnmower).
+  Sprite sets: `assets/sprites/worm/lantern/` (same names and sizes as `assets/proto/worm/`),
+  `assets/sprites/foods/<id>_calm|wide.png`, `assets/sprites/creatures/<id>_calm|wide|smug.png`
+  (`art/tools/lantern_faces.py`).
+- Dock grade (from C): the dock and its cutscenes only, never underground: `DockGrade`
+  (`scripts/lighting/dock_grade.gd`, `shaders/dock_grade.gdshader`): sun-faded colour mapped between
+  sepia ink `#3a2418` and paper `#f8ecd0`, paper grain, soft vignette, as one screen pass.
+- Palette (file in `art/`): `art/palette/lantern_deep.gpl` (and `.hex`), 66 colours: look B's ring
+  ramps (deep, low, mid, high + two wall shades) for topsoil, dirt, rock, core, the grass crust, plus
+  clay, ore, crystal, mushroom, stem, flower, Strangestone, castings, root, sprout, egg, pebble, ink.
+  Every tile pixel is snapped to it. Sky `#2d5f96 > #c7e4f2`, space `#05071a > #24306a`.
+  ΔE2000 of both worms against every ring colour: `art/direction/deltae_lantern.md` (worst 20.6).
+- Reference feel: a lantern-lit dig. Moody, warm, deep, the worms carrying their own light; the
+  dock a faded storybook plate. Vibe only, no copying.
+- Characters used: the two worms (Gulp P1 `#3cc24a`, Burp P2 `#e4393c`, tinted in code), Old Reel and
+  Bobber on the dock (library pixel forms), the slice's foods and creatures.
+- Tile or model scale: 16 px tiles; worm head 20 px, segment 16 px at stage 1; stage-1 food under
+  20 px; a stage-2 threat at least 1.25x the head (K-01).
+- Outline weight / rim light: characters 1 px ink `#140c12`; terrain has no outline, only a dark
+  1 px rim and a lit 2 px lip where a tile meets air. Each worm's light is warm white pulled 30%
+  toward its slot colour, so the rim of light round Gulp is greenish and round Burp reddish.
 
 ## Asset pipeline
 
