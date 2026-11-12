@@ -80,8 +80,13 @@ static func used_cues() -> Dictionary:
 
 
 func after_test() -> void:
-	for p in Audio._pool:   # no playback outlives the suite (it would leak at exit)
+	# No playback outlives the suite (it would be reported leaked at exit): stop, let the audio
+	# server drop the playbacks on the next frames, then let go of the streams.
+	for p in Audio._pool:
 		p.stop()
+	for i in 3:
+		await get_tree().process_frame
+	for p in Audio._pool:
 		p.stream = null
 
 
