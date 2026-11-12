@@ -695,6 +695,212 @@ func steer_camera(base_zoom_index: int)  # PlanetLevel calls it each frame: sets
                                          # lowers min_fit_index during the pull-back, then restores it
 # Tin save key "crust": {"broken": [player, ...], "eaten": int}. Cue: "breakthrough".
 ```
+### Creature behaviour (worm-creatures-1)
+
+`feature/worm-creatures-1` (PLAN-STATUS L-04, S-07, L-15, L-16, L-17). Code in `scripts/creatures/`.
+Reads `WormGrowth` / `WormStats` / `StageData`; never changes them.
+
+```gdscript
+# CreatureSense (static): the size table
+enum React { FLEE, IGNORE, AMBLE, FRIEND }
+static func react(creature_stage, worm_size, jarling := false) -> React   # < FLEE, > AMBLE, == IGNORE
+static func worm_size(w, data) -> int     # stage_info().edible_size + round(stats "bite_bonus/<flavour>")
+static func of(data, w) -> React; static func is_food(data, w) -> bool; static func is_threat(data, w) -> bool
+# is_food(data, w) == w.can_eat(data) for every non-Jarling (tested over all stages and creatures).
+
+# Creature (adds)
+func react_to(w) -> CreatureSense.React
+func is_jarling() -> bool                  # CreatureData.jarling; group &"jarlings", never &"food"
+func is_gulping() -> bool                  # drawn mid-gulp for 0.7 s after it eats a worm (the cause)
+
+# Gulp (static): the one eaten path; the beetle, the bird and the apex beetle all use it
+static func eat(creature_id, w, far_end: Vector2, from = null) -> bool   # false while w sparkles
+static func is_safe(w) -> bool             # EatenSparkle on w.head, 0.5 s
+static func landing(w, far_end) -> Vector2 # partner within 160 px: beside them; else nearest open
+                                           # tile within 96 px of far_end; else far_end
+
+# Outgrown (per worm, Outgrown.of(w)): species once a threat in sight (260 px)
+signal flipped(species)                    # first time seen as food in sight: once per species
+signal first_bite(species)                 # first one eaten: once per species
+# Tin key `outgrown`: {"<player>": {"threat": [...], "flipped": [...], "bitten": [...]}}
+
+# GrinCloseup (CanvasLayer 55): static show_for(w, prey_data = null); 1.6 s inset, P1 left, P2 right
+```
+
+**Data.** `CreatureData.jarling: bool` (default false, a new field in the script only; no
+`data/creatures/*.tres` changed). A Jarling is never food, never a threat, never in Outgrown, and is
+drawn with the soft warm friend outline (the Mole's `MoleLook.FRIEND` colour).
+
+**Reaction by size** (GAME.md "Bugs and threats", taken literally): a worm bigger than a creature
+makes it flee slowly (slower than half the worm's speed); a worm its own size is ignored (no flee,
+no stalk) but it is still food (`Worm.can_eat`, equal = food); a smaller worm is ambled toward by a
+TRUNDLE creature with `notice > 0` (others just carry on). This replaces slice-rings-1's "equal size
+runs away".
+
+**Audio cues** (new; grey beeps until audio lands): `outgrown` (the creature's startle when a worm
+outgrows its kind: a surprised squeak, never pain), `creature_gulp` (comic gulp when a creature
+swallows a worm). `now_i_eat_you` now also plays on the first bite of any outgrown species.
+
+### Sky ring (worm-sky-ring-1)
+
+`feature/worm-sky-ring-1`, PLAN-STATUS W-07 (part), X-06. The sky has no tiles: `rings.tres` still
+ends at the surface (the lantern and the generator read its last two rings). The sky ring is one
+data file, a `RingLife` subclass that also carries its band, stage and regrow time.
+
+```gdscript
+# SkyLife extends RingLife (scripts/rings/sky_life.gd; data/rings/sky_life.tres, ring = &"sky")
+@export var inner := 1.03 ; @export var outer := 1.45   # band of air, fractions of the planet radius
+@export var edible_from := 5                             # every sky food has this size_stage
+@export var regrow_time := 150.0                         # every scattered sky food has this regrow_time
+@export var balloon_angle, balloon_height, balloon_string, balloon_tie, balloon_color   # SkyBalloon
+# species: cloud_puff (plant), toy_plane, sky_balloon: counters only (live_max 0), no `eats`,
+# never a .tscn (no threats). scatter: cloud_puff, toy_plane, sky_balloon (data/foods/, ring &"sky").
+
+# RingsDirector
+const SKY: SkyLife                  # loaded beside LIVES; its counters join the ecology
+ring_band(&"sky") -> Vector2(SKY.inner, SKY.outer)
+var balloon: SkyBalloon
+func balloon_popped(player)         # SkyBalloon calls it: store + level.save_now()
+# Sky statics are appended after every other static, so old tins keep their saved order.
+# Rings save key gains "balloon": bool (popped in this tin; missing = not popped).
+# --rings-shot=sky | sky_pop stages a stage-5 worm by the balloon (sky_pop bites the tie at 1.5 s).
+
+# SkyBalloon (scripts/rings/sky_balloon.gd)
+signal popped(player: int)
+const CUE := "segment_pop"
+var is_popped: bool ; var popped_by: int ; var pop_t: float   # < 0 when the beat is not playing
+var tie: RingPickup                  # data/foods/balloon_tie.tres (size_stage 5): eating it pops
+func pop(player := -1)               # once: cue, shake (WormHooks.juice + PolarCamera.shake), burst
+                                     # ring and scraps, the snapped string, worm swell. Never moves a worm.
+```
+
+Hooks still waiting: live sky bodies (the director only spawns into loaded tile chunks, and the
+sky has none); birds (creatures lane); plane and cloud placeholder shapes (`RingFood.Look`).
+
+### Destructible world: loose things and surface props (W-10, W-11; world-destruct-1)
+
+Eating stays the world's: a worm eats tiles only through `World.eat_tile` (air, castings,
+`tile_eaten`), and who may bite a prop is `World.is_edible_by(stage, prop)` (the prop's
+`size_stage` on `StageRule`: a bigger stage bites, equal or smaller bonks). Nothing here moves a worm.
+
+```gdscript
+# LooseFall (scripts/world/loose_fall.gd): a child node named "Fall" of any Node2D on the planet
+signal landed(body: Node2D, speed: float)          # a touchdown faster than LAND_SPEED (cue + squash + dust)
+var world: TileWorld                               # default: first node in group &"world"
+var radius: float                                  # origin to underside, px (default: parent.data.radius)
+var velocity: Vector2
+var resting: bool
+func step(delta: float) -> bool                    # _physics_process calls it; tests call it directly
+func supported_at(world_local_pos: Vector2) -> bool # the cell one step toward the core is solid
+func launch(v: Vector2) -> void                    # start falling with this velocity (chunks popping out)
+#   While the cell under it is air it falls with world.shape.gravity_at(pos) (-pos.normalized() * g),
+#   capped at MAX_SPEED, and rests on the first solid tile. Carried (_carried), eaten (_gone),
+#   hidden or broken parents never fall. Kinematic on purpose: the worm carries / pulls / hops foods.
+
+# PropData (scripts/world/prop_data.gd; data/props/<id>.tres; scene scenes/props/<id>.tscn)
+@export var id: StringName
+@export var size: Vector2i                  # tiles, width along the ground x height away from the core
+@export var tile: StringName                # lantern atlas row it is drawn with (placeholder art)
+@export var hits: int                       # bites to break it
+@export var size_stage: int                 # StageRule size: stage size_stage + 1 and up bite it
+@export var chunk: FoodData                 # the chunk food
+@export var chunks: int                     # chunks in all: one per bite, the rest on the breaking bite
+@export var angles: PackedFloat32Array      # one prop per entry, radians round from the start point
+
+# SurfaceProp (scripts/world/surface_prop.gd): origin = middle of its bottom edge, upright on the surface
+signal bitten(prop: SurfaceProp, player: int, hp_left: int)
+signal bonked(prop: SurfaceProp, player: int)
+signal broke(prop: SurfaceProp, player: int, chunks: Array)
+var data: PropData
+var key: String                             # tin save key "<id>_<index>"
+var hp: int
+var broken: bool
+var size_stage: int                         # data.size_stage (read by StageRule.stage_of)
+var chunks_out: Array[Node2D]               # RingPickup chunk foods, each with a LooseFall
+func bite(player: int, stage: int, at := Vector2.INF) -> bool   # true when it cracked
+func touches(global_point: Vector2) -> bool
+#   Solid (StaticBody2D on the world's collision layer). Each physics frame a worm whose
+#   mouth_position() touches it bites it, at most once per BITE_COOLDOWN (0.45 s); a too-small worm
+#   bonks at most once per BONK_COOLDOWN (1.2 s): wobble + "bonk". A bite: a new crack, a shudder,
+#   Juice.chomp + debris, "prop_crack", one chunk knocked out (up and away from the bite, then
+#   falling; not edible for CHUNK_BLOCK 0.7 s so it is seen landing). The last bite: "prop_break",
+#   Juice.shake (the camera nudge), the remaining chunks, a squash and fade, then it frees itself.
+#   It falls (LooseFall, radius 0) if the ground under its middle is eaten.
+
+# WorldDestruct (scripts/world/world_destruct.gd): node "Destruct" in scenes/levels/planet.tscn
+@export var loose_foods: Array[StringName] = [&"pebble"]   # food ids that get a LooseFall
+var props: Dictionary[String, SurfaceProp]               # live props by key
+func setup(world, spawn: Vector2, saved: Dictionary, foods: Node = null) -> void
+func place(d: PropData, angle: float, key: String, hp := -1) -> SurfaceProp
+static func load_props() -> Array[PropData]
+static func surface_distance(world, angle: float) -> float
+func sweep_loose() -> void                                 # every 0.5 s: new loose foods get a LooseFall
+# Tin save key "destruct": {"props": {"<id>_<i>": hp_left}}  (0 = broken for good; chunks are not saved)
+```
+
+New cues with no file yet (grey beep): `prop_crack`, `prop_break`, `loose_land`. The bonk reuses `bonk`.
+
+### Stage 6 in the planet and the space stage (worm-chomp-space-1)
+
+`PlanetLevel.chomp` (`ChompDirector`, `scripts/chomp/chomp_director.gd`) runs stage 6 inside the real
+planet. Trigger: a worm at stage >= 6 with its head more than `RADIUS + 2` tiles from the centre for
+`OUT_TIME` (0.6 s). Never inside a jar (`JarStore.stage6_allowed()`). The jar id for a tin is
+`<profile>[_<slot>]_<seed>` (the same as feature/worm-jar-1's `JarStore.current_planet_id`).
+
+```gdscript
+# ChompDirector (PlanetLevel.chomp)
+signal shot_opened(player: int)       # cut to the fixed planet shot, the picture asks
+signal shot_closed()                  # B: not yet; back to the disk, nothing changed
+signal entered_space()                # after the chomp, or on opening an eaten tin
+enum State { WATCH, SHOT, SPACE }
+var chomp: PlanetChomp                # while the shot is up
+var space: SpaceStage                 # once in space
+var jar_dir := ""                     # tests only ("" = user://jars)
+static func eaten() -> bool           # Save "planet_eaten"
+func busy() -> bool                   # SHOT or SPACE: PlanetLevel's frame only autosaves
+func open_shot(w: Worm) -> bool       # level.save_now() first, so the jar copies the tin as it is
+func close_shot() -> void
+func enter_space(fade := true) -> void
+func planet_id() -> String
+
+# PlanetChomp additions (set before add_child)
+signal declined()                     # B on the picture
+var source_texture: Texture2D; var source_id: String; var source_colors: Array[Color]
+var worm_color: Color; var keep_planet_save := false   # the real tin keeps "planet"
+func decline() -> bool
+
+# SpaceStage (scenes/levels/space_stage.tscn, prototype; one drifting SpacePlanet, no hunting)
+const HOLD := 0.9; const EASE := 2.6; const SPACE_ZOOM := 0.7
+var players: Array[int]; var worms: Array[SpaceWorm]; var planet: SpacePlanet; var camera: Camera2D
+func gravity_on() -> bool             # always false
+func step_camera(delta) -> void       # planet shot -> follow the worms; rotation stays 0
+
+# Tin save keys: "planet_eaten": true and "stage": 7 after the chomp; "planet" is kept.
+# Cues: the chomp's ProtoSfx cues (confirm_hold, confirm_yes, confirm_cancel, jar_clink,
+# chomp_bite, planet_gone); "warp" on arriving in space.
+```
+### Centipede (worm-creatures-2)
+
+`feature/worm-creatures-2` (PLAN-STATUS L-08). Adds `CreatureData.Behaviour.WAVE` (appended, so
+existing `.tres` values keep their meaning) and `Creature.Mode.GIVE_UP` (appended).
+
+```gdscript
+# CentipedeData extends CreatureData (data/creatures/centipede.tres; size_stage 3, ring dirt)
+@export var wave_amplitude, wave_rate, chase_time, give_up_distance, rest_time
+@export var sneaker, sneaker_stripe: Color; @export var segments: int
+# Centipede extends Creature (scenes/creatures/centipede.tscn)
+var chase_t; var rest; var give_ups
+func give_up() -> void        # GIVE_UP for 1.2 s: turns away, eyes shut, huff cloud; then rests
+func sway() -> float          # sideways offset of the wave (tests)
+# Creature (adds, for WAVE): _wave(...) (default: trundle), _strike(delta) (the shared wind-up,
+# lunge, Gulp bite and doze, split out of _trundle unchanged), _draw_wave(r, o) (default: beetle)
+```
+
+Who it chases is `CreatureSense` alone (AMBLE: a worm smaller than 3). It gives up after
+`chase_time`, at once when the worm is past `give_up_distance`, or after a missed lunge, then
+won't chase again for `rest_time`. Flees a bigger worm at 0.45x speed (under half a worm's).
+Cues: bark `threat_near`, wind-up `beetle_windup`, give-up `bird_offended` (borrowed: no
+centipede cue file yet). Live in `dirt_life.tres` (species `centipede`, eats grubs, live_max 2).
 ### Planet jar audit (worm-jar-1)
 
 Additions to `JarStore` (`scripts/jars/jars.gd`); the API above is unchanged.

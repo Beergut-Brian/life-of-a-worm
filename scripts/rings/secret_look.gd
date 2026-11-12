@@ -2,7 +2,8 @@
 ## the find bubble over the hall and on the tackle box's secrets page, so the page reads as "that's
 ## the place you found". Also the bubble's food and tackle-box pictures.
 ## PictoBubble ids (register() once; safe to call again): "secret:<id>", "secret_food:<food>",
-## &"secret_box". Unknown secret ids draw a gold star.
+## &"secret_box", &"secret_dig" (the worm's head biting through a rock wall: a find's cause).
+## Unknown secret ids draw a gold star.
 class_name SecretLook
 extends RefCounted
 
@@ -16,7 +17,8 @@ const ROCK := Color("6f7586")
 const GOLD := Color("ffd23f")
 
 ## The pictures this file can draw (secret ids).
-const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall"]
+const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall", &"geode_cathedral"]
+const GEMS: Array[Color] = [Color("c46cff"), Color("5fe8ff"), Color("ff7ad9"), Color("ffd23f")]
 
 
 static func register() -> void:
@@ -24,6 +26,7 @@ static func register() -> void:
 		draw(ci, StringName(String(id).trim_prefix("secret:")), c, s, a))
 	PictoBubble.register_prefix("secret_food:", _food_pic)
 	PictoBubble.register(&"secret_box", _box_pic)
+	PictoBubble.register(&"secret_dig", _dig_pic)
 
 
 static func has(id: StringName) -> bool:
@@ -40,6 +43,8 @@ static func draw(ci: CanvasItem, id: StringName, c: Vector2, s: float, a := 1.0,
 			_rowboat(ci, c, u, a, t)
 		&"fossil_hall":
 			_fossil_hall(ci, c, u, a, t)
+		&"geode_cathedral":
+			_geode_cathedral(ci, c, u, a, t)
 		_:
 			_star(ci, c, 8.0 * u, Color(GOLD, a), Color(INK, a))
 
@@ -112,6 +117,49 @@ static func _fossil_hall(ci: CanvasItem, c: Vector2, u: float, a: float, t: floa
 	var g := 0.6 + 0.4 * sin(t * 3.0)
 	ci.draw_circle(c + Vector2(5.0, 6.0) * u, 2.8 * u, Color(Color("ffa826"), 0.3 * g * a))
 	ci.draw_circle(c + Vector2(5.0, 6.0) * u, 1.7 * u, Color(Color("ffa826"), a))
+
+
+## A tall pointed arch in lit violet rock, crystal pillars in the middle, a split geode either side.
+static func _geode_cathedral(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var arch := PackedVector2Array()
+	var inner := PackedVector2Array()
+	for k in 15:
+		var ang := PI + PI * k / 14.0
+		var lift := 1.0 + 0.35 * sin(PI * k / 14.0)   # a pointed crown
+		arch.append(c + Vector2(cos(ang) * 11.0, 9.0 + sin(ang) * 15.0 * lift) * u)
+		inner.append(c + Vector2(cos(ang) * 9.6, 9.0 + sin(ang) * 13.6 * lift) * u)
+	ci.draw_colored_polygon(arch, Color(INK, a))
+	ci.draw_colored_polygon(inner, Color(Color("9a6cc4"), a))
+	for i in 3:
+		var x := -4.0 + i * 4.0
+		var h := 9.0 if i == 1 else 6.0
+		var col := GEMS[i + 1]
+		ci.draw_colored_polygon(PackedVector2Array([c + Vector2(x - 1.6, 9) * u, c + Vector2(x + 1.6, 9) * u, c + Vector2(x, 9 - h - 2.5) * u]), Color(col, a))
+	for sx in [-1.0, 1.0]:
+		var g: Vector2 = c + Vector2(sx * 6.5, -3.0) * u
+		ci.draw_circle(g, 2.8 * u, Color(Color("c9b8a6"), a))
+		ci.draw_circle(g, 2.0 * u, Color(GEMS[0], a))
+	var tw := 0.6 + 0.4 * sin(t * 3.0)
+	ci.draw_circle(c + Vector2(0, -10.0) * u, 1.3 * u, Color(Color(1, 1, 1), tw * a))
+
+
+## The cause of a find: the worm's head biting through a rock wall, chips flying off.
+static func _dig_pic(ci: CanvasItem, _id: StringName, c: Vector2, s: float, a: float) -> void:
+	var u := s / 22.0
+	var wall := PackedVector2Array([c + Vector2(2, -10) * u, c + Vector2(10, -10) * u, c + Vector2(10, 10) * u, c + Vector2(2, 10) * u, c + Vector2(4, 4) * u, c + Vector2(1, 0) * u, c + Vector2(4, -5) * u])
+	ci.draw_colored_polygon(wall, Color(Color("d8643a"), a))
+	ci.draw_polyline(PackedVector2Array([c + Vector2(2, -10) * u, c + Vector2(4, -5) * u, c + Vector2(1, 0) * u, c + Vector2(4, 4) * u, c + Vector2(2, 10) * u]), Color(INK, a), 1.2 * u)
+	# the worm: a pink body coming from the left, head at the crack, mouth open
+	for i in 3:
+		ci.draw_circle(c + Vector2(-9.0 + i * 3.5, 2.0 - i * 0.6) * u, (2.6 + i * 0.3) * u, Color(INK, a))
+		ci.draw_circle(c + Vector2(-9.0 + i * 3.5, 2.0 - i * 0.6) * u, (2.0 + i * 0.3) * u, Color(Color("f29ab0"), a))
+	ci.draw_circle(c + Vector2(-0.5, 0.5) * u, 3.6 * u, Color(INK, a))
+	ci.draw_circle(c + Vector2(-0.5, 0.5) * u, 3.0 * u, Color(Color("f29ab0"), a))
+	ci.draw_circle(c + Vector2(-1.0, -0.8) * u, 0.7 * u, Color(INK, a))
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(1.5, 0.0) * u, c + Vector2(3.0, -1.2) * u, c + Vector2(3.0, 1.8) * u]), Color(INK, a))
+	# chips flying off the wall
+	for spec in [[Vector2(5, -8), 1.2], [Vector2(7, 6), 1.0], [Vector2(-3, -7), 0.9]]:
+		ci.draw_rect(Rect2(c + (spec[0] as Vector2) * u - Vector2.ONE * spec[1] * u, Vector2.ONE * spec[1] * 2.0 * u), Color(Color("f08a5a"), a))
 
 
 static func _food_pic(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float) -> void:

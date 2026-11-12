@@ -17,6 +17,9 @@ var follow := 6.0
 var fit := false
 var max_fit_index := 6
 var min_fit_index := 3
+## Extra steps closer than max_fit_index a beat asks for (a hidden place's find leans in one); the
+## fit still never cuts a target off. Owned by whoever set it; 0 = none.
+var lean_in := 0
 ## Screen margin kept round the fitted bodies, in screen pixels.
 var fit_margin := 160.0
 ## Zoom steps wait this long between changes so the view never flickers between two steps.
@@ -93,10 +96,11 @@ func fit_index() -> int:
 			var q: Vector2 = inv * (p - position)
 			lo = lo.min(q)
 			hi = hi.max(q)
+	var cap := mini(max_fit_index + maxi(lean_in, 0), ZOOMS.size() - 1)
 	if lo.x == INF:
-		return clampi(zoom_index, min_fit_index, max_fit_index)
+		return clampi(zoom_index, min_fit_index, cap)
 	var half := Vector2(maxf(absf(lo.x), absf(hi.x)), maxf(absf(lo.y), absf(hi.y)))
-	for i in range(max_fit_index, min_fit_index - 1, -1):
+	for i in range(cap, min_fit_index - 1, -1):
 		var room := view * 0.5 / ZOOMS[i] - Vector2.ONE * fit_margin / ZOOMS[i]
 		if half.x <= room.x and half.y <= room.y:
 			return i

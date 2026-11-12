@@ -23,6 +23,8 @@ var _root: Control
 var _flash: ColorRect
 var _flash_frames := 0
 var _t := 0.0
+var _icon_stage := {}   # player -> stage the icon shows
+var _icon_pulse := {}   # player -> seconds of pop left
 
 
 func _ready() -> void:
@@ -76,6 +78,7 @@ func set_rows(ctx: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	_track_icons(delta)
 	if _flash_frames > 0:
 		_flash_frames -= 1
 		if _flash_frames == 0:
@@ -91,7 +94,7 @@ func _draw_hud() -> void:
 	var cam: PolarCamera = level.camera
 	var i := 0
 	for w in Worm.all():
-		_draw_stage_icon(Vector2(70 + i * 230, 70), w)
+		_draw_stage_icon(Vector2(80 + i * ICON_GAP, 80), w)
 		if cam and not cam.sees(w.cam_position(), 30.0):
 			_draw_edge_arrow(view, cam, w)
 		i += 1
@@ -170,16 +173,88 @@ func _draw_picture(c: Vector2, what: String, a: float) -> void:
 				_root.draw_circle(c + Vector2(-11 + k * 11, 0), 5.0, [Color("ff9f1c"), Color("8d99ae"), Color("6ff0ff")][k] * Color(1, 1, 1, a))
 
 
+## Stage icon size: the segment sprite's width at stage 1, and how much it grows per stage.
+const ICON_BASE_PX := 26.0
+const ICON_STEP_PX := 5.0
+## Seconds of the pop when the icon grows (the stage-up).
+const ICON_PULSE := 0.7
+## Room per worm along the top edge (stage 7's icon is about 330 px long).
+const ICON_GAP := 380.0
+
+
+## Segments in the icon at a stage: the head plus one body segment per stage (the count is the
+## picture; no number is ever drawn).
+static func icon_segments(stage: int) -> int:
+	return maxi(1, stage) + 1
+
+
+## Sprite width in the icon at a stage.
+static func icon_px(stage: int) -> float:
+	return ICON_BASE_PX + ICON_STEP_PX * (maxi(1, stage) - 1)
+
+
+## The stage the icon shows for a player (-1 before it has seen that worm).
+func icon_stage(player: int) -> int:
+	return _icon_stage.get(player, -1)
+
+
+## 1.0 at rest; above 1 while the icon pops after a stage-up.
+func icon_scale(player: int) -> float:
+	var left: float = _icon_pulse.get(player, 0.0)
+	if left <= 0.0:
+		return 1.0
+	return 1.0 + 0.45 * sin(PI * (1.0 - left / ICON_PULSE))
+
+
+## Notices stage-ups: a worm seen for the first time (loaded, hatched) just shows its stage; a
+## bigger stage than last frame starts the pop.
+func _track_icons(delta: float) -> void:
+	for p in _icon_pulse.keys():
+		_icon_pulse[p] = maxf(0.0, _icon_pulse[p] - delta)
+	for w in Worm.all():
+		var s: int = w.model.stage
+		if _icon_stage.has(w.player) and s > _icon_stage[w.player]:
+			_icon_pulse[w.player] = ICON_PULSE
+		_icon_stage[w.player] = s
+
+
+## The worm's own segment sprites (WormLook), head and face at the right, one more segment and a
+## bigger sprite each stage, with a gentle wiggle; a ring pops out of the head at a stage-up.
 func _draw_stage_icon(at: Vector2, w: Worm) -> void:
-	var col: Color = Players.COLOR[w.player]
-	var n := w.model.stage + 1
-	for k in n:
-		var r := 9.0 + 2.0 * w.model.stage
-		_root.draw_circle(at + Vector2(k * r * 1.3, 0), r + 2.0, Color(0, 0, 0, 0.5))
-		_root.draw_circle(at + Vector2(k * r * 1.3, 0), r, col if k == n - 1 else col.darkened(0.25))
-	var head := at + Vector2((n - 1) * (9.0 + 2.0 * w.model.stage) * 1.3, 0)
-	_root.draw_circle(head + Vector2(3, -3), 4.0, Color.WHITE)
-	_root.draw_circle(head + Vector2(4, -3), 2.0, Color.BLACK)
+	var stage: int = _icon_stage.get(w.player, w.model.stage)
+	var look := WormHooks.look()
+	var n := icon_segments(stage)
+	var k := icon_scale(w.player)
+	var px := icon_px(stage) * k
+	var step := px * 0.7
+	var shade := Color(0, 0, 0, 0.45)
+	var head := at + Vector2((n - 1) * step, 0)
+	var back := Color(0.08, 0.06, 0.1, 0.55)   # the hint panel's backing, as a pill
+	var br := px * 0.85
+	var pill := PackedVector2Array()
+	for j in 13:   # one capsule polygon, so the see-through backing has no darker seams
+		pill.append(head + Vector2.from_angle(-PI / 2 + PI * j / 12.0) * br)
+	for j in 13:
+		pill.append(at + Vector2.from_angle(PI / 2 + PI * j / 12.0) * br)
+	_root.draw_colored_polygon(pill, back)
+	for i in n:   # tail first so the head draws on top
+		var c := at + Vector2(i * step, sin(_t * 3.0 + i * 0.9) * px * 0.08)
+		if i == n - 1:
+			c = head
+		_root.draw_circle(c, px * 0.58, shade)
+		var kind: StringName = &"head" if i == n - 1 else (&"tail" if i == 0 else &"body")
+		var tex: Texture2D = look.segment_texture(w.player, stage, kind)
+		var sz := px * (1.15 if kind == &"head" else 1.0)
+		if tex:
+			_root.draw_texture_rect(tex, Rect2(c - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), false)
+	var face: Texture2D = look.face_texture(w.player, stage, &"idle")
+	if face:
+		var fs := px * 1.15
+		_root.draw_texture_rect(face, Rect2(head - Vector2(fs, fs) * 0.5, Vector2(fs, fs)), false)
+	if k > 1.0:
+		var left: float = _icon_pulse.get(w.player, 0.0)
+		var u := 1.0 - left / ICON_PULSE
+		_root.draw_arc(head, px * (0.7 + 1.4 * u), 0.0, TAU, 32, Color(1, 1, 1, 0.8 * (1.0 - u)), 4.0)
 
 
 func _draw_edge_arrow(view: Vector2, cam: PolarCamera, w: Worm) -> void:

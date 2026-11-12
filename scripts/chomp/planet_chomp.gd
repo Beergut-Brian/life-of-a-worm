@@ -3,12 +3,16 @@
 ## with a shader mask -> final gulp (white flash 2 frames, planet_gone: gulp, silence, burp) -> space.
 ## advance(delta, held) drives everything so tests can run it without frames or input.
 ## --demo-chomp runs it hands-free in a sandbox profile ("demo_chomp") with its own jar shelf.
+## In the game, ChompDirector (scripts/chomp/chomp_director.gd) sets `source_*` before adding it, so it
+## eats the real disk's texture and jars the real tin; B there is "not yet" (`declined`).
 class_name PlanetChomp
 extends Node2D
 
 signal confirm_started()
 signal confirm_cancelled()
 signal planet_eaten()
+## B pressed on the picture: "not yet". The director takes the shot away; nothing changed.
+signal declined()
 
 enum Phase { IDLE, CONFIRM, JARRING, CHOMP, GONE, FADE, DONE }
 
@@ -25,6 +29,15 @@ const DEMO_HOLDS := [[1.2, 2.0], [2.8, 6.0]]   # a false start (cancels), then t
 
 @export var autostart := true
 @export var auto_space := true
+## Set by ChompDirector before _ready: the real planet instead of the stand-in.
+var source_texture: Texture2D
+var source_id := ""
+var source_colors: Array[Color] = []
+## The chomping worm's colour (green P1, red P2).
+var worm_color := Color("3cc24a")
+## True in the real tin: the tin keeps its planet data (the jar has it too) and only marks it eaten.
+var keep_planet_save := false
+var tex_px := TEX_SIZE
 
 var phase := Phase.IDLE
 var planet: PlanetStandIn
@@ -65,6 +78,7 @@ func _ready() -> void:
 	if demo:
 		_setup_demo()
 	_load_planet()
+	_worm.body_color = worm_color
 	for i in 4:
 		_debris.append(_make_debris())
 	confirm.started.connect(_on_confirm_started)
@@ -90,6 +104,13 @@ func _setup_demo() -> void:
 
 
 func _load_planet() -> void:
+	if source_texture != null:
+		planet = PlanetStandIn.generate("", 1)   # only for its debris colours, unless given
+		planet.id = source_id
+		planet_texture = source_texture
+		tex_px = maxi(1, source_texture.get_width())
+		_show_planet()
+		return
 	var d = Save.get_value("planet", null)
 	if d is Dictionary:
 		planet = PlanetStandIn.from_save(d)
@@ -100,9 +121,13 @@ func _load_planet() -> void:
 	var t0 := Time.get_ticks_usec()
 	planet_texture = planet.texture(TEX_SIZE)
 	texture_ms = (Time.get_ticks_usec() - t0) / 1000.0
+	_show_planet()
+
+
+func _show_planet() -> void:
 	_planet_sprite.texture = planet_texture
-	_planet_sprite.scale = Vector2.ONE * PLANET_SCALE
-	(_planet_sprite.material as ShaderMaterial).set_shader_parameter("tex_px", float(TEX_SIZE))
+	_planet_sprite.scale = Vector2.ONE * planet_scale()
+	(_planet_sprite.material as ShaderMaterial).set_shader_parameter("tex_px", float(tex_px))
 	_set_progress(0.0)
 	_picture.planet_texture = planet_texture
 	_jar.set("planet_texture", planet_texture)
@@ -121,6 +146,11 @@ func begin() -> bool:
 	create_tween().tween_property(_picture, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_sfx.play("confirm_yes", 0.7)
 	return true
+
+
+## Screen size of the planet in the shot is the same whatever the texture's pixel size.
+func planet_scale() -> float:
+	return TEX_SIZE * PLANET_SCALE / float(tex_px)
 
 
 func planet_id() -> StringName:
@@ -150,6 +180,28 @@ func _held() -> bool:
 				return true
 		return false
 	return Input.is_action_pressed("p1_action") or Input.is_action_pressed("p2_action")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if demo or phase != Phase.CONFIRM:
+		return
+	if event.is_action_pressed("p1_jump") or event.is_action_pressed("p2_jump"):
+		decline()
+
+
+## "Not yet": only while the picture is asking and the ring is not full. Nothing is saved or eaten.
+func decline() -> bool:
+	if phase != Phase.CONFIRM or confirm.done:
+		return false
+	if confirm.is_holding():
+		_sfx.stop("confirm_hold")
+	confirm = _fresh_confirm()
+	phase = Phase.IDLE
+	_picture.visible = false
+	_worm.mouth_open = 0.0
+	_sfx.play("confirm_cancel")
+	declined.emit()
+	return true
 
 
 func advance(delta: float, held: bool) -> void:
@@ -198,6 +250,7 @@ func _on_confirmed() -> void:
 	var tw := create_tween()
 	tw.tween_property(_picture, "scale", Vector2.ZERO, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	_jar.call("fly_in", global_position, PLANET_SCALE * TEX_SIZE, JAR_TIME * 0.8)
+	_picture.jarred = true
 
 
 func _fresh_confirm() -> HoldConfirm:
@@ -261,7 +314,8 @@ func _gulp() -> void:
 	if eaten_count == 0:
 		eaten_count += 1
 		Save.set_value("stage", 7)
-		Save.set_value("planet", null)
+		if not keep_planet_save:
+			Save.set_value("planet", null)
 		Save.set_value("planet_eaten", true)
 		Save.flush()
 		planet_eaten.emit()
@@ -336,7 +390,7 @@ func _make_debris() -> CPUParticles2D:
 	e.scale_amount_min = 7.0
 	e.scale_amount_max = 18.0
 	var g := Gradient.new()
-	var cols := planet.ring_colors()
+	var cols: Array[Color] = source_colors if source_colors.size() == 5 else planet.ring_colors()
 	g.offsets = PackedFloat32Array([0.0, 0.25, 0.5, 0.75, 1.0])
 	g.colors = PackedColorArray(cols)
 	g.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT

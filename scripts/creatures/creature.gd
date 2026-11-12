@@ -5,6 +5,12 @@
 ## (telegraph), then lunges; a caught worm pops out of its far end one segment shorter and dizzy.
 ## WIGGLE wiggles in place; MARCH walks its path back and forth (ants, tiny hats, digging a trail).
 ## Hunters eat live prey they bump into (beetles eat grubs): the visible side of the food chain.
+## How it reacts is size alone (CreatureSense, feature/worm-creatures-1): a worm bigger than it
+## makes it flee slowly, a worm its own size is ignored (it is still food: Worm.can_eat), a smaller
+## worm is ambled toward (TRUNDLE; others just carry on). A Jarling is never food or a threat and
+## wears the friend outline. Outgrowing a species is marked once (Outgrown): the flip startles it
+## pale and wide-eyed, the first bite plays `now_i_eat_you` and the grinning close-up. A gulped
+## worm goes through Gulp (comic gulp drawn on this creature, out the far end, 0.5 s sparkle).
 ## Never steers a worm. Placeholder art drawn in code (Art lane after D92).
 class_name Creature
 extends Node2D
@@ -13,7 +19,8 @@ signal taken(c: Creature)
 signal ate_worm(player: int)
 signal ate_creature(prey: Creature)
 
-enum Mode { IDLE, STALK, WINDUP, LUNGE, FULL, FLEE }
+## GIVE_UP: a chaser stopped chasing and turns away (the centipede), drawn so the cause shows.
+enum Mode { IDLE, STALK, WINDUP, LUNGE, FULL, FLEE, GIVE_UP }
 
 const INK := Color("2a1a14")
 const LUNGE_TIME := 0.35
@@ -22,6 +29,9 @@ const BITE := 14.0
 const FULL_TIME := 6.0
 const SCARE_RANGE := 56.0
 const WANDER := 70.0
+const GULP_TIME := 0.7
+const STARTLE_TIME := 0.9
+const FRIEND := Color(1.0, 0.93, 0.6, 0.55)
 
 @export var data: CreatureData
 var world: PolarWorld
@@ -46,11 +56,18 @@ var _barked := 0.0
 var _lunge_to := Vector2.ZERO
 var _wander_to := Vector2.ZERO
 var _path_len := 0.0
+var _gulp := 0.0
+var _gulp_dir := Vector2.RIGHT
+var _gulp_color := Color("f29aa0")
+var _startle := 0.0
 
 
 func _ready() -> void:
 	add_to_group(&"creatures")
-	add_to_group(&"food")
+	if is_jarling():
+		add_to_group(&"jarlings")
+	else:
+		add_to_group(&"food")
 	if home == Vector2.ZERO:
 		home = position
 	_wander_to = home
@@ -67,6 +84,7 @@ func is_available() -> bool:
 func take() -> void:
 	if _gone:
 		return
+	_note_first_bite()
 	_gone = true
 	remove_from_group(&"food")
 	remove_from_group(&"creatures")
@@ -102,13 +120,23 @@ func smug() -> void:
 
 # --- rules -------------------------------------------------------------------------------------
 
-## Is this worm (anything with model.stage) a threat to me? Bigger eats smaller.
+func is_jarling() -> bool:
+	return CreatureSense.is_jarling(data)
+
+
+## How I react to this worm: FLEE (it is bigger), IGNORE (my size), AMBLE (smaller), FRIEND.
+func react_to(w: Node) -> CreatureSense.React:
+	return CreatureSense.of(data, w)
+
+
+## Can this worm eat me? Bigger (or equal) eats smaller; never a Jarling.
 func can_be_eaten_by(w: Node) -> bool:
-	return w != null and w.model != null and w.can_eat(data)
+	return w != null and w.model != null and not is_jarling() and w.can_eat(data)
 
 
+## Am I a threat to this worm (bigger than it, and it is not still sparkling from a gulp)?
 func threatens(w: Node) -> bool:
-	return w != null and w.model != null and data.is_threat_to(w.model.stage)
+	return w != null and w.model != null and CreatureSense.is_threat(data, w) and not Gulp.is_safe(w)
 
 
 func _worms() -> Array:
@@ -132,6 +160,8 @@ func step(delta: float) -> void:
 	_block = maxf(0.0, _block - delta)
 	_smug = maxf(0.0, _smug - delta)
 	_barked = maxf(0.0, _barked - delta)
+	_gulp = maxf(0.0, _gulp - delta)
+	_startle = maxf(0.0, _startle - delta)
 	if _carried:
 		queue_redraw()
 		return
@@ -141,10 +171,13 @@ func step(delta: float) -> void:
 	var prey_d := INF
 	for w in _worms():
 		var d: float = w.head_position().distance_to(global_position)
-		if can_be_eaten_by(w) and d < near_d:
+		var r := react_to(w)
+		if not is_jarling() and Outgrown.of(w).note(data.id, r, d):
+			_on_outgrown()
+		if r == CreatureSense.React.FLEE and d < near_d:
 			near_d = d
 			near_eater = w
-		elif threatens(w) and d < prey_d:
+		elif r == CreatureSense.React.AMBLE and threatens(w) and d < prey_d:
 			prey_d = d
 			prey_worm = w
 	_scared = near_eater != null and near_d < SCARE_RANGE + data.radius
@@ -156,6 +189,8 @@ func step(delta: float) -> void:
 			_march(delta * (1.6 if _scared else 1.0))
 		CreatureData.Behaviour.TRUNDLE:
 			_trundle(delta, near_eater, near_d, prey_worm, prey_d)
+		CreatureData.Behaviour.WAVE:
+			_wave(delta, near_eater, near_d, prey_worm, prey_d)
 	if data.hunts != &"" and mode != Mode.FULL and not _scared:
 		_hunt()
 	if world:
@@ -187,6 +222,18 @@ func _trundle(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d:
 				if global_position.distance_to(_wander_to) < 4.0:
 					_wander_to = home + Vector2.from_angle(randf() * TAU) * randf() * WANDER
 				_move(_wander_to - global_position, data.speed * 0.5, delta)
+		_:
+			_strike(delta)
+
+
+## WAVE chasers (Centipede) override this; a bare WAVE creature trundles.
+func _wave(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d: float) -> void:
+	_trundle(delta, eater, eater_d, prey, prey_d)
+
+
+## The shared end of a chase: wind up (the telegraph), lunge, bite through Gulp, doze when full.
+func _strike(delta: float) -> void:
+	match mode:
 		Mode.WINDUP:
 			# The telegraph: it swells and shakes, standing still, for a full second or more.
 			if _mode_t >= data.telegraph_time():
@@ -208,11 +255,52 @@ func _trundle(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d:
 
 
 func _eat_worm(w: Node2D) -> void:
-	var back: Vector2 = global_position - (w.head_position() - global_position).normalized() * (data.radius + 10.0)
-	w.get_eaten(data.id, back)
+	var dir: Vector2 = (w.head_position() - global_position)
+	dir = dir.normalized() if dir.length() > 0.5 else Vector2.RIGHT
+	var back: Vector2 = global_position - dir * (data.radius + 10.0)
+	if not Gulp.eat(data.id, w, back, global_position):
+		return
+	var tangent := Vector2.from_angle(position.angle() + PI / 2.0) if world else Vector2.RIGHT
+	if absf(dir.dot(tangent)) > 0.01:
+		facing = signf(dir.dot(tangent))   # jaws on the side it bit; the worm leaves by the back
+	_gulp = GULP_TIME
+	_gulp_dir = dir
+	_gulp_color = Players.COLOR.get(w.player, _gulp_color)
+	Audio.play("creature_munch")  # existing file; creature_gulp had none (audio-1 has no gulp cue)
 	ate_worm.emit(w.player)
 	_set_mode(Mode.FULL)
 	target = null
+
+
+## Mid-gulp (drawn jaws shut, the worm a bulge going through): shows who ate the worm.
+func is_gulping() -> bool:
+	return _gulp > 0.0
+
+
+## A worm just outgrew my species, in sight: I startle (hop, pale, wide eyes, sweat drop).
+func _on_outgrown() -> void:
+	_startle = STARTLE_TIME
+	if mode == Mode.STALK or mode == Mode.WINDUP:
+		_set_mode(Mode.IDLE)
+	Audio.play("boing")  # existing file; outgrown startle (comic, not a pain sound)
+
+
+## Eaten: if the worm eating me used to be chased by my kind, this is its first bite of one.
+func _note_first_bite() -> void:
+	if is_jarling() or data == null:
+		return
+	var eater: Node2D = null
+	var best := INF
+	for w in _worms():
+		var d: float = w.mouth_position().distance_to(global_position) if w.has_method("mouth_position") else INF
+		if d < best and can_be_eaten_by(w):
+			best = d
+			eater = w
+	if eater == null or best > data.radius + 48.0:
+		return
+	if Outgrown.of(eater).note_bite(data.id):
+		Audio.play("now_i_eat_you")
+		GrinCloseup.show_for(eater, data)
 
 
 func _hunt() -> void:
@@ -303,6 +391,8 @@ func draw_scale() -> float:
 		s = 0.85
 	if mode == Mode.WINDUP:
 		s = 1.0 + 0.25 * minf(1.0, _mode_t / data.telegraph_time())
+	if _gulp > 0.0:
+		s = 1.0 + 0.3 * sin(PI * (1.0 - _gulp / GULP_TIME))
 	return s
 
 
@@ -313,20 +403,56 @@ func _draw() -> void:
 	var shake := Vector2.ZERO
 	if mode == Mode.WINDUP or (_scared and not _carried):
 		shake.x = sin(_t * 45.0) * 0.8
+	if _startle > 0.0:
+		shake.y = -absf(sin(_startle / STARTLE_TIME * PI)) * r * 0.8
+	if is_jarling():
+		_draw_friend(r, shake)
 	match data.behaviour:
 		CreatureData.Behaviour.WIGGLE:
 			_draw_grub(r, shake)
 		CreatureData.Behaviour.MARCH:
 			_draw_ant(r, shake)
+		CreatureData.Behaviour.WAVE:
+			_draw_wave(r, shake)
 		_:
 			_draw_beetle(r, shake)
+	if _gulp > 0.0:
+		_draw_gulp(r, shake)
+	if _startle > 0.0:
+		var sd := shake + Vector2(r * 0.9, -r * 1.1 + (1.0 - _startle / STARTLE_TIME) * r * 0.6)
+		draw_circle(sd, maxf(1.5, r * 0.18), Color(0.55, 0.8, 1.0))
+
+
+## The friend outline: soft, warm and gently pulsing, the same look as the Mole's.
+func _draw_friend(r: float, o: Vector2) -> void:
+	var glow := 2.5 + 1.0 * sin(_t * 2.0)
+	draw_circle(o, r * 1.25 + glow + 2.0, Color(FRIEND, FRIEND.a * 0.5))
+	draw_circle(o, r * 1.25 + glow, FRIEND)
+
+
+## The comic gulp: the worm is a bulge sliding from my mouth to my back end, cheeks puffed.
+## (Rotation-free: _gulp_dir is in my parent's space, so undo my rotation.)
+func _draw_gulp(r: float, o: Vector2) -> void:
+	var k := 1.0 - _gulp / GULP_TIME
+	var dir := _gulp_dir.rotated(-rotation)
+	var at := o + dir * r * lerpf(0.8, -1.0, k)
+	draw_circle(at, r * 0.42 + 1.0, INK)
+	draw_circle(at, r * 0.42, _gulp_color)
+	draw_circle(at + dir * r * 0.15, r * 0.12, Color(1, 1, 1, 0.8))
+	# "gulp" lines round the throat
+	for i in 3:
+		var a := dir.angle() + (i - 1) * 0.5
+		var p := o + Vector2.from_angle(a) * r * (1.15 + 0.1 * sin(_t * 30.0))
+		draw_line(p, p + Vector2.from_angle(a) * r * 0.35, Color.WHITE, 1.5)
 
 
 func _eyes(at: Vector2, r: float, spread: float) -> void:
 	var e := maxf(1.0, r * 0.24)
 	for sx in [-1.0, 1.0]:
 		var c: Vector2 = at + Vector2(sx * spread, 0)
-		if _scared or _carried:
+		if _gulp > 0.0:
+			draw_line(c + Vector2(-e, -e * 0.5), c + Vector2(e, e * 0.5), INK, 1.0)   # squeezed shut
+		elif _scared or _carried or _startle > 0.0:
 			draw_circle(c, e + 1.0, Color.WHITE)
 			draw_circle(c, e * 0.5, INK)
 		elif _smug > 0.0 or mode == Mode.STALK:
@@ -337,6 +463,11 @@ func _eyes(at: Vector2, r: float, spread: float) -> void:
 				draw_line(c + Vector2(-e, 0), c + Vector2(e, 0), INK, 1.0)
 			else:
 				draw_circle(c, e * 0.7, INK)
+
+
+## WAVE creatures draw themselves (Centipede); a bare one looks like a beetle.
+func _draw_wave(r: float, o: Vector2) -> void:
+	_draw_beetle(r, o)
 
 
 func _draw_grub(r: float, o: Vector2) -> void:
@@ -371,7 +502,7 @@ func _draw_ant(r: float, o: Vector2) -> void:
 
 func _draw_beetle(r: float, o: Vector2) -> void:
 	var col := data.color
-	if _scared:
+	if _scared or _startle > 0.0:
 		col = col.lerp(Color.WHITE, 0.35)
 	var walk := sin(_t * 8.0) * 1.2
 	for i in 3:
@@ -387,7 +518,12 @@ func _draw_beetle(r: float, o: Vector2) -> void:
 	if mode == Mode.WINDUP or mode == Mode.LUNGE:
 		draw_line(head + Vector2(r * 0.4 * facing, -2), head + Vector2(r * 0.9 * facing, -r * 0.4), INK, 1.5)
 		draw_line(head + Vector2(r * 0.4 * facing, 2), head + Vector2(r * 0.9 * facing, r * 0.4), INK, 1.5)
-	if mode == Mode.FULL:
+	if _gulp > 0.0:
+		# jaws clamped shut on the worm, cheeks puffed
+		draw_circle(head + Vector2(r * 0.25 * facing, r * 0.3), r * 0.28, col.lightened(0.15))
+		draw_line(head + Vector2(r * 0.3 * facing, 0), head + Vector2(r * 0.75 * facing, 0), INK, 1.5)
+		_eyes(head + Vector2(0, -r * 0.1), r * 0.48, r * 0.18)
+	elif mode == Mode.FULL:
 		for i in 3:   # zzz
 			var z := head + Vector2(4 + i * 4, -r - 2 - i * 4 - fmod(_t * 6.0, 4.0))
 			draw_line(z, z + Vector2(3, 0), Color.WHITE, 1.0)

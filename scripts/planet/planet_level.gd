@@ -34,6 +34,8 @@ var stage_beat: StageBeat
 ## The crust burst (scripts/gameplay/crust_burst.gd; the crust ring and its stage come from data/stages.tres).
 var crust: CrustBurst
 var hud: PlanetHud
+## Stage 6 and the hand-off to space (scripts/chomp/chomp_director.gd).
+var chomp: ChompDirector
 ## The home half of the vertical slice (scripts/burrow/home_slice.gd): trophies, pets, tackle box,
 ## the Mole's swap shop and their hints.
 var home_slice: HomeSlice
@@ -149,6 +151,10 @@ func _ready() -> void:
 	_tunnel = Audio.loop_player("tunnel")
 	_tunnel.volume_db = -60.0
 	add_child(_tunnel)
+	chomp = ChompDirector.new()
+	chomp.name = "Chomp"
+	chomp.level = self
+	add_child(chomp)
 	if Game.demo and auto_spawn_demo:
 		_demo = GreyboxDemo.new()
 		_demo.name = "Demo"
@@ -324,6 +330,13 @@ func max_stage() -> int:
 
 func _physics_process(delta: float) -> void:
 	played += delta
+	if chomp and chomp.busy():
+		# the planet shot or space owns the screen; the disk waits, and the tin still autosaves
+		_tunnel_step(false, delta)
+		_autosave_t += delta
+		if _autosave_t >= autosave_every:
+			save_now()
+		return
 	var any_carry := false
 	var any_burrow := false
 	var digging := 0
@@ -453,7 +466,7 @@ func save_now() -> void:
 		if w.get_parent() == actors:
 			worms[str(w.player)] = w.to_dict()
 	Save.set_value("worms", worms)
-	Save.set_value("stage", max_stage())
+	Save.set_value("stage", 7 if ChompDirector.eaten() else max_stage())
 	Save.set_value("burrow", burrow.to_dict())
 	Save.set_value("apex", beetle.to_dict())
 	Save.set_value("foods", _foods_to_save())
