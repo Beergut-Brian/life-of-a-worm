@@ -9,15 +9,23 @@
 ## - gardens: a carried seed (RingFood.plants) dropped in castings plants a patch; garden bites give
 ##   extra growth in the garden's flavour; Green thumb doubles both castings regrowth and that yield;
 ## - the hidden places (every data/secrets/*.tres: the ant city, the sunken rowboat, the fossil
-##   hall): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
-##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after).
+##   hall, the geode cathedral at the core): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
+##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after);
+## - the sky ring above the grass (data/rings/sky_life.tres, SkyLife): its counters, its scattered
+##   clouds, toy planes and balloons (sky foods, edible from SkyLife.edible_from), and the balloon
+##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie.
 ## Everything it keeps goes in the tin under Save key "rings".
 class_name RingsDirector
 extends Node2D
 
 signal secret_found(id: StringName)
 
-const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres")]
+## The core's chain (core crystals scattered and growing back live; lava blobs counted only, no
+## body yet) runs in play too (W-02).
+const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres"),
+		preload("res://data/rings/core_life.tres")]
+## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
+const SKY: SkyLife = preload("res://data/rings/sky_life.tres")
 ## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
 static var SECRETS: Array[SecretData] = _load_secrets()
 const BIRD := preload("res://scenes/creatures/bird.tscn")
@@ -62,6 +70,7 @@ var cities: Dictionary = {}           # secret id -> centre (world px)
 var live: Dictionary = {}             # species -> Array[Node2D]
 var castings_speed := 1.0
 var dressing: TopsoilDressing
+var balloon: SkyBalloon
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
 var _last_clock := 0.0
@@ -140,7 +149,7 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	spawn_point = p_spawn
 	planet_radius_px = float(world.shape.radius) * float(world.shape.cell_size)
 	_rng.seed = p_seed * 7919 + 17
-	ecology = RingEcology.from_lives(LIVES, p_seed)
+	ecology = RingEcology.from_lives(LIVES + [SKY], p_seed)
 	_last_clock = world.clock
 	trail = _ant_trail()
 	anthill = trail[trail.size() - 1]
@@ -181,6 +190,13 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 		spot.position = cities[s.id]
 		spot.director = self
 		add_child(spot)
+	balloon = SkyBalloon.new()
+	balloon.name = "SkyBalloon"
+	balloon.sky = SKY
+	balloon.director = self
+	balloon.is_popped = bool(saved.get("balloon", false))
+	balloon.position = polar(SKY.balloon_angle, SKY.balloon_height)
+	add_child(balloon)
 
 
 ## A point on the planet: angle from the start (radians, + = right of it on screen at the start)
@@ -199,6 +215,8 @@ func depth_of(p: Vector2) -> float:
 
 
 func ring_band(ring: StringName) -> Vector2:
+	if ring == SKY.ring:
+		return Vector2(SKY.inner, SKY.outer)
 	var inner := 0.0
 	for r in world.rings.rings:
 		if r.id == ring:
@@ -281,9 +299,18 @@ func _scatter(saved: Array) -> void:
 		var rooms := rooms_of(s, c)
 		if s.extra_food != &"" and not rooms.is_empty():
 			placed.append({ "food": load("res://data/foods/%s.tres" % s.extra_food), "at": c + Vector2(rooms[0].x, rooms[0].y) })
+	# the sky goes last, so tins saved before it keep their statics in order
+	for i in SKY.scatter_count:
+		if SKY.scatter.is_empty():
+			break
+		var at := polar(rng.randf_range(-0.12, 0.12), rng.randf_range(SKY.inner + 0.01, SKY.outer - 0.01))
+		placed.append({ "food": SKY.scatter[i % SKY.scatter.size()], "at": at })
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
-		if i < saved.size() and saved[i] is Array and saved[i].size() >= 2 and float(saved[i][1]) >= 0.0:
+		# A slot only takes its saved "eaten" if the same food was saved there (a tin from before a
+		# new ring chain or hidden place shifts the list: those just start uneaten).
+		if i < saved.size() and saved[i] is Array and saved[i].size() >= 2 and float(saved[i][1]) >= 0.0 \
+				and String(saved[i][0]) == String(placed[i].food.id):
 			p.gone_at = float(saved[i][1])
 			p.take()
 			p.gone_at = float(saved[i][1])
@@ -717,7 +744,16 @@ func to_dict() -> Dictionary:
 	var dug := []
 	for id in carved:
 		dug.append(String(id))
-	return { "eco": ecology.to_dict(), "found": f, "rain_t": _rain_t, "built": true, "statics": statics, "carved": dug }
+	return { "eco": ecology.to_dict(), "found": f, "rain_t": _rain_t, "built": true, "statics": statics, "carved": dug,
+			"balloon": balloon != null and balloon.is_popped }
+
+
+## SkyBalloon calls this when its tie is eaten: saved at once, like a find.
+func balloon_popped(player: int) -> void:
+	print("balloon_popped: %d" % player)
+	_store()
+	if level and level.has_method("save_now"):
+		level.save_now()
 
 
 func _store() -> void:
@@ -795,6 +831,19 @@ func _stage_shot() -> void:
 			w = w if w else level.spawn_worm(Players.P1, cpos, 1)
 			w.warp_to(cpos + up_at(cpos).orthogonal() * 40.0)
 			ecology.counts[&"ant"] = 40.0
+		"sky", "sky_pop":
+			# a stage-5 worm in the sky beside the stuck balloon; sky_pop bites its tie after 1.5 s
+			var tie_at := balloon.position + balloon.up() * -SKY.balloon_string
+			var at := tie_at + balloon.up().orthogonal() * 90.0
+			w = w if w else level.spawn_worm(Players.P1, at, 5)
+			if w.model.stage < 5:
+				w.model.start_at_stage(5)
+			w.warp_to(at)
+			balloon.reset()
+			if _shot == "sky_pop":
+				# the worm's own bite eats the tie (a stage-5 mouth on it)
+				get_tree().create_timer(1.5).timeout.connect(func() -> void:
+					w.warp_to(tie_at - (w.mouth_position() - w.head_position())))
 		_ when _shot.begins_with("secret:"):
 			# --rings-shot=secret:<id>: the worm (big enough for the hall's ring) just inside the
 			# hall, so the frames show the find beat as it plays.

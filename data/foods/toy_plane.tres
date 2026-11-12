@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"toy_plane"
+flavour = &"junk"
+growth = 3.5
+size_stage = 5
+color = Color(0.85, 0.88, 0.92, 1)
+radius = 14.0
+ring = &"sky"
+regrow_time = 150.0
+plants = &""
+look = 4
+accent = Color(0.2, 0.55, 0.95, 1)

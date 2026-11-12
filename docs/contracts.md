@@ -741,6 +741,104 @@ runs away".
 outgrows its kind: a surprised squeak, never pain), `creature_gulp` (comic gulp when a creature
 swallows a worm). `now_i_eat_you` now also plays on the first bite of any outgrown species.
 
+### Sky ring (worm-sky-ring-1)
+
+`feature/worm-sky-ring-1`, PLAN-STATUS W-07 (part), X-06. The sky has no tiles: `rings.tres` still
+ends at the surface (the lantern and the generator read its last two rings). The sky ring is one
+data file, a `RingLife` subclass that also carries its band, stage and regrow time.
+
+```gdscript
+# SkyLife extends RingLife (scripts/rings/sky_life.gd; data/rings/sky_life.tres, ring = &"sky")
+@export var inner := 1.03 ; @export var outer := 1.45   # band of air, fractions of the planet radius
+@export var edible_from := 5                             # every sky food has this size_stage
+@export var regrow_time := 150.0                         # every scattered sky food has this regrow_time
+@export var balloon_angle, balloon_height, balloon_string, balloon_tie, balloon_color   # SkyBalloon
+# species: cloud_puff (plant), toy_plane, sky_balloon: counters only (live_max 0), no `eats`,
+# never a .tscn (no threats). scatter: cloud_puff, toy_plane, sky_balloon (data/foods/, ring &"sky").
+
+# RingsDirector
+const SKY: SkyLife                  # loaded beside LIVES; its counters join the ecology
+ring_band(&"sky") -> Vector2(SKY.inner, SKY.outer)
+var balloon: SkyBalloon
+func balloon_popped(player)         # SkyBalloon calls it: store + level.save_now()
+# Sky statics are appended after every other static, so old tins keep their saved order.
+# Rings save key gains "balloon": bool (popped in this tin; missing = not popped).
+# --rings-shot=sky | sky_pop stages a stage-5 worm by the balloon (sky_pop bites the tie at 1.5 s).
+
+# SkyBalloon (scripts/rings/sky_balloon.gd)
+signal popped(player: int)
+const CUE := "segment_pop"
+var is_popped: bool ; var popped_by: int ; var pop_t: float   # < 0 when the beat is not playing
+var tie: RingPickup                  # data/foods/balloon_tie.tres (size_stage 5): eating it pops
+func pop(player := -1)               # once: cue, shake (WormHooks.juice + PolarCamera.shake), burst
+                                     # ring and scraps, the snapped string, worm swell. Never moves a worm.
+```
+
+Hooks still waiting: live sky bodies (the director only spawns into loaded tile chunks, and the
+sky has none); birds (creatures lane); plane and cloud placeholder shapes (`RingFood.Look`).
+
+### Destructible world: loose things and surface props (W-10, W-11; world-destruct-1)
+
+Eating stays the world's: a worm eats tiles only through `World.eat_tile` (air, castings,
+`tile_eaten`), and who may bite a prop is `World.is_edible_by(stage, prop)` (the prop's
+`size_stage` on `StageRule`: a bigger stage bites, equal or smaller bonks). Nothing here moves a worm.
+
+```gdscript
+# LooseFall (scripts/world/loose_fall.gd): a child node named "Fall" of any Node2D on the planet
+signal landed(body: Node2D, speed: float)          # a touchdown faster than LAND_SPEED (cue + squash + dust)
+var world: TileWorld                               # default: first node in group &"world"
+var radius: float                                  # origin to underside, px (default: parent.data.radius)
+var velocity: Vector2
+var resting: bool
+func step(delta: float) -> bool                    # _physics_process calls it; tests call it directly
+func supported_at(world_local_pos: Vector2) -> bool # the cell one step toward the core is solid
+func launch(v: Vector2) -> void                    # start falling with this velocity (chunks popping out)
+#   While the cell under it is air it falls with world.shape.gravity_at(pos) (-pos.normalized() * g),
+#   capped at MAX_SPEED, and rests on the first solid tile. Carried (_carried), eaten (_gone),
+#   hidden or broken parents never fall. Kinematic on purpose: the worm carries / pulls / hops foods.
+
+# PropData (scripts/world/prop_data.gd; data/props/<id>.tres; scene scenes/props/<id>.tscn)
+@export var id: StringName
+@export var size: Vector2i                  # tiles, width along the ground x height away from the core
+@export var tile: StringName                # lantern atlas row it is drawn with (placeholder art)
+@export var hits: int                       # bites to break it
+@export var size_stage: int                 # StageRule size: stage size_stage + 1 and up bite it
+@export var chunk: FoodData                 # the chunk food
+@export var chunks: int                     # chunks in all: one per bite, the rest on the breaking bite
+@export var angles: PackedFloat32Array      # one prop per entry, radians round from the start point
+
+# SurfaceProp (scripts/world/surface_prop.gd): origin = middle of its bottom edge, upright on the surface
+signal bitten(prop: SurfaceProp, player: int, hp_left: int)
+signal bonked(prop: SurfaceProp, player: int)
+signal broke(prop: SurfaceProp, player: int, chunks: Array)
+var data: PropData
+var key: String                             # tin save key "<id>_<index>"
+var hp: int
+var broken: bool
+var size_stage: int                         # data.size_stage (read by StageRule.stage_of)
+var chunks_out: Array[Node2D]               # RingPickup chunk foods, each with a LooseFall
+func bite(player: int, stage: int, at := Vector2.INF) -> bool   # true when it cracked
+func touches(global_point: Vector2) -> bool
+#   Solid (StaticBody2D on the world's collision layer). Each physics frame a worm whose
+#   mouth_position() touches it bites it, at most once per BITE_COOLDOWN (0.45 s); a too-small worm
+#   bonks at most once per BONK_COOLDOWN (1.2 s): wobble + "bonk". A bite: a new crack, a shudder,
+#   Juice.chomp + debris, "prop_crack", one chunk knocked out (up and away from the bite, then
+#   falling; not edible for CHUNK_BLOCK 0.7 s so it is seen landing). The last bite: "prop_break",
+#   Juice.shake (the camera nudge), the remaining chunks, a squash and fade, then it frees itself.
+#   It falls (LooseFall, radius 0) if the ground under its middle is eaten.
+
+# WorldDestruct (scripts/world/world_destruct.gd): node "Destruct" in scenes/levels/planet.tscn
+@export var loose_foods: Array[StringName] = [&"pebble"]   # food ids that get a LooseFall
+var props: Dictionary[String, SurfaceProp]               # live props by key
+func setup(world, spawn: Vector2, saved: Dictionary, foods: Node = null) -> void
+func place(d: PropData, angle: float, key: String, hp := -1) -> SurfaceProp
+static func load_props() -> Array[PropData]
+static func surface_distance(world, angle: float) -> float
+func sweep_loose() -> void                                 # every 0.5 s: new loose foods get a LooseFall
+# Tin save key "destruct": {"props": {"<id>_<i>": hp_left}}  (0 = broken for good; chunks are not saved)
+```
+
+New cues with no file yet (grey beep): `prop_crack`, `prop_break`, `loose_land`. The bonk reuses `bonk`.
 ### Centipede (worm-creatures-2)
 
 `feature/worm-creatures-2` (PLAN-STATUS L-08). Adds `CreatureData.Behaviour.WAVE` (appended, so

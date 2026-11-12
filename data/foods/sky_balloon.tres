@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sky_balloon"
+flavour = &"junk"
+growth = 2.5
+size_stage = 5
+color = Color(0.98, 0.78, 0.25, 1)
+radius = 14.0
+ring = &"sky"
+regrow_time = 150.0
+plants = &""
+look = 6
+accent = Color(1, 0.95, 0.75, 1)

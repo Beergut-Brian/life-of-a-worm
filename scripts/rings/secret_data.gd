@@ -23,3 +23,8 @@ extends Resource
 @export var rooms := PackedVector3Array([Vector3(9, 2, 2.6), Vector3(-9, 1, 2.6), Vector3(0, -6, 2.6)])
 ## One more food set in the first side room (&"" = none). The ant city keeps a bug egg there.
 @export var extra_food: StringName = &"bug_egg"
+## The "why" picture the find bubble opens with (&"" = none): the cathedral's is the worm biting
+## through the rock wall (SecretLook &"secret_dig"), so the bubble reads "you dug in, you found it".
+@export var lead_picture: StringName = &""
+## Seconds the shared camera holds on the hall when it is found (0 = no camera beat).
+@export var camera_beat := 0.0
