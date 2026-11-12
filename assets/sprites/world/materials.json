@@ -1,0 +1,128 @@
+{
+ "size": 128,
+ "tile": 16,
+ "materials": [
+  "dirt",
+  "clay",
+  "topsoil",
+  "mycelium",
+  "grass",
+  "flowers",
+  "stone",
+  "ore",
+  "core_rock",
+  "crystal",
+  "strangestone",
+  "garden_root",
+  "garden_stone",
+  "garden_bug",
+  "garden_crystal"
+ ],
+ "tiles": {
+  "dirt": "dirt",
+  "clay": "clay",
+  "topsoil": "topsoil",
+  "mushroom": "mycelium",
+  "grass": "grass",
+  "flower": "flowers",
+  "stone": "stone",
+  "ore": "ore",
+  "core_rock": "core_rock",
+  "crystal": "crystal",
+  "strangestone": "strangestone",
+  "garden_root": "garden_root",
+  "garden_stone": "garden_stone",
+  "garden_bug": "garden_bug",
+  "garden_crystal": "garden_crystal"
+ },
+ "grassy": [
+  "grass",
+  "flowers"
+ ],
+ "palette_shares": {
+  "dirt": {
+   "#4a2e1f": 0.4249,
+   "#6c452c": 0.382,
+   "#93653d": 0.142,
+   "#2e1c13": 0.0196
+  },
+  "clay": {
+   "#9c703c": 0.394,
+   "#7a5028": 0.3254,
+   "#bf9058": 0.1481,
+   "#4e3018": 0.1182,
+   "#d8b070": 0.0118
+  },
+  "topsoil": {
+   "#2a4229": 0.4362,
+   "#3d5e36": 0.3853,
+   "#5b7e45": 0.1446
+  },
+  "mycelium": {
+   "#2a4229": 0.4363,
+   "#3d5e36": 0.3837,
+   "#5b7e45": 0.145,
+   "#e6dcc4": 0.0156,
+   "#6a5a48": 0.0127
+  },
+  "grass": {
+   "#2c4a2c": 0.4332,
+   "#3f6236": 0.3853,
+   "#58783e": 0.144,
+   "#8a9a52": 0.0294
+  },
+  "flowers": {
+   "#2c4a2c": 0.4303,
+   "#3f6236": 0.3815,
+   "#58783e": 0.144,
+   "#8a9a52": 0.0292
+  },
+  "stone": {
+   "#2c3448": 0.445,
+   "#435069": 0.3965,
+   "#64758f": 0.1486
+  },
+  "ore": {
+   "#2c3448": 0.4424,
+   "#435069": 0.3934,
+   "#64758f": 0.1468
+  },
+  "core_rock": {
+   "#7e3410": 0.4426,
+   "#b85a20": 0.3945,
+   "#e0782a": 0.148,
+   "#ffc067": 0.015
+  },
+  "crystal": {
+   "#7e3410": 0.4352,
+   "#b85a20": 0.392,
+   "#e0782a": 0.1446,
+   "#ffc067": 0.0148
+  },
+  "strangestone": {
+   "#4a6a1a": 0.45,
+   "#86b830": 0.4,
+   "#c8f070": 0.15
+  },
+  "garden_root": {
+   "#2a1a10": 0.4386,
+   "#3c2617": 0.3918,
+   "#56391f": 0.1474
+  },
+  "garden_stone": {
+   "#2a1a10": 0.4443,
+   "#3c2617": 0.3917,
+   "#56391f": 0.1495
+  },
+  "garden_bug": {
+   "#2a1a10": 0.442,
+   "#3c2617": 0.3938,
+   "#56391f": 0.147
+  },
+  "garden_crystal": {
+   "#2a1a10": 0.4468,
+   "#3c2617": 0.3926,
+   "#56391f": 0.1469
+  }
+ }
+}

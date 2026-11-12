@@ -141,3 +141,10 @@ All drawn in code by `assets/proto/worm/make_art.py` (Python + Pillow), original
 | `proto/worm/part_magnet.png` | `make_art.py` (Pillow) | Horseshoe tail part | Project's own |
 | `proto/worm/part_sheen.png` | `make_art.py` (Pillow) | Glossy highlight skin part | Project's own |
 | `proto/worm/heart.png`, `note.png`, `star.png` | `make_art.py` (Pillow) | Boop heart, wiggle note, dizzy / share star | Project's own |
+| `sprites/world/materials.png`, `materials_n.png`, `materials.json` | `scripts/look/gen/make_world.py` (Pillow, procedural) | Look B ground: 15 seamless 128 px materials (dirt, clay, topsoil, mycelium, grass, flowers, stone, ore, core rock, crystal, strangestone, 4 gardens) and normal maps (art-rings-1) | Project's own |
+| `sprites/world/tile_masks.png` | `scripts/look/gen/make_world.py` | Autotile mask atlas (material, ink edge, lip, rounded corners, grass blades) | Project's own |
+| `sprites/world/castings.png`, `parallax_soil.png`, `clouds.png` | `scripts/look/gen/make_world.py` | Tunnel floor, three soil parallax layers (packed RGB), sky clouds | Project's own |
+| `sprites/fx/lantern.png`, `glow.png`, `shaft.png`, `chunk.png`, `debris.png` | `scripts/look/gen/make_world.py` | Light textures (worm lantern, food glow, daylight shaft) and particle bits | Project's own |
+| `sprites/food/*.png` (13 sheets) | `scripts/look/gen/make_sprites.py` (Pillow, procedural pixel art) | Food sprites with A-style faces (calm, blink, wide-eyed, smug x 2 frames) at each food's data radius | Project's own |
+| `sprites/creatures/*.png` (grub, ant, beetle, apex_beetle, bird, boot) | `scripts/look/gen/make_sprites.py` | Creature sprites with faces and walk / flap frames | Project's own |
+| `shaders/ring_tiles.gdshader`, `soil_parallax.gdshader`, `sky.gdshader` | written by hand (art-rings-1) | Tile texturing and light, soil parallax, sky with day/night and rain | Project's own |
