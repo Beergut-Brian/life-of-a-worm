@@ -187,7 +187,7 @@ func test_every_prop_is_prop_data_with_a_chunk_food_and_a_scene() -> void:
 func test_a_crate_stands_upright_on_the_surface() -> void:
 	var w := _world()
 	var d := _destruct(w)
-	assert_int(d.props.size()).is_equal(CRATE.angles.size())
+	assert_int(d.props.keys().filter(func(k: String) -> bool: return k.begins_with("crate_")).size()).is_equal(CRATE.angles.size())
 	var c := _crate(d)
 	var up := Vector2.from_angle(UP + CRATE.angles[0])
 	assert_float(c.position.normalized().dot(up)).is_greater(0.9999)
@@ -306,7 +306,11 @@ func test_broken_and_bitten_props_are_kept_in_the_tin() -> void:
 	assert_int(d.props["crate_1"].hp).is_equal(2)
 	assert_int(d.props["crate_1"]._cracks.size()).is_equal(CRATE.hits - 2)
 	d.props["crate_1"].bite(0, CRATE.size_stage + 1)
-	assert_dict(d.to_dict()).is_equal({ "props": { "crate_0": 0, "crate_1": 1 } })
+	var crates := {}
+	for k in d.to_dict().props:
+		if String(k).begins_with("crate_"):
+			crates[k] = d.to_dict().props[k]
+	assert_dict(crates).is_equal({ "crate_0": 0, "crate_1": 1 })
 
 
 func test_the_planet_scene_hooks_world_destruct() -> void:

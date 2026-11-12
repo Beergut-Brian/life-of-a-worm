@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PropData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/prop_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/foods/scrap.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"car"
+size = Vector2i(4, 2)
+tile = &"core_rock"
+hits = 3
+size_stage = 4
+chunk = ExtResource("2")
+chunks = 4
+angles = PackedFloat32Array(-0.18, 0.135)
+look = &"car"
+top_tile = &""
+top_rows = 0

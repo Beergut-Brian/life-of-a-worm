@@ -931,6 +931,55 @@ func advance(delta: float) -> void           # shelf (clink) -> lid pops (jar_op
   with the same seed share one jar). `PlanetChomp` uses it when the planet has no id.
 - Audio cues `jar_clink`, `jar_open`, `jar_enter` have no files yet (grey beeps).
 
+### Surface ring and the town (W-06, W-13; worm-surface-ring-1)
+
+`feature/worm-surface-ring-1`. The surface's tiles stay the last ring in `rings.tres` (grass,
+flowers; `edible_from` 4, regrow 120). Its life and its town are data; props use the destruct
+lane's pattern unchanged (PropData + `scenes/props/<id>.tscn` + `WorldDestruct`).
+
+```gdscript
+# SurfaceLife extends RingLife (scripts/rings/surface_life.gd; data/rings/surface_life.tres, ring = &"surface")
+@export var edible_from := 4 ; @export var edible_to := 5   # every surface prop: size_stage + 1 in [from, to]
+@export var regrow_time := 120.0                            # every scattered surface food has it
+@export var scatter_inner := 1.003 ; @export var scatter_outer := 1.008   # on top of the grass
+@export var scatter_spread := 0.4                           # radians either side of the start
+@export var props: Array[PropData]                          # the town (each also in data/props/)
+# species: apple (plant counter), lawnmower (counter only, live_max 0, no body yet); scatter: apple x8
+
+# RingsDirector
+const SURFACE: SurfaceLife          # its counters join the ecology; its apples are statics appended
+                                    # after the sky's, so older tins keep their saved order
+# WorldDestruct.loose_foods default gains &"apple" (apples fall when the grass under them is eaten)
+
+# PropData (adds; defaults keep the crate as it was)
+@export var look: StringName = &"crate"   # PropLook shape: crate, tree, fence, house, car, cow, hill,
+                                          # water_tower, diner, court, dock_shed
+@export var top_tile: StringName = &""    # tile row for the top top_rows rows (roof, canopy)
+@export var top_rows := 0
+# PropLook (scripts/world/prop_look.gd): static filled(look, size, x, y) -> bool (cells drawn; the
+# collision is still the whole footprint), tile_of(data, y), draw_marks(canvas, data, rect). Shapes
+# only, never text. SurfaceProp._draw uses it; the art round replaces it.
+```
+
+```
+# data/props/   size  tile / top        hits size_stage chunk      chunks angles (rad from start)
+tree            3x5   dirt / grass x3    3    3          twig       4      -0.36 -0.205 -0.10 0.085 0.23 0.31
+fence           5x2   dirt               2    3          plank      3      -0.30 0.16 0.40
+cow             4x2   garden_stone       2    3          milk_drop  3      -0.33 -0.27
+hill            10x3  grass              4    3          turf       6      -0.40 0.27
+house           5x4   clay / core_rock   5    4          brick      6      -0.23 0.11
+car             4x2   core_rock          3    4          scrap      4      -0.18 0.135
+water_tower     4x7   stone              6    4          scrap      7      0.06
+diner           6x3   stone / crystal    5    4          brick      6      -0.155
+court           7x4   stone              4    4          scrap      5      -0.03
+dock_shed       6x3   clay / topsoil     4    4          plank      5      0.20
+# data/foods/ (RingFood, ring surface): twig, plank, milk_drop, turf (size 3), brick, scrap, apple (4)
+```
+
+No animal or vehicle AI: cows and cars are props (a cow falls when the ground under it is eaten,
+like any prop). Cues are the destruct lane's (`prop_crack`, `prop_break`, `bonk`); none added.
+Still waiting: the lawnmower's body (creatures lane), the cow Jarling (Patience, character lane),
+a pond on the planet (the dock shed draws a strip of water beside its jetty).
 ### Space planets (worm-space-planets-1)
 
 `feature/worm-space-planets-1` (PLAN-STATUS S-11, S-18, W-08, L-19). Stage 7's drifting planets run
