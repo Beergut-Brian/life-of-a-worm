@@ -879,3 +879,25 @@ func step_camera(delta) -> void       # planet shot -> follow the worms; rotatio
 # Cues: the chomp's ProtoSfx cues (confirm_hold, confirm_yes, confirm_cancel, jar_clink,
 # chomp_bite, planet_gone); "warp" on arriving in space.
 ```
+### Centipede (worm-creatures-2)
+
+`feature/worm-creatures-2` (PLAN-STATUS L-08). Adds `CreatureData.Behaviour.WAVE` (appended, so
+existing `.tres` values keep their meaning) and `Creature.Mode.GIVE_UP` (appended).
+
+```gdscript
+# CentipedeData extends CreatureData (data/creatures/centipede.tres; size_stage 3, ring dirt)
+@export var wave_amplitude, wave_rate, chase_time, give_up_distance, rest_time
+@export var sneaker, sneaker_stripe: Color; @export var segments: int
+# Centipede extends Creature (scenes/creatures/centipede.tscn)
+var chase_t; var rest; var give_ups
+func give_up() -> void        # GIVE_UP for 1.2 s: turns away, eyes shut, huff cloud; then rests
+func sway() -> float          # sideways offset of the wave (tests)
+# Creature (adds, for WAVE): _wave(...) (default: trundle), _strike(delta) (the shared wind-up,
+# lunge, Gulp bite and doze, split out of _trundle unchanged), _draw_wave(r, o) (default: beetle)
+```
+
+Who it chases is `CreatureSense` alone (AMBLE: a worm smaller than 3). It gives up after
+`chase_time`, at once when the worm is past `give_up_distance`, or after a missed lunge, then
+won't chase again for `rest_time`. Flees a bigger worm at 0.45x speed (under half a worm's).
+Cues: bark `threat_near`, wind-up `beetle_windup`, give-up `bird_offended` (borrowed: no
+centipede cue file yet). Live in `dirt_life.tres` (species `centipede`, eats grubs, live_max 2).

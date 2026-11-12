@@ -62,9 +62,28 @@ live = "res://scenes/creatures/beetle.tscn"
 depth_min = 0.55
 depth_max = 0.0
 
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("2")
+id = &"centipede"
+ring = &"dirt"
+start = 4.0
+plant = false
+growth_rate = 0.0
+capacity = 16.0
+death = 0.01
+efficiency = 0.3
+immigration = 0.004
+eats = Dictionary[StringName, float]({&"grub": 0.02})
+half_sat = 10.0
+live_scale = 0.5
+live_max = 2
+live = "res://scenes/creatures/centipede.tscn"
+depth_min = 0.55
+depth_max = 0.0
+
 [resource]
 script = ExtResource("1")
 ring = &"dirt"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("r3")])
 scatter = Array[ExtResource("3")]([ExtResource("f0")])
 scatter_count = 6

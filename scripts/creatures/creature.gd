@@ -19,7 +19,8 @@ signal taken(c: Creature)
 signal ate_worm(player: int)
 signal ate_creature(prey: Creature)
 
-enum Mode { IDLE, STALK, WINDUP, LUNGE, FULL, FLEE }
+## GIVE_UP: a chaser stopped chasing and turns away (the centipede), drawn so the cause shows.
+enum Mode { IDLE, STALK, WINDUP, LUNGE, FULL, FLEE, GIVE_UP }
 
 const INK := Color("2a1a14")
 const LUNGE_TIME := 0.35
@@ -188,6 +189,8 @@ func step(delta: float) -> void:
 			_march(delta * (1.6 if _scared else 1.0))
 		CreatureData.Behaviour.TRUNDLE:
 			_trundle(delta, near_eater, near_d, prey_worm, prey_d)
+		CreatureData.Behaviour.WAVE:
+			_wave(delta, near_eater, near_d, prey_worm, prey_d)
 	if data.hunts != &"" and mode != Mode.FULL and not _scared:
 		_hunt()
 	if world:
@@ -219,6 +222,18 @@ func _trundle(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d:
 				if global_position.distance_to(_wander_to) < 4.0:
 					_wander_to = home + Vector2.from_angle(randf() * TAU) * randf() * WANDER
 				_move(_wander_to - global_position, data.speed * 0.5, delta)
+		_:
+			_strike(delta)
+
+
+## WAVE chasers (Centipede) override this; a bare WAVE creature trundles.
+func _wave(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d: float) -> void:
+	_trundle(delta, eater, eater_d, prey, prey_d)
+
+
+## The shared end of a chase: wind up (the telegraph), lunge, bite through Gulp, doze when full.
+func _strike(delta: float) -> void:
+	match mode:
 		Mode.WINDUP:
 			# The telegraph: it swells and shakes, standing still, for a full second or more.
 			if _mode_t >= data.telegraph_time():
@@ -397,6 +412,8 @@ func _draw() -> void:
 			_draw_grub(r, shake)
 		CreatureData.Behaviour.MARCH:
 			_draw_ant(r, shake)
+		CreatureData.Behaviour.WAVE:
+			_draw_wave(r, shake)
 		_:
 			_draw_beetle(r, shake)
 	if _gulp > 0.0:
@@ -446,6 +463,11 @@ func _eyes(at: Vector2, r: float, spread: float) -> void:
 				draw_line(c + Vector2(-e, 0), c + Vector2(e, 0), INK, 1.0)
 			else:
 				draw_circle(c, e * 0.7, INK)
+
+
+## WAVE creatures draw themselves (Centipede); a bare one looks like a beetle.
+func _draw_wave(r: float, o: Vector2) -> void:
+	_draw_beetle(r, o)
 
 
 func _draw_grub(r: float, o: Vector2) -> void:
