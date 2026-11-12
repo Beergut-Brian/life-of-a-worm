@@ -10,15 +10,19 @@ extends RefCounted
 const PARTNER_NEAR := 160.0
 ## px: how far round the far end to look for an open tunnel.
 const TUNNEL_SEARCH := 96.0
-const PARTNER_SIDE := 18.0
+## px beside the partner's head (times its size factor), so the two heads never overlap.
+const PARTNER_SIDE := 22.0
 
 
 ## Gulp `w`. `far_end` is the creature's back end in global px. Returns false (and does nothing)
 ## if the worm is still sparkling from the last time.
-static func eat(creature_id: StringName, w: Node2D, far_end: Vector2) -> bool:
+## `from` (optional) is the creature's centre: the worm comes out facing away from it, head first.
+static func eat(creature_id: StringName, w: Node2D, far_end: Vector2, from = null) -> bool:
 	if w == null or not is_instance_valid(w) or is_safe(w):
 		return false
 	var at := landing(w, far_end)
+	if from is Vector2 and at.distance_to(from) > 0.5:
+		w.heading = (at - from).angle()
 	w.get_eaten(creature_id, at)
 	var old := sparkle_of(w)
 	if old:
@@ -51,7 +55,8 @@ static func landing(w: Node2D, far_end: Vector2) -> Vector2:
 		if hp.distance_to(far_end) <= PARTNER_NEAR:
 			var side := (far_end - hp)
 			side = side.normalized() if side.length() > 0.5 else Vector2.RIGHT
-			return hp + side * PARTNER_SIDE
+			var k: float = o.size_factor() if o.has_method("size_factor") else 1.0
+			return hp + side * PARTNER_SIDE * maxf(1.0, k)
 	var world: PolarWorld = w.get("world")
 	if world == null:
 		return far_end

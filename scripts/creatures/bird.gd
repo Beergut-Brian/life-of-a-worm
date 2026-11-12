@@ -93,7 +93,7 @@ func _land() -> void:
 	caught = false
 	for w in _worms():
 		if w.head_position().distance_to(spot) <= PECK_RADIUS * w.size_factor() and threatens(w):
-			if not Gulp.eat(data.id, w, spot - _up * 14.0):
+			if not Gulp.eat(data.id, w, spot - _up * 14.0, spot):
 				continue
 			ate_worm.emit(w.player)
 			caught = true

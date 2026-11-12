@@ -243,8 +243,11 @@ func _eat_worm(w: Node2D) -> void:
 	var dir: Vector2 = (w.head_position() - global_position)
 	dir = dir.normalized() if dir.length() > 0.5 else Vector2.RIGHT
 	var back: Vector2 = global_position - dir * (data.radius + 10.0)
-	if not Gulp.eat(data.id, w, back):
+	if not Gulp.eat(data.id, w, back, global_position):
 		return
+	var tangent := Vector2.from_angle(position.angle() + PI / 2.0) if world else Vector2.RIGHT
+	if absf(dir.dot(tangent)) > 0.01:
+		facing = signf(dir.dot(tangent))   # jaws on the side it bit; the worm leaves by the back
 	_gulp = GULP_TIME
 	_gulp_dir = dir
 	_gulp_color = Players.COLOR.get(w.player, _gulp_color)

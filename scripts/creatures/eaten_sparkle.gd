@@ -36,12 +36,12 @@ func is_safe() -> bool:
 
 
 func _draw() -> void:
-	var k := clampf(left / SAFE_TIME, 0.0, 1.0)
+	var k := 0.5 + 0.5 * clampf(left / SAFE_TIME, 0.0, 1.0)
 	for i in 8:
 		var a := TAU * i / 8.0 + _t * 5.0
 		var r := 13.0 + 3.0 * sin(_t * 18.0 + i)
 		var p := Vector2.from_angle(a) * r
-		var s := 2.5 * (0.6 + 0.4 * absf(sin(_t * 20.0 + i * 1.7))) * (0.5 + 0.5 * k)
+		var s := 3.5 * (0.6 + 0.4 * absf(sin(_t * 20.0 + i * 1.7))) * (0.5 + 0.5 * k)
 		draw_line(p + Vector2(-s, 0), p + Vector2(s, 0), Color(1, 1, 1, k), 1.0)
 		draw_line(p + Vector2(0, -s), p + Vector2(0, s), Color(1, 1, 1, k), 1.0)
 		draw_circle(p, s * 0.45, Color(tint, k))

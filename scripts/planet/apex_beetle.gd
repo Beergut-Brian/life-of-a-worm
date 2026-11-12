@@ -150,7 +150,7 @@ func is_gone() -> bool:
 func _gulp(w: Worm) -> void:
 	# Out of the far end: behind the beetle, on the side away from where it bit.
 	var out := global_position - facing * (radius + 14.0)
-	if not Gulp.eat(id, w, out):
+	if not Gulp.eat(id, w, out, global_position):
 		return   # still sparkling from the last gulp: the lunge goes on past it
 	_set_mode(Mode.FULL)
 	ate_worm.emit(w.player)
