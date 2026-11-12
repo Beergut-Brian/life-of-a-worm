@@ -1,6 +1,6 @@
 """Render the reference sheets and low-res drawing bases from worms_master.blend.
 
-    blender -b art/worms/worms_master.blend --python art/worms/render_refs.py [-- only=<group,...>]
+    blender -b art/worms/worms_master.blend --python art/worms/render_refs.py [-- only=<group,...>] [worm=gulp|burp]
 
 groups: turnaround, expressions, lowres, side (default: all). Cycles CPU (Eevee and
 Workbench crash headless on the build box: no GPU).
@@ -28,9 +28,12 @@ HEAD_S3_LIFT_PX = 2   # stage-3 head canvas: head sits 2 px low to leave headroo
 
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 ONLY = None
+WORM = None
 for a in args:
     if a.startswith("only="):
         ONLY = set(a[5:].split(","))
+    if a.startswith("worm="):
+        WORM = a[5:].lower()
 
 
 def want(g):
@@ -263,6 +266,8 @@ def side(w):
 
 
 for w in rig.WORMS:
+    if WORM and w.lower() != WORM:
+        continue
     if want("turnaround"):
         turnaround(w)
     if want("expressions"):
