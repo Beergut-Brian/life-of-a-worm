@@ -62,6 +62,31 @@ func _draw() -> void:
 			_poly_ellipse(o, Vector2(r * 0.75, r), data.color)
 			draw_circle(o + Vector2(r * 0.2, r * 0.3), r * 0.15, accent)
 			draw_circle(o + Vector2(-r * 0.3, -r * 0.3), r * 0.12, accent)
+		RingFood.Look.CRYSTAL:
+			# a cluster of three glowing points
+			var glow := 0.5 + 0.5 * sin(_t * 2.5)
+			draw_circle(o, r * 1.15 + glow * 2.0, Color(data.color, 0.22))
+			for spec in [[-0.55, 0.75, -0.35], [0.0, 1.15, 0.0], [0.55, 0.8, 0.35]]:
+				var b := o + Vector2(spec[0] * r, r * 0.55)
+				var tip := b + Vector2(0, -spec[1] * r * 1.4).rotated(spec[2])
+				var side := Vector2(r * 0.28, 0).rotated(spec[2])
+				var pts := PackedVector2Array([b - side, tip, b + side])
+				draw_colored_polygon(PackedVector2Array([b - side * 1.4 + Vector2(0, 1), tip + (tip - b).normalized() * 1.5, b + side * 1.4 + Vector2(0, 1)]), INK)
+				draw_colored_polygon(pts, data.color)
+				draw_line(b, tip, accent, 1.0)
+			face = o + Vector2(0, r * 0.2)
+		RingFood.Look.GEODE:
+			# a split geode: a rough shell, a ring of crystal teeth, a glowing heart
+			var glow := 0.5 + 0.5 * sin(_t * 3.0)
+			draw_circle(o, r + 3.0 + glow * 2.0, Color(accent, 0.25))
+			draw_circle(o, r + 1.0, INK)
+			draw_circle(o, r, Color("9a8a7a"))
+			draw_circle(o, r * 0.78, data.color)
+			for i in 8:
+				var a := TAU * i / 8.0 + 0.2
+				var b := o + Vector2.from_angle(a) * r * 0.78
+				draw_colored_polygon(PackedVector2Array([b + Vector2.from_angle(a + 1.6) * r * 0.18, o + Vector2.from_angle(a) * r * 0.42, b + Vector2.from_angle(a - 1.6) * r * 0.18]), accent)
+			draw_circle(o, r * 0.3, Color(1, 1, 1, 0.55 + 0.35 * glow))
 		_:
 			draw_circle(o, r + 1.0, INK)
 			draw_circle(o, r, data.color)

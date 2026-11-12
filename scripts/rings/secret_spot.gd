@@ -5,7 +5,9 @@
 ##  - sunken_rowboat: an aquifer pool at the foot of the dirt with Old Reel's lost rowboat sunk in it,
 ##    oars, his spilled green tackle tin, lures and rising bubbles;
 ##  - fossil_hall: a hall in the rock with layered walls, a long fish skeleton, curled shells and
-##    little many-legged imprints set in the stone.
+##    little many-legged imprints set in the stone;
+##  - geode_cathedral: a tall hall in the core rock lined with split geodes, crystal pillars in
+##    violet, teal, pink and gold, shafts of coloured light and drifting sparkles (lit, never dark).
 ## The find beat (play_found_beat): a picture bubble over the hall, [the place] [its food] [the tackle
 ## box], popping in, held, then fading; the tackle box shows the same picture afterwards.
 class_name SecretSpot
@@ -23,6 +25,11 @@ var director: RingsDirector
 var beat_t := -1.0
 var _t := 0.0
 var _bubble: Node2D
+## The camera the beat steers (default: the level's shared camera); seconds left on its hold.
+var camera: PolarCamera
+var camera_t := 0.0
+var _cam_at = null
+var _leaning := false
 
 
 func _ready() -> void:
@@ -40,6 +47,10 @@ func _process(delta: float) -> void:
 				_bubble.queue_free()
 		elif is_instance_valid(_bubble):
 			_bubble.queue_redraw()
+	if camera_t > 0.0:
+		camera_t -= delta
+		if camera_t <= 0.0:
+			_release_camera()
 	if get_viewport().get_camera_2d() and get_viewport().get_camera_2d().get_screen_center_position().distance_to(position) < 1400.0:
 		queue_redraw()
 
@@ -58,11 +69,45 @@ func play_found_beat() -> void:
 	_bubble.rotation = up.angle() + PI / 2.0   # local -y points away from the core
 	_bubble.draw.connect(_draw_bubble)
 	add_child(_bubble)
+	if data.camera_beat > 0.0:
+		_hold_camera()
+
+
+func _hold_camera() -> void:
+	if camera == null and director and director.level:
+		camera = director.level.camera
+	if camera == null:
+		return
+	_cam_at = global_position
+	camera.centre_override = _cam_at
+	camera_t = data.camera_beat
+	# one step closer while it holds, if every worm still fits (the fit zoom checks that)
+	if not _leaning:
+		_leaning = true
+		camera.lean_in += 1
+
+
+func _release_camera() -> void:
+	camera_t = 0.0
+	if is_instance_valid(camera) and _cam_at != null and camera.centre_override == _cam_at:
+		camera.centre_override = null
+	if is_instance_valid(camera) and _leaning:
+		camera.lean_in = maxi(0, camera.lean_in - 1)
+	_leaning = false
+	_cam_at = null
+
+
+func _exit_tree() -> void:
+	_release_camera()
 
 
 ## The bubble's pictures: the place, its food, the tackle box.
 func beat_pictures() -> Array[StringName]:
-	return [StringName("secret:%s" % data.id), StringName("secret_food:%s" % data.food), &"secret_box"]
+	var out: Array[StringName] = []
+	if data.lead_picture != &"":
+		out.append(data.lead_picture)
+	out.append_array([StringName("secret:%s" % data.id), StringName("secret_food:%s" % data.food), &"secret_box"])
+	return out
 
 
 func beat_alpha() -> float:
@@ -90,6 +135,8 @@ func _draw() -> void:
 			_draw_rowboat()
 		&"fossil_hall":
 			_draw_fossil_hall()
+		&"geode_cathedral":
+			_draw_geode_cathedral()
 		_:
 			_draw_ant_city()
 
@@ -235,6 +282,68 @@ func _draw_fossil_hall() -> void:
 			shell.append(c + _p(cos(th) * 7.0, sin(th) * 9.0))
 		draw_colored_polygon(shell, Color("b9ad92"))
 		draw_line(c + _p(0, -9), c + _p(0, 9), INK, 1.5)
+
+
+const GEMS: Array[Color] = [Color("c46cff"), Color("5fe8ff"), Color("ff7ad9"), Color("ffd23f"), Color("7dff9a")]
+
+
+func _draw_geode_cathedral() -> void:
+	var r := data.radius_tiles * 16.0
+	# the side chapels and the necks to them: lit violet too, a geode in each
+	for room in RingsDirector.rooms_of(data, position):
+		var o := Vector2(room.x, room.y)
+		draw_circle(o * 0.5, 1.7 * 16.0, Color("8a5cb2"))
+		draw_circle(o, room.z + 2.0, Color("7a4fa0"))
+		draw_circle(o, room.z * 0.75, Color("b68ad8"))
+		draw_circle(o, 9.0, INK)
+		draw_circle(o, 7.5, Color("c9b8a6"))
+		draw_circle(o, 5.5, GEMS[1])
+		draw_circle(o, 2.0, Color(1, 1, 1, 0.6 + 0.3 * sin(_t * 2.0 + o.x)))
+	# a warm lit back wall, lighter towards the top: a cathedral, never a dark cave
+	draw_circle(Vector2.ZERO, r * 0.97, Color("7a4fa0"))
+	draw_circle(_p(0, r * 0.12), r * 0.78, Color("9a6cc4"))
+	draw_circle(_p(0, r * 0.3), r * 0.5, Color("c39be6"))
+	# shafts of coloured light falling from the crown
+	for i in 5:
+		var x := lerpf(-r * 0.55, r * 0.55, i / 4.0)
+		var sway := sin(_t * 0.7 + i) * 6.0
+		var col := GEMS[i % GEMS.size()]
+		var shaft := [Vector2(x - 6, r * 0.85), Vector2(x + 6, r * 0.85), Vector2(x + 22 + sway, -r * 0.6), Vector2(x - 22 + sway, -r * 0.6)]
+		var pp := PackedVector2Array()
+		for q in shaft:
+			pp.append(_p(q.x, q.y))
+		draw_colored_polygon(pp, Color(col, 0.16 + 0.06 * sin(_t * 1.5 + i)))
+	# split geodes set round the walls: a rough rim, a ring of crystal teeth, a bright heart
+	for i in 9:
+		var a := TAU * i / 9.0 + 0.35   # all round the walls
+		var gr := 11.0 + (i % 3) * 4.0
+		var c := _p(cos(a) * r * 0.8, sin(a) * r * 0.8)
+		var col := GEMS[i % GEMS.size()]
+		draw_circle(c, gr + 2.0, INK)
+		draw_circle(c, gr, Color("c9b8a6"))
+		draw_circle(c, gr * 0.75, col)
+		for k in 7:
+			var ta := TAU * k / 7.0 + i
+			var b := c + Vector2.from_angle(ta) * gr * 0.75
+			draw_colored_polygon(PackedVector2Array([b + Vector2.from_angle(ta + 1.6) * gr * 0.2, c + Vector2.from_angle(ta) * gr * 0.3, b + Vector2.from_angle(ta - 1.6) * gr * 0.2]), col.lightened(0.5))
+		draw_circle(c, gr * 0.22, Color(1, 1, 1, 0.6 + 0.3 * sin(_t * 2.0 + i)))
+	# crystal pillars rising from the floor, tallest in the middle (the cathedral's nave)
+	for i in 7:
+		var x := lerpf(-r * 0.6, r * 0.6, i / 6.0)
+		var h := r * (0.55 - absf(x) / r * 0.45)
+		var w := 7.0 + (3 - absi(i - 3)) * 1.5
+		var col := GEMS[(i + 1) % GEMS.size()]
+		var base := -r * 0.7
+		_poly([Vector2(x - w, base), Vector2(x + w, base), Vector2(x + w * 0.7, base + h), Vector2(x, base + h + w * 1.6), Vector2(x - w * 0.7, base + h)], col, 2.0)
+		draw_line(_p(x, base + 2.0), _p(x, base + h + w), col.lightened(0.6), 1.5)
+	# sparkles drifting up through the light
+	for i in 10:
+		var f := fmod(_t * 0.25 + i * 0.137, 1.0)
+		var sp := _p(sin(i * 2.3) * r * 0.6 + sin(_t + i) * 4.0, lerpf(-r * 0.5, r * 0.8, f))
+		var s := 2.5 * sin(f * PI) + 0.5
+		var col := Color(GEMS[i % GEMS.size()].lightened(0.4), sin(f * PI))
+		draw_colored_polygon(PackedVector2Array([sp + Vector2(0, -s * 2), sp + Vector2(s * 0.6, 0), sp + Vector2(0, s * 2), sp + Vector2(-s * 0.6, 0)]), col)
+		draw_colored_polygon(PackedVector2Array([sp + Vector2(-s * 2, 0), sp + Vector2(0, s * 0.6), sp + Vector2(s * 2, 0), sp + Vector2(0, -s * 0.6)]), col)
 
 
 func _draw_ant_city() -> void:

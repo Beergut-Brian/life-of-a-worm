@@ -9,7 +9,7 @@
 ## - gardens: a carried seed (RingFood.plants) dropped in castings plants a patch; garden bites give
 ##   extra growth in the garden's flavour; Green thumb doubles both castings regrowth and that yield;
 ## - the hidden places (every data/secrets/*.tres: the ant city, the sunken rowboat, the fossil
-##   hall): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
+##   hall, the geode cathedral at the core): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
 ##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after);
 ## - the sky ring above the grass (data/rings/sky_life.tres, SkyLife): its counters, its scattered
 ##   clouds, toy planes and balloons (sky foods, edible from SkyLife.edible_from), and the balloon
@@ -20,7 +20,10 @@ extends Node2D
 
 signal secret_found(id: StringName)
 
-const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres")]
+## The core's chain (core crystals scattered and growing back live; lava blobs counted only, no
+## body yet) runs in play too (W-02).
+const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres"),
+		preload("res://data/rings/core_life.tres")]
 ## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
 const SKY: SkyLife = preload("res://data/rings/sky_life.tres")
 ## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
@@ -304,7 +307,10 @@ func _scatter(saved: Array) -> void:
 		placed.append({ "food": SKY.scatter[i % SKY.scatter.size()], "at": at })
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
-		if i < saved.size() and saved[i] is Array and saved[i].size() >= 2 and float(saved[i][1]) >= 0.0:
+		# A slot only takes its saved "eaten" if the same food was saved there (a tin from before a
+		# new ring chain or hidden place shifts the list: those just start uneaten).
+		if i < saved.size() and saved[i] is Array and saved[i].size() >= 2 and float(saved[i][1]) >= 0.0 \
+				and String(saved[i][0]) == String(placed[i].food.id):
 			p.gone_at = float(saved[i][1])
 			p.take()
 			p.gone_at = float(saved[i][1])
