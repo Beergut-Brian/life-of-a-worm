@@ -11,6 +11,7 @@ const JAR_PROFILE_PREFIX := "jar_"
 
 var dir := "user://jars"
 var _return_profile := ""
+var _return_slot := ""
 var _open_id: StringName = &""
 
 
@@ -67,6 +68,7 @@ func open(planet_id: StringName) -> bool:
 	if is_in_jar():
 		close()
 	_return_profile = Save.profile
+	_return_slot = Save.slot
 	_open_id = StringName(id)
 	Save.use_profile(JAR_PROFILE_PREFIX + id)
 	Save.wipe()
@@ -89,11 +91,13 @@ func close() -> void:
 	if f != null:
 		f.store_string(JSON.stringify(data))
 		f.close()
-	var jar_save := ProjectSettings.globalize_path("user://saves/%s.json" % Save.profile)
+	var jar_save := ProjectSettings.globalize_path(Save.path_for(""))
 	Save.use_profile(_return_profile)
+	Save.use_slot(_return_slot)
 	DirAccess.remove_absolute(jar_save)
 	_open_id = &""
 	_return_profile = ""
+	_return_slot = ""
 
 
 func is_in_jar() -> bool:
@@ -110,8 +114,9 @@ func clear() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(dir.path_join(String(id) + ".json")))
 
 
+## The open save's file: the tin's slot, not just the profile (Worm's tins are slots).
 func _read_save() -> Dictionary:
-	var path := "user://saves/%s.json" % Save.profile
+	var path := Save.path_for(Save.slot)
 	if not FileAccess.file_exists(path):
 		return {}
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
