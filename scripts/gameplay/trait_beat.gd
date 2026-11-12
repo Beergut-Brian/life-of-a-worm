@@ -4,8 +4,8 @@
 ##   t = 0     the shared camera leans in one whole-pixel step (PolarCamera.lean_in) for LEAN secs,
 ##             so the worm's new part fills more of the screen; the fit still never cuts a worm off;
 ##   t = 0     the TraitWhy picture pops over the worm: the flavour beads that earned it -> the part.
-## Two moments never share the bubble spot: a trait earned during a stage-up beat (or right after
-## another trait) waits its turn, GAP secs apart.
+## Two moments never share the bubble spot: a trait earned during a stage-up beat (even in the same
+## bite: it starts a frame later) or right after another trait waits its turn, GAP secs apart.
 ## StageBeat owns one and hooks every worm in the tree, so the level needs no new code.
 class_name TraitBeat
 extends Node
@@ -44,10 +44,9 @@ func _on_trait_earned(player: int, id: StringName) -> void:
 	var w := Worm.of(player)
 	if w == null:
 		return
-	if _clock < _busy_until or not _queue.is_empty():
-		_queue.append([w, id])
-		return
-	play(w, id)
+	# Always next frame: WormGrowth checks traits before the stage in the same bite, so a stage-up
+	# in this same call gets to hold() first and the trait waits for its picture to go.
+	_queue.append([w, id])
 
 
 func play(w: Worm, id: StringName) -> void:

@@ -245,6 +245,23 @@ func test_a_trait_during_a_stage_up_waits_its_turn() -> void:
 	assert_str(String(tb.history[0].trait)).is_equal("wriggle")
 
 
+func test_a_trait_in_the_same_bite_as_a_stage_up_waits_for_it() -> void:
+	var w := _worm()
+	var host: Node2D = auto_free(Node2D.new())
+	add_child(host)
+	var tb := TraitBeat.new()
+	host.add_child(tb)
+	tb.watch(w)
+	# WormGrowth emits trait_earned before stage_changed in one add_segment()
+	w.trait_earned.emit(w.player, &"wriggle")
+	tb.hold(0.5)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_int(tb.history.size()).is_equal(0)
+	await get_tree().create_timer(0.7).timeout
+	assert_int(tb.history.size()).is_equal(1)
+
+
 func test_the_stage_beat_hooks_every_worm_for_trait_beats() -> void:
 	var sb: StageBeat = auto_free(StageBeat.new())
 	sb.make_story = false
