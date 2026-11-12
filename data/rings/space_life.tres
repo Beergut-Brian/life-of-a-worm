@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="SpaceLife" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_yb1jt"]
+[ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_bjohh"]
+[ext_resource type="Resource" path="res://data/planets/ice.tres" id="3_fatdw"]
+[ext_resource type="Resource" path="res://data/planets/jungle.tres" id="4_2mgbr"]
+[ext_resource type="Resource" path="res://data/planets/junk.tres" id="5_4t0tp"]
+[ext_resource type="Resource" path="res://data/planets/candy.tres" id="6_2iu2d"]
+[ext_resource type="Resource" path="res://data/planets/clockwork.tres" id="7_smncs"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="8_131rb"]
+[ext_resource type="Script" path="res://scripts/space/space_life.gd" id="9_22t4l"]
+[ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="10_p777t"]
+
+[sub_resource type="Resource" id="Resource_q4cuf"]
+script = ExtResource("1_yb1jt")
+id = &"comet"
+flavour = &"star"
+growth = 1.5
+size_stage = 4
+color = Color(0.62352943, 0.9098039, 1, 1)
+radius = 26.0
+
+[sub_resource type="Resource" id="Resource_aa5tv"]
+script = ExtResource("1_yb1jt")
+id = &"moon"
+flavour = &"star"
+growth = 2.0
+size_stage = 5
+color = Color(0.8509804, 0.8392157, 0.78431374, 1)
+radius = 40.0
+
+[sub_resource type="Resource" id="Resource_66plt"]
+script = ExtResource("10_p777t")
+id = &"moon"
+ring = &"space"
+start = 12.0
+plant = true
+growth_rate = 0.02
+capacity = 20.0
+live_max = 4
+
+[sub_resource type="Resource" id="Resource_x2bih"]
+script = ExtResource("10_p777t")
+id = &"comet"
+ring = &"space"
+start = 2.0
+capacity = 6.0
+death = 0.01
+immigration = 0.03
+live_scale = 1.0
+live_max = 2
+
+[sub_resource type="Resource" id="Resource_2rohs"]
+script = ExtResource("10_p777t")
+id = &"planet"
+ring = &"space"
+start = 5.0
+capacity = 5.0
+immigration = 0.0
+live_scale = 0.0
+live_max = 0
+
+[sub_resource type="Resource" id="Resource_m5xuh"]
+script = ExtResource("10_p777t")
+id = &"sun"
+ring = &"space"
+start = 1.0
+capacity = 1.0
+immigration = 0.0
+live_scale = 0.0
+live_max = 0
+
+[resource]
+script = ExtResource("9_22t4l")
+planets = Array[ExtResource("2_bjohh")]([ExtResource("3_fatdw"), ExtResource("4_2mgbr"), ExtResource("5_4t0tp"), ExtResource("6_2iu2d"), ExtResource("7_smncs")])
+moon = SubResource("Resource_aa5tv")
+comet = SubResource("Resource_q4cuf")
+spawn_min = 700.0
+spawn_max = 1100.0
+ring = &"space"
+species = Array[ExtResource("10_p777t")]([SubResource("Resource_66plt"), SubResource("Resource_x2bih"), SubResource("Resource_2rohs"), SubResource("Resource_m5xuh")])

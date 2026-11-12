@@ -930,3 +930,131 @@ func advance(delta: float) -> void           # shelf (clink) -> lid pops (jar_op
 - `planet_id` for a tin is `<profile>_<slot>_<seed>` (was `<profile>_<seed>`, which let two tins
   with the same seed share one jar). `PlanetChomp` uses it when the planet has no id.
 - Audio cues `jar_clink`, `jar_open`, `jar_enter` have no files yet (grey beeps).
+
+### Surface ring and the town (W-06, W-13; worm-surface-ring-1)
+
+`feature/worm-surface-ring-1`. The surface's tiles stay the last ring in `rings.tres` (grass,
+flowers; `edible_from` 4, regrow 120). Its life and its town are data; props use the destruct
+lane's pattern unchanged (PropData + `scenes/props/<id>.tscn` + `WorldDestruct`).
+
+```gdscript
+# SurfaceLife extends RingLife (scripts/rings/surface_life.gd; data/rings/surface_life.tres, ring = &"surface")
+@export var edible_from := 4 ; @export var edible_to := 5   # every surface prop: size_stage + 1 in [from, to]
+@export var regrow_time := 120.0                            # every scattered surface food has it
+@export var scatter_inner := 1.003 ; @export var scatter_outer := 1.008   # on top of the grass
+@export var scatter_spread := 0.4                           # radians either side of the start
+@export var props: Array[PropData]                          # the town (each also in data/props/)
+# species: apple (plant counter), lawnmower (counter only, live_max 0, no body yet); scatter: apple x8
+
+# RingsDirector
+const SURFACE: SurfaceLife          # its counters join the ecology; its apples are statics appended
+                                    # after the sky's, so older tins keep their saved order
+# WorldDestruct.loose_foods default gains &"apple" (apples fall when the grass under them is eaten)
+
+# PropData (adds; defaults keep the crate as it was)
+@export var look: StringName = &"crate"   # PropLook shape: crate, tree, fence, house, car, cow, hill,
+                                          # water_tower, diner, court, dock_shed
+@export var top_tile: StringName = &""    # tile row for the top top_rows rows (roof, canopy)
+@export var top_rows := 0
+# PropLook (scripts/world/prop_look.gd): static filled(look, size, x, y) -> bool (cells drawn; the
+# collision is still the whole footprint), tile_of(data, y), draw_marks(canvas, data, rect). Shapes
+# only, never text. SurfaceProp._draw uses it; the art round replaces it.
+```
+
+```
+# data/props/   size  tile / top        hits size_stage chunk      chunks angles (rad from start)
+tree            3x5   dirt / grass x3    3    3          twig       4      -0.36 -0.205 -0.10 0.085 0.23 0.31
+fence           5x2   dirt               2    3          plank      3      -0.30 0.16 0.40
+cow             4x2   garden_stone       2    3          milk_drop  3      -0.33 -0.27
+hill            10x3  grass              4    3          turf       6      -0.40 0.27
+house           5x4   clay / core_rock   5    4          brick      6      -0.23 0.11
+car             4x2   core_rock          3    4          scrap      4      -0.18 0.135
+water_tower     4x7   stone              6    4          scrap      7      0.06
+diner           6x3   stone / crystal    5    4          brick      6      -0.155
+court           7x4   stone              4    4          scrap      5      -0.03
+dock_shed       6x3   clay / topsoil     4    4          plank      5      0.20
+# data/foods/ (RingFood, ring surface): twig, plank, milk_drop, turf (size 3), brick, scrap, apple (4)
+```
+
+No animal or vehicle AI: cows and cars are props (a cow falls when the ground under it is eaten,
+like any prop). Cues are the destruct lane's (`prop_crack`, `prop_break`, `bonk`); none added.
+Still waiting: the lawnmower's body (creatures lane), the cow Jarling (Patience, character lane),
+a pond on the planet (the dock shed draws a strip of water beside its jetty).
+### Space planets (worm-space-planets-1)
+
+`feature/worm-space-planets-1` (PLAN-STATUS S-11, S-18, W-08, L-19). Stage 7's drifting planets run
+inside `SpaceStage` as `SpaceStage.drift` (`SpaceDrift`, `scripts/space/space_drift.gd`). Nothing
+here moves a worm: the stage reads the stick, the drift only spawns and drifts bodies.
+
+```gdscript
+# PlanetData (data/planets/<id>.tres: ice, jungle, junk, candy, clockwork; scripts/space/planet_data.gd)
+@export var id: StringName; @export var color, accent: Color
+@export var size_stage := 9          # > 7: a threat, it bumps
+@export var ripe_stage := 6          # once its meal is eaten: food
+@export var radius := 0.0            # px (0 = SpacePlanet.radius_for(size_stage))
+@export var foods: Array[FoodData]   # inline, size_stage < 7; `live_foods` drift round it at once
+@export var meal := 8                # foods to eat before the planet itself is food (one pip each)
+@export var drift := 24.0            # px/s
+@export var star_trait: TraitData    # inline; add keys space_speed, space_reach, space_steady
+@export var star_chance := 0.15      # per spawned food, once per run
+
+# SpaceLife extends RingLife (data/rings/space_life.tres, ring &"space"; scripts/space/space_life.gd)
+#   species (PopulationRule): moon (plant), comet, planet, sun; stepped by a RingEcology on space time
+@export var planets: Array[PlanetData]; @export var moon, comet: FoodData; @export var comet_speed
+@export var sun_stage := 6; sun_radius; sun_color; sun_accent
+@export var spawn_min, spawn_max, forget_at, bump_speed, next_planet_after
+
+# SpaceDrift (SpaceStage.drift)
+signal arrived(body: SpacePlanet)    # the next themed planet, or the sun, starts drifting in
+signal planet_ripe(id: StringName)   # its pips are full: it is food now (cue now_i_eat_you)
+signal planet_done(id: StringName)   # eaten (cue planet_gone); the next comes after next_planet_after s
+signal star_earned(player: int, id: StringName)   # cue secret_found
+signal sun_arrived()                 # after all five (cue stage_up)
+signal sun_eaten(player: int)        # the last meal
+const SAVE_KEY := "space"            # {seed, visit, done, stars: [[player, id]], sun, meal_left, ecology}
+const SMALL_LAYER := 2               # foods, moons, comets: worm bodies pass through, mouths eat
+static func shuffled(planets: Array[PlanetData], seed_value: int) -> Array[PlanetData]
+var order: Array[PlanetData]; var visit: int; var done: Array[StringName]
+var big: SpacePlanet; var sun: SpacePlanet; var sun_gone: bool
+func current() -> PlanetData         # null on the sun's turn
+func begin() -> void                 # bring in what is next (nothing after the sun)
+func on_eaten(eater: SpaceWorm, p: SpacePlanet) -> void   # the stage's eaten path calls it
+
+# SpaceStage additions
+signal ate(player: int, what: StringName, growth: float)  # what = "<kind>_<theme>", e.g. "food_cog"
+var drift: SpaceDrift; var sun_why: SunBubble
+var planet: SpacePlanet              # now the current big planet, else the sun, else null
+func resolve_contact(eater: SpaceWorm, body: Node) -> int # StageRule FOOD / THREAT / IGNORE
+func step_world(delta: float) -> void                     # all of _process except the stick
+# Tin keys: "space" (above), "sun_eaten": true after the sun.
+
+# SpacePlanet additions: kind (&"planet", &"food", &"moon", &"comet", &"sun"), data, food,
+# star_trait, tint, tint2, radius_override, pips, pips_full, pip_colors, ripe;
+# func bump(at: Vector2), bump_showing() -> bool, ripen(stage: int), accent() -> Color
+# SpaceWorm additions: stars: Array[TraitData], knock_scale, sun_glow;
+# func add_star(t: TraitData) -> bool, has_star(id) -> bool
+```
+
+The star traits live only in space for now: they are not in `WormRules.traits`, the trait wall or
+the book. Old Reel's new tin after the sun (S-12) is not built; it can start from `sun_eaten`.
+### Traits you can see (worm-traits-visible-1)
+
+`feature/worm-traits-visible-1` (PLAN-STATUS D-15, P-15, U-15). Worm code still names no trait;
+every effect is found through the stat a trait changes (`Worm._trait_for(stat)`: the active trait
+with that stat in `add` or `mul`, highest `part_priority` first).
+
+```gdscript
+# Worm (scripts/worm/worm.gd), new public state:
+var cart: Array[Node2D]     # riders beyond the mouth's `carrying` (carry_slots - 1 of them)
+var reveals: Dictionary     # trait id -> reveal rings shown (earn only)
+var moments: Dictionary     # trait id -> times shown at work (bite_bonus bite, cart rider)
+var in_open: bool           # last frame ate no tile (open tunnel or air)
+func needs_bonus(food: FoodData) -> bool   # edible only because of a bite_bonus stat
+# Stats now read by the worm: "glide" (burst x(1 + glide) when it starts in open ground),
+# "skate" (open-ground speed x(1 + 0.35 * skate)), "carry_slots" (things held with X).
+```
+
+Sound: earn = `TraitData.cue` + reveal ring, once. Any later equip (`traits_changed` adding it) =
+the cue again, no ring. At work = the cue, a small ring, the part pops (throttled 0.4 s).
+Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
+A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.

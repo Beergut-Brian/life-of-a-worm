@@ -55,6 +55,7 @@ var _cool: Dictionary[int, float] = {}
 var _wobble := 0.0
 var _t := 0.0
 var _row := 6
+var _top_row := 6
 var _cracks: Array[PackedVector2Array] = []
 var _rng := RandomNumberGenerator.new()
 
@@ -66,6 +67,7 @@ func _ready() -> void:
 		hp = data.hits
 	z_index = 1
 	_row = _atlas_row(data.tile)
+	_top_row = _atlas_row(data.top_tile) if data.top_tile != &"" else _row
 	_rng.seed = hash(key if key != "" else String(data.id))
 	for i in data.hits - hp:
 		_cracks.append(_crack())
@@ -225,24 +227,36 @@ func _draw() -> void:
 	var shudder := sin(_t * 60.0) * 1.5 * _wobble
 	draw_set_transform(Vector2(shudder, 0), shudder * 0.02, Vector2.ONE)
 	var r := rect()
-	draw_rect(r.grow(1.0), INK)
+	var look := data.look
 	for y in data.size.y:
 		for x in data.size.x:
+			if PropLook.filled(look, data.size, x, y):
+				draw_rect(Rect2(r.position + Vector2(x, y) * CS, Vector2(CS, CS)).grow(1.0), INK)
+	for y in data.size.y:
+		var row := _top_row if y < data.top_rows else _row
+		for x in data.size.x:
+			if not PropLook.filled(look, data.size, x, y):
+				continue
 			var open := 0
-			if y == 0: open |= 1
-			if x == data.size.x - 1: open |= 2
-			if y == data.size.y - 1: open |= 4
-			if x == 0: open |= 8
+			if not _filled(x, y - 1): open |= 1
+			if not _filled(x + 1, y): open |= 2
+			if not _filled(x, y + 1): open |= 4
+			if not _filled(x - 1, y): open |= 8
 			var v := (x * 7 + y * 13 + hash(key)) % 4
-			var src := Rect2(Vector2((open * 4 + absi(v)) * CS, _row * CS), Vector2(CS, CS))
+			var src := Rect2(Vector2((open * 4 + absi(v)) * CS, row * CS), Vector2(CS, CS))
 			draw_texture_rect_region(ATLAS, Rect2(r.position + Vector2(x, y) * CS, Vector2(CS, CS)), src)
-	# Placeholder crate marks: two braces, so it reads as a made thing, not ground.
-	draw_line(r.position + Vector2(2, 2), r.end - Vector2(2, 2), Color(INK, 0.55), 2.0)
-	draw_line(Vector2(r.position.x + 2, r.end.y - 2), Vector2(r.end.x - 2, r.position.y + 2), Color(INK, 0.55), 2.0)
+	# Placeholder marks (crate braces, doors, wheels, spots), so it reads as a made thing, not ground.
+	PropLook.draw_marks(self, data, r)
 	for c in _cracks:
 		draw_polyline(c, Color(1, 0.95, 0.8, 0.7), 3.0)
 		draw_polyline(c, INK, 1.5)
 	draw_set_transform(Vector2.ZERO)
+
+
+func _filled(x: int, y: int) -> bool:
+	if x < 0 or y < 0 or x >= data.size.x or y >= data.size.y:
+		return false
+	return PropLook.filled(data.look, data.size, x, y)
 
 
 static func _atlas_row(tile: StringName) -> int:

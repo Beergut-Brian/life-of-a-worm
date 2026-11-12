@@ -15,6 +15,13 @@ const OUTLINE := Color("2a1a14")
 @export var max_speed := 420.0
 @export var accel := 900.0
 var steer := Vector2.ZERO        # set by the level each frame from the stick
+## Star traits eaten in space (PlanetData.star_trait, S-11): each orbits the head in its colour and
+## adds its TraitData.add stats: space_speed (px/s top speed), space_reach (px of mouth radius),
+## space_steady (share of a big planet's knock-back it shrugs off, 0..0.8).
+var stars: Array[TraitData] = []
+var knock_scale := 1.0
+## 0..1: the sun is inside (the last meal); the worm glows gold from then on.
+var sun_glow := 0.0
 var mouth_open := 0.0
 var squash := 0.0
 var _trail: PackedVector2Array = []
@@ -54,6 +61,30 @@ func add_segment() -> void:
 	squash = 1.0
 
 
+func has_star(id: StringName) -> bool:
+	for t in stars:
+		if t.id == id:
+			return true
+	return false
+
+
+## Eat a star trait: it shows on the head at once and its stats apply. False if already worn.
+func add_star(t: TraitData) -> bool:
+	if t == null or has_star(t.id):
+		return false
+	stars.append(t)
+	max_speed += float(t.add.get("space_speed", 0.0))
+	knock_scale = maxf(0.2, knock_scale - float(t.add.get("space_steady", 0.0)))
+	var reach := float(t.add.get("space_reach", 0.0))
+	if reach != 0.0:
+		for c in mouth.get_children():
+			if c is CollisionShape2D and c.shape is CircleShape2D:
+				c.shape = c.shape.duplicate()
+				c.shape.radius += reach
+	squash = 1.0
+	return true
+
+
 func _draw() -> void:
 	var col := body_color()
 	var spacing := seg_radius * 0.95
@@ -71,6 +102,9 @@ func _draw() -> void:
 		draw_circle(points[i], r + 5.0, OUTLINE)
 		draw_circle(points[i], r, col if i % 2 == 0 else col.darkened(0.08))
 	var hr := seg_radius * 1.25 * (1.0 + squash * 0.15)
+	if sun_glow > 0.0:
+		for k in 3:
+			draw_circle(Vector2.ZERO, hr * (1.6 + 0.5 * k), Color(1.0, 0.8, 0.25, 0.18 * sun_glow))
 	draw_circle(Vector2.ZERO, hr + 5.0, OUTLINE)
 	draw_circle(Vector2.ZERO, hr, col)
 	var open := 0.1 + mouth_open * 0.7
@@ -87,12 +121,17 @@ func _draw() -> void:
 	for k in 3:
 		var p := up * hr * (1.15 if k == 1 else 1.0) + _facing * (k - 1) * hr * 0.55
 		_star(p, hr * (0.36 if k == 1 else 0.27))
+	# star traits from space planets orbit the head, each in its own colour
+	var t := Time.get_ticks_msec() / 1000.0
+	for i in stars.size():
+		var a := t * 1.4 + i * TAU / stars.size()
+		_star(Vector2.from_angle(a) * hr * 1.7, hr * 0.3, stars[i].color)
 
 
-func _star(c: Vector2, r: float) -> void:
+func _star(c: Vector2, r: float, col := Color("ffd94a")) -> void:
 	var pts: PackedVector2Array = []
 	for i in 10:
 		pts.append(c + Vector2.from_angle(-PI / 2.0 + i * PI / 5.0) * (r if i % 2 == 0 else r * 0.45))
-	draw_colored_polygon(pts, Color("ffd94a"))
+	draw_colored_polygon(pts, col)
 	pts.append(pts[0])
 	draw_polyline(pts, OUTLINE, 3.0)
