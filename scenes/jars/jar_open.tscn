@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/jars/jar_open_view.gd" id="1"]
+
+[node name="JarOpen" type="Node2D"]
+script = ExtResource("1")
