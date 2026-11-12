@@ -76,10 +76,10 @@ func advance(delta: float) -> void:
 		Audio.play("jar_clink")          # the jar lands on the shelf
 	if _beats == 1 and t >= LID_AT:
 		_beats = 2
-		Audio.play("jar_open")           # the lid pops
+		Audio.play("burst")              # the lid pops (no jar_open file yet: reuse burst)
 	if _beats == 2 and t >= DIVE_AT:
 		_beats = 3
-		Audio.play("jar_enter")          # the dive into the glass
+		Audio.play("tunnel")             # the dive into the glass (no jar_enter file yet: reuse tunnel)
 	if t >= ENTER_AT:
 		opened = true
 		jars.open(planet_id)
