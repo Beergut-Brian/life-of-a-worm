@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PropData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/prop_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/foods/crate_chunk.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"crate"
+size = Vector2i(3, 3)
+tile = &"clay"
+hits = 3
+size_stage = 4
+chunk = ExtResource("2")
+chunks = 4
+angles = PackedFloat32Array(0.03, -0.12)

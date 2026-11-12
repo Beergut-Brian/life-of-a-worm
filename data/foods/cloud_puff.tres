@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cloud_puff"
+flavour = &"water"
+growth = 3.0
+size_stage = 5
+color = Color(0.96, 0.97, 1, 1)
+radius = 22.0
+ring = &"sky"
+regrow_time = 150.0
+plants = &""
+look = 0
+accent = Color(0.78, 0.86, 0.98, 1)
