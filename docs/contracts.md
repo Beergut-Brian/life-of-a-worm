@@ -980,3 +980,60 @@ No animal or vehicle AI: cows and cars are props (a cow falls when the ground un
 like any prop). Cues are the destruct lane's (`prop_crack`, `prop_break`, `bonk`); none added.
 Still waiting: the lawnmower's body (creatures lane), the cow Jarling (Patience, character lane),
 a pond on the planet (the dock shed draws a strip of water beside its jetty).
+### Space planets (worm-space-planets-1)
+
+`feature/worm-space-planets-1` (PLAN-STATUS S-11, S-18, W-08, L-19). Stage 7's drifting planets run
+inside `SpaceStage` as `SpaceStage.drift` (`SpaceDrift`, `scripts/space/space_drift.gd`). Nothing
+here moves a worm: the stage reads the stick, the drift only spawns and drifts bodies.
+
+```gdscript
+# PlanetData (data/planets/<id>.tres: ice, jungle, junk, candy, clockwork; scripts/space/planet_data.gd)
+@export var id: StringName; @export var color, accent: Color
+@export var size_stage := 9          # > 7: a threat, it bumps
+@export var ripe_stage := 6          # once its meal is eaten: food
+@export var radius := 0.0            # px (0 = SpacePlanet.radius_for(size_stage))
+@export var foods: Array[FoodData]   # inline, size_stage < 7; `live_foods` drift round it at once
+@export var meal := 8                # foods to eat before the planet itself is food (one pip each)
+@export var drift := 24.0            # px/s
+@export var star_trait: TraitData    # inline; add keys space_speed, space_reach, space_steady
+@export var star_chance := 0.15      # per spawned food, once per run
+
+# SpaceLife extends RingLife (data/rings/space_life.tres, ring &"space"; scripts/space/space_life.gd)
+#   species (PopulationRule): moon (plant), comet, planet, sun; stepped by a RingEcology on space time
+@export var planets: Array[PlanetData]; @export var moon, comet: FoodData; @export var comet_speed
+@export var sun_stage := 6; sun_radius; sun_color; sun_accent
+@export var spawn_min, spawn_max, forget_at, bump_speed, next_planet_after
+
+# SpaceDrift (SpaceStage.drift)
+signal arrived(body: SpacePlanet)    # the next themed planet, or the sun, starts drifting in
+signal planet_ripe(id: StringName)   # its pips are full: it is food now (cue now_i_eat_you)
+signal planet_done(id: StringName)   # eaten (cue planet_gone); the next comes after next_planet_after s
+signal star_earned(player: int, id: StringName)   # cue secret_found
+signal sun_arrived()                 # after all five (cue stage_up)
+signal sun_eaten(player: int)        # the last meal
+const SAVE_KEY := "space"            # {seed, visit, done, stars: [[player, id]], sun, meal_left, ecology}
+const SMALL_LAYER := 2               # foods, moons, comets: worm bodies pass through, mouths eat
+static func shuffled(planets: Array[PlanetData], seed_value: int) -> Array[PlanetData]
+var order: Array[PlanetData]; var visit: int; var done: Array[StringName]
+var big: SpacePlanet; var sun: SpacePlanet; var sun_gone: bool
+func current() -> PlanetData         # null on the sun's turn
+func begin() -> void                 # bring in what is next (nothing after the sun)
+func on_eaten(eater: SpaceWorm, p: SpacePlanet) -> void   # the stage's eaten path calls it
+
+# SpaceStage additions
+signal ate(player: int, what: StringName, growth: float)  # what = "<kind>_<theme>", e.g. "food_cog"
+var drift: SpaceDrift; var sun_why: SunBubble
+var planet: SpacePlanet              # now the current big planet, else the sun, else null
+func resolve_contact(eater: SpaceWorm, body: Node) -> int # StageRule FOOD / THREAT / IGNORE
+func step_world(delta: float) -> void                     # all of _process except the stick
+# Tin keys: "space" (above), "sun_eaten": true after the sun.
+
+# SpacePlanet additions: kind (&"planet", &"food", &"moon", &"comet", &"sun"), data, food,
+# star_trait, tint, tint2, radius_override, pips, pips_full, pip_colors, ripe;
+# func bump(at: Vector2), bump_showing() -> bool, ripen(stage: int), accent() -> Color
+# SpaceWorm additions: stars: Array[TraitData], knock_scale, sun_glow;
+# func add_star(t: TraitData) -> bool, has_star(id) -> bool
+```
+
+The star traits live only in space for now: they are not in `WormRules.traits`, the trait wall or
+the book. Old Reel's new tin after the sun (S-12) is not built; it can start from `sun_eaten`.
