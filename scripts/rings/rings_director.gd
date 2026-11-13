@@ -14,7 +14,8 @@
 ## - the sky ring above the grass (data/rings/sky_life.tres, SkyLife): its counters, its scattered
 ##   clouds, toy planes and balloons (sky foods, edible from SkyLife.edible_from), and the balloon
 ##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie;
-## - the surface ring (data/rings/surface_life.tres, SurfaceLife): its counters and its apples.
+## - the surface ring (data/rings/surface_life.tres, SurfaceLife): its counters and its apples, and
+##   the lawnmower driving the grass (its counter's body from data/creatures/lawnmower.tres).
 ## Everything it keeps goes in the tin under Save key "rings".
 class_name RingsDirector
 extends Node2D
@@ -24,12 +25,14 @@ signal secret_found(id: StringName)
 ## The core's chain (core crystals scattered and growing back live; lava blobs counted only, no
 ## body yet) runs in play too (W-02).
 const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres"),
-		preload("res://data/rings/core_life.tres")]
+		preload("res://data/rings/core_life.tres"), preload("res://data/rings/deep_rock_life.tres")]
 ## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
 const SKY: SkyLife = preload("res://data/rings/sky_life.tres")
 ## The surface ring (W-06): its counters (apples, the lawnmower) and the apples on the grass. Its
 ## props (the town) are data/props/*.tres, stood by WorldDestruct.
 const SURFACE: SurfaceLife = preload("res://data/rings/surface_life.tres")
+## The lawnmower's body (L-12): the surface's "lawnmower" counter spawns this (give_body), only there.
+const LAWNMOWER: LawnmowerData = preload("res://data/creatures/lawnmower.tres")
 ## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
 static var SECRETS: Array[SecretData] = _load_secrets()
 const BIRD := preload("res://scenes/creatures/bird.tscn")
@@ -74,6 +77,8 @@ var cities: Dictionary = {}           # secret id -> centre (world px)
 var live: Dictionary = {}             # species -> Array[Node2D]
 var castings_speed := 1.0
 var dressing: TopsoilDressing
+## G-06: castings in the topsoil sprout while it rains (scripts/rings/castings_sprouts.gd).
+var sprouts: CastingsSprouts
 var balloon: SkyBalloon
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
@@ -154,6 +159,7 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	planet_radius_px = float(world.shape.radius) * float(world.shape.cell_size)
 	_rng.seed = p_seed * 7919 + 17
 	ecology = RingEcology.from_lives(LIVES + [SKY, SURFACE], p_seed)
+	LAWNMOWER.give_body(ecology)
 	_last_clock = world.clock
 	trail = _ant_trail()
 	anthill = trail[trail.size() - 1]
@@ -187,6 +193,11 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	dressing.name = "TopsoilDressing"
 	dressing.director = self
 	add_child(dressing)
+	sprouts = CastingsSprouts.new()
+	sprouts.name = "CastingsSprouts"
+	sprouts.director = self
+	sprouts.world = world
+	add_child(sprouts)
 	for s in SECRETS:
 		var spot := SecretSpot.new()
 		spot.name = "Secret_%s" % s.id

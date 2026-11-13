@@ -1058,6 +1058,246 @@ Sound: earn = `TraitData.cue` + reveal ring, once. Any later equip (`traits_chan
 the cue again, no ring. At work = the cue, a small ring, the part pops (throttled 0.4 s).
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
+
+### Regrowth (worm-regrow-1)
+
+Food sizes and a ring that never runs out, both on `PolarWorld` (the World above), both data in
+`data/rings/rings.tres`. Tiles still regrow at `RingDef.regrow_time` (x `castings_factor` in
+castings, / `castings_speed` with Green thumb), only in live chunks, on the planet clock.
+
+```gdscript
+# RingDef
+@export var castings_size := 2          # food size a tile reaches when it grows back in castings
+# RingSet
+@export var size_growth := 1.0          # extra growth per size above 1, in plain tiles
+@export var scarce_share := 0.5         # past this share eaten, a ring's regrow times shrink...
+@export var scarce_factor := 0.2        # ...down to this x when it is all eaten
+
+# PolarWorld
+signal big_tile_eaten(cell: Vector2i, player: int, size: int)   # after tile_eaten, size > 1 only
+var frozen := false                      # true: advance() does nothing (clock, regrowth, gardens)
+func food_size(cell) -> int              # 1 plain; castings_size for a tile grown back in castings
+func regrow_size(cell) -> int            # the size this cell's tile will come back at
+func ring_eaten(ri) -> int               # cells of ring ri eaten or dug and not back yet
+func ring_eaten_share(ri) -> float       # 0..1 of the ring's cells
+func food_left(ri) -> int                # the ring's cells minus those
+func scarcity_factor(ri) -> float        # 1 while well fed, toward scarce_factor as it empties
+func big_tile_count() -> int
+```
+
+- A big tile is still edible from its ring's `edible_from`: size never makes food inedible.
+- Eating a big tile: the worm gets its usual `bite_tile` growth from `tile_eaten`, then the world
+  adds `(size - 1) x size_growth x tile_growth` in the ring's flavour to that player's worm and plays
+  `chomp_bite` (at most every 0.3 s). The tile comes back as plain air + castings, so it can grow
+  back big again.
+- Plain dug ground (not eaten by a worm) grows back size 1. Garden cells keep their own rules.
+- Look: a code-drawn plump dome with shine dots, a `Sizes_<x>_<y>` TileMapLayer per live chunk at
+  z 1. Saved in the planet dict as `"sizes": [x, y, size, ...]`; tins without it load all size 1.
+- The jar view: ChompDirector's planet shot disables the level's nodes, the world included, so the
+  clock stands still; `frozen` is the explicit switch for anything else that shows the planet
+  without playing it.
+### Lawnmower (worm-lawnmower-1)
+
+`feature/worm-lawnmower-1` (PLAN-STATUS L-12). The surface's mower: a creature that drives the
+ground line, very loud, mows grass, and bumps a worm off the grass. Never food, never eats, never
+steers a worm (the bump is a push added to the head; the stick still drives).
+
+```gdscript
+# LawnmowerData extends CreatureData (scripts/creatures/lawnmower_data.gd; data/creatures/lawnmower.tres)
+# CreatureData fields used: id &"lawnmower", size_stage 5, radius 24, ring &"surface", speed 28,
+#   telegraph 1.2 (warning before a bump), notice 170 (px ahead it warns), bark "threat_near"
+@export var bump := 90.0              # px knock: up off the grass and away along its way, ~0.4 s
+@export var cue := "boot_rumble"      # engine loop (Audio.loop_player), the whole time it drives
+@export var bump_cue := "space_bump"  # every bump
+@export var loud_db := 6.0 ; @export var hear := 900.0   # engine dB beside a worm, silent by `hear` px
+@export var drive := 240.0            # px of surface either side of its spawn, then it turns round
+@export var bump_cooldown := 1.6      # s before the same worm can be bumped again
+@export_file("*.tscn") var scene      # res://scenes/creatures/lawnmower.tscn
+@export var live_max := 1 ; @export var spawn_depth := Vector2(0.97, 0.999)
+func give_body(ecology: RingEcology) -> PopulationRule   # swaps the ecology's "lawnmower" rule for a copy
+                                                         # with live = scene, live_max, live_scale 1
+# RingsDirector: const LAWNMOWER: LawnmowerData; setup() calls LAWNMOWER.give_body(ecology) once, so
+# the surface ring's own counter (surface_life.tres, unchanged: live_max 0) spawns the body via fit_live.
+
+# Lawnmower extends Creature (scripts/creatures/lawnmower.gd)
+signal bumped(player: int, push: Vector2)
+signal beat_requested(player: int, at: Vector2)   # the cause beat: shadow flash + camera shake / lean_in
+signal mowed(cell: Vector2i)                      # one grass tile mowed (world.dig; regrows as usual)
+var angle, home_angle, drive_dir, mowed_count, bumps, beats
+func is_available() -> bool          # false: never food (not in group "food"); take() does nothing
+func ground_r(a: float) -> float     # its line: highest ground under both wheels, mowed cells count as ground
+func bump(w: Worm) -> Vector2        # the push it applied; worm stage > 5 is never bumped (it turns round)
+func request_beat(w: Worm) -> void   # camera: level.camera via the "rings" group, else the viewport's PolarCamera
+```
+
+Cues: all existing files (`boot_rumble`, `threat_near`, `space_bump`); none added.
+### Session flow (worm-session-1)
+
+`feature/worm-session-1` (PLAN-STATUS P-06, P-07, P-09, C-03, C-08, C-14).
+
+```gdscript
+# Game (scripts/autoload/Game.gd): pause() remembers whether the tree was already paused (an open
+# tackle box, a rewatched cutscene); resume() puts that back instead of unpausing under it.
+# start_round(), restart() and to_lobby() always leave the tree unpaused.
+
+# main.gd: while Game.state == PAUSED, every node under the level with PROCESS_MODE_ALWAYS is set to
+# PAUSABLE and any CanvasLayer under it is hidden; both are restored on the next state change.
+# A lane adding an always-processing overlay under the level gets this for free; one that must keep
+# running under the pause menu does not belong under the level.
+
+# PauseMenu: $Card/DoorIcon (scenes/ui/icon_button.gd, Icon.DOOR) is lit while focus == DOOR.
+
+# FarCamera (scripts/planet/far_camera.gd), owned by PlanetLevel as `far_camera`:
+var split: bool        # true while the worms don't fit the widest zoom (camera.min_fit_index)
+var anchor: int        # the player the camera follows while split, else -1
+static func fits(camera: PolarCamera, worms: Array, slack := 1.0) -> bool
+func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2D]
+# PlanetLevel._refresh_camera_targets() runs every physics frame and sets camera.targets from it.
+# Anchor: solo -> Players.solo_focus; co-op -> the bigger worm; a tie keeps the current anchor
+# (P1 first). Rejoins at 85% of the widest view. camera.centre_override still wins (secrets).
+```
+
+### Audio hooks (worm-audio-hooks-1)
+
+- **Breakthrough (U-09).** Unchanged: `CrustBurst._burst()` calls `Audio.play(CrustBurst.CUE)`
+  (`"breakthrough"`, `assets/audio/sfx/breakthrough.ogg`) once per worm per tin, before
+  `CrustBurst.breakthrough` / `Worm.breakthrough` are emitted.
+- **Space drift (U-11).** `SpaceStage.drift_bed: AudioStreamPlayer` (child `DriftBed`) is
+  `Audio.loop_player(SpaceStage.DRIFT_CUE)` (`"space_drift"`) at `SpaceStage.DRIFT_DB` with
+  `autoplay`: it plays whenever the stage is in the tree and stops in `_exit_tree`. Nothing else
+  starts `space_drift`.
+- **Ring ambience (U-14).** `RingAmbience` (`scripts/audio/ring_ambience.gd`, node `RingAmbience`
+  in `scenes/levels/planet.tscn`) is a plain `Node` child of a level that has `world: PolarWorld`
+  (and optionally `chomp` with `busy()`). Every frame it reads the head of the lowest-numbered
+  `Worm` under that level and plays the cue `"amb_" + RingDef.id` at `RingAmbience.LEVEL_DB`
+  (SFX bus), crossfading over `RingAmbience.FADE` s on a ring change. Above
+  `SkyLife.inner` x planet radius the id is `RingAmbience.SKY_ID` (`&"sky"`). An id with no
+  `assets/audio/sfx/amb_<id>.ogg` plays nothing (no placeholder, no warning). While
+  `level.chomp.busy()` every bed fades out.
+  - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
+    `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
+  - A new ring needs only `amb_<its id>.ogg`; no code change.
+
+### Story: Old Reel's dock scenes (story-1; documented by worm-gap-close-1 for W-28)
+
+Already on `dev`; this section only writes down the API other lanes already call (TackleLog, the
+book, PlanetLevel's stage hook).
+
+```gdscript
+# Story (scripts/story/story.gd, scenes/story/story.tscn). Not an autoload: the game adds one node
+# for the session; find it with Story.find(tree) (group &"story"). Scenes are data/cutscenes/<id>.json.
+signal started(id: StringName)
+signal finished(id: StringName, skipped: bool)
+signal cutscene_finished(id: StringName)          # GAME.md contract name: a scene ended, watched or skipped
+signal handoff(id: StringName, what: String)      # "follow_worm_underground" after the opening
+signal input_locked(on: bool)                     # lock / unlock every player's input
+const SCENES: Array[StringName]                   # opening, stage_2 .. stage_7, ending (book order)
+const STAGE_SCENES := {1: &"opening", 2: &"stage_2", ..., 7: &"stage_7"}
+const SAVE_KEY := "story_seen"                    # per tin: Array[String] of scene ids watched, in order
+static func find(tree: SceneTree) -> Story
+static func scene_for_stage(stage: int) -> StringName   # &"" when none
+func play(id: StringName) -> bool                 # queues if one is playing; false if no such scene
+func is_playing() -> bool ; func current() -> StringName ; func skip() -> void
+func has_seen(id: StringName) -> bool
+func watch(source: Object) -> void                # anything with stage_changed(player, from, to)
+func on_stage_changed(player: int, from: int, to: int) -> void   # once per tin, only going up
+var seen: Array[StringName] ; var persist := true ; var speed := 1.0
+```
+
+TackleLog connects `cutscene_finished` to fill its "cutscenes" page, and `sync_seen()` reads
+`story_seen` from the tin when no Story node is up. `tests/test_tin_keys.gd` checks each tin keeps its
+own `story_seen` (and its own `rings`, `home_slice.tackle` and `jars`).
+
+### Deep rock (worm-deep-rock-1)
+
+PLAN-STATUS W-03 (built) and W-02 (bounce built, spawning held). Appended only; nothing above changes.
+
+```gdscript
+# CreatureData (scripts/creatures/creature_data.gd)
+enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE, BOUNCE }   # BOUNCE appended (index 6)
+@export var bounce := 0.0        # BOUNCE: px a smaller worm's head is pushed away on contact
+
+# Creature (scripts/creatures/creature.gd), BOUNCE only
+const BOUNCE_DECAY := 8.0        # knock: v = push * DECAY, decays exp(-DECAY t), total ~= push
+const BOUNCE_TIME := 0.45        # s the knock lasts (the worm keeps steering on top of it)
+const SQUASH_TIME := 0.35        # s the blob draws squashed flat toward the worm
+const BOUNCE_COOL := 0.8         # s per player before it can bounce that worm again
+const SWELL_RANGE := 48.0        # px past touching: a smaller worm this close makes it swell (+12%)
+const BOUNCE_CUE := "boing"      # every bounce; data.windup_cue plays as it swells
+var bounces: int                 # bounces given (tests, frames)
+func can_bounce(w) -> bool       # smaller worms only (CreatureSense.worm_size < size_stage)
+func bounce(w) -> Vector2        # push straight away from the blob; returns the push
+# Contact = head within radius + BITE (14 px). Never a bite, never a steer. A worm of its size or
+# bigger eats it (the food protocol, unchanged).
+
+# RingFood.Look (scripts/rings/ring_food.gd): NUGGET (10), FOSSIL (11) appended, placeholders.
+static func RingPickup.look_shape(look, r) -> PackedVector2Array
+#   NUGGET: the lumpy 8-point outline; FOSSIL: the spiral polyline (rim -> centre); else empty.
+```
+
+```
+scenes/creatures/rock_beetle.tscn   Creature + data/creatures/rock_beetle.tres
+scenes/creatures/lava_blob.tscn     Creature + data/creatures/lava_blob.tres (behaviour BOUNCE, bounce 80)
+data/rings/deep_rock_life.tres      rock_beetle: live = rock_beetle.tscn, live_scale 0.5, live_max 3
+data/rings/core_life.tres           lava_blob:   live = lava_blob.tscn, live_scale 0, live_max 0 (never spawns)
+data/foods/ore_nugget.tres          look NUGGET     data/foods/fossil.tres   look FOSSIL
+RingsDirector.LIVES                 + deep_rock_life.tres (appended last: older tins' statics after
+                                    the deep-rock fossils shift and start uneaten, as with the core)
+```
+### Centipede (worm-centipede-1)
+
+`feature/worm-centipede-1` (PLAN-STATUS W-04, the centipede part). Additions to `Centipede`
+(`scripts/creatures/centipede.gd`); the worm-creatures-2 API above is unchanged.
+
+```gdscript
+signal gave_up_beat(at: Vector2)   # the first give-up only (once per centipede)
+const BEAT_TIME := 0.8             # camera lean_in +1 for this long, no shake; released on free
+const WINDUP_PASSES := 2.0         # humps run head to tail during one wind-up
+var beats: int                     # camera beats played (0 or 1)
+func windup_wave() -> float        # hump position, 0 head .. 1 tail; -1 outside WINDUP
+func draw_scale() -> float         # super, but 0.85x when the nearest worm can eat it (K-01 at stage 3)
+```
+
+Camera: `level.camera` via the "rings" group, else the viewport's `PolarCamera` (as the lawnmower).
+No new cues, no new forced movement (a bite is still `Gulp`). Data and `dirt_life.tres` unchanged.
+### Star trait (worm-star-trait-1)
+
+`feature/worm-star-trait-1` (PLAN-STATUS D-10). One rare Star `TraitData` per space planet type, in
+`data/traits/<id>.tres`, listed in `WormRules.traits`, referenced by `PlanetData.star_trait`
+(`star_chance` is 0: foods never carry it; the planet itself does).
+
+```gdscript
+# TraitData additions
+@export var part_shape: StringName   # no part_textures: StarParts draws it (snowflake, leaf, nut, pinwheel, cog)
+@export var star := false            # a Star: never earned from flavours (empty requires), never offered
+@export var star_planet: StringName  # the PlanetData id that gives it
+
+# StarTraits (scripts/worm/star_traits.gd), static
+static func all(rules = null) -> Array[TraitData]
+static func is_star(id: StringName) -> bool
+static func for_planet(planet_id: StringName) -> TraitData
+static func record(player: int, id: StringName) -> bool   # onto the live planet worm and the tin's "worms"; silent
+
+# StarAward (scripts/worm/star_award.gd): child "StarAward" of scenes/levels/space_stage.tscn
+signal revealed(player: int, id: StringName)   # once per earn (SpaceDrift.star_earned)
+var reveals: Dictionary                         # trait id -> reveals shown
+func beat_showing() -> bool                     # the camera lean-in is running (REVEAL_TIME 1.8 s)
+```
+
+| Star | Planet | Stat (one, felt in space) | Seen | Cue (borrowed) |
+| --- | --- | --- | --- | --- |
+| frost_star | ice | `space_speed` +110 px/s | snowflake, `above` | `trait_slick` |
+| vine_star | jungle | `space_reach` +26 px mouth (a ring shows it) | leaf, `tail` | `trait_green_thumb` |
+| anchor_star | junk | `space_steady` 0.5 (half knock-back) | hex nut, `back` | `trait_magnet` |
+| sugar_star | candy | `space_pull` 280 px: small food drifts in (dotted ring) | pinwheel sweet, `crown` | `trait_floaty` |
+| tick_star | clockwork | `space_turn` 1.2: steering accel x2.2 | cog, `under` | `trait_drill_head` |
+
+Earn path: StarAward sets `SpacePlanet.star_trait` on each arriving planet whose Star isn't taken;
+`SpaceDrift.on_eaten` (unchanged) adds it and emits `star_earned` (+ `secret_found`); StarAward then
+plays `TraitData.cue`, two `WormRing`s, leans the camera in on that worm and flies the part into its
+orbit, applies `space_turn`, and calls `StarTraits.record`. `space_speed/reach/steady` stay with
+`SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner. No `scripts/space/`
+or `scripts/chomp/` edits.
 ### Dock story follow-up (worm-story-2)
 
 The trait beat (Y-16 / P-14). `StageBeat` owns it, so the level needs no new code.

@@ -39,7 +39,7 @@ eats = Dictionary[StringName, float]({})
 half_sat = 10.0
 live_scale = 0.0
 live_max = 0
-live = ""
+live = "res://scenes/creatures/lava_blob.tscn"
 depth_min = 0.0
 depth_max = 0.0
 

@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"root"
+eat_cue = "world_sprout"
 flavour = &"root"
 growth = 0.8
 size_stage = 1
