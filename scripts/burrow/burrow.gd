@@ -12,7 +12,11 @@
 ##    nearest the worm. With no free ledge a notch is dug in the floor, so nobody is ever refused.
 ## Trophy families (data/trophies/) give every worm a small standing bonus (TrophyBonus).
 ## The bed is the sleep spot: falling asleep saves the tin, and Y while asleep opens the trait wall
-## (it opens by itself when a newly earned trait is waiting). The room grows with the worm's stage.
+## (it opens by itself when a newly earned trait is waiting). The wall hangs above the bed: one
+## picture per earned trait (BurrowWall is the close-up chooser). A player who never makes a choice
+## there gets the newest trait equipped when the wall shuts (auto_equip), once per trait.
+## The room grows with the worm's stage (data/burrow/growth.tres, BurrowGrowth); from the house stage
+## the chamber is a cavern with a buried house in it, and trophies brought home become its furniture.
 ## Nothing in a burrow ever regrows (the world's keep zone). Placeholder art, drawn here.
 class_name Burrow
 extends Node2D
@@ -28,12 +32,7 @@ const SLEEP_STILL := 2.0
 ## A hollow: at least HOLLOW_SHARE of the cells within HOLLOW_TILES of the head are air.
 const HOLLOW_TILES := 2.0
 const HOLLOW_SHARE := 0.75
-## In the burrow: within room_tiles() of home (ROOM_TILES at stage 1, + ROOM_GROWTH a stage).
-const ROOM_TILES := 4.0
-const ROOM_GROWTH := 1.5
-## The chamber carved round the bed when the burrow grows: CHAMBER_TILES + CHAMBER_GROWTH a stage.
-const CHAMBER_TILES := 2.0
-const CHAMBER_GROWTH := 1.0
+## In the burrow: within room_tiles() of home. Sizes per stage live in data (BurrowGrowth).
 const SHELF_SLOTS := 8
 const MAX_PETS := 3
 const FOODS := "res://data/foods/%s.tres"
@@ -60,6 +59,12 @@ var night := false
 ## The biggest stage a worm of this tin has reached: the room's size.
 var stage := 1
 var families: Array[TrophyFamily] = []
+var growth: BurrowGrowth
+## player -> trait ids the wall already equipped by itself (each one only once, so a player who
+## later takes it off keeps it off).
+var offered := {}
+## player -> seconds left on the "it equipped itself" flash on the wall.
+var _flash := {}
 var _t := 0.0
 var _fallback := 0
 ## player -> the carried node it picked up inside the room (never "brought home" again).
@@ -69,6 +74,7 @@ var _last_carry := {}
 
 func _init() -> void:
 	families = TrophyFamily.load_all()
+	growth = BurrowGrowth.get_default()
 
 
 ## Pure rule, for tests: is the world hollow round pos (world-local px)?
@@ -88,11 +94,21 @@ static func is_hollow(w: PolarWorld, pos: Vector2, tiles := HOLLOW_TILES, share 
 
 
 static func room_tiles_for(s: int) -> float:
-	return ROOM_TILES + ROOM_GROWTH * (maxi(1, s) - 1)
+	return BurrowGrowth.get_default().room_for(s)
+
+
+## The chamber carved round the bed at stage s, in tiles.
+func chamber_tiles() -> float:
+	return growth.chamber_for(stage)
+
+
+## By the house stage the burrow is a cavern with a buried house in it.
+func has_house() -> bool:
+	return has_home and growth.has_house(stage)
 
 
 func room_tiles() -> float:
-	return room_tiles_for(stage)
+	return growth.room_for(stage)
 
 
 func in_room(pos: Vector2) -> bool:
@@ -110,6 +126,7 @@ func sleep(w: Worm) -> void:
 	Audio.play("sleep")
 	set_home(world.to_local(w.head_position()), w.player)
 	if w.model.earned.size() > w.model.active.size() and w.model.slots() > 0 and not w.wall_open:
+		install_wall(w)
 		w.in_burrow = true   # asleep in the bed: the wall is open (the level keeps it so)
 		w.set_wall_open(true)
 
@@ -121,6 +138,8 @@ func set_home(at: Vector2, player := 0) -> void:
 	home = at
 	if moved:
 		_keep_zone()
+		if stage > 1:
+			_carve()   # a grown worm's new home gets its full-size chamber (and house) at once
 		# Things are data: they come along to the new home, re-shelved there.
 		if shift != Vector2.ZERO:
 			var ids := trophies.duplicate()
@@ -205,7 +224,9 @@ func bring(w: Worm, food: Node2D) -> StringName:
 
 ## Puts trophy `id` on the free dug ledge nearest `near` (a notch in the floor if there is none).
 func _shelve(id: StringName, near: Vector2) -> Vector2i:
-	var cell := free_ledge(near)
+	var cell := free_house_spot(near)
+	if cell == Vector2i(-99999, -99999):
+		cell = free_ledge(near)
 	if cell == Vector2i(-99999, -99999):
 		cell = _dig_notch()
 	trophies.append(id)
@@ -256,11 +277,15 @@ func _dig_notch() -> Vector2i:
 	return Vector2i.ZERO
 
 
-## Where a trophy on `cell` sits (on the floor of its ledge).
+## Where a trophy on `cell` sits (on the floor of its ledge, or on its furniture in the house).
 func trophy_position(i: int) -> Vector2:
 	var cell := trophy_cells[i]
 	if world == null:
 		return Vector2(cell)
+	if has_house():
+		var k := house_spot_cells().find(cell)
+		if k >= 0:
+			return house_spot(k)
 	var at := world.shape.center_of(cell)
 	return at - at.normalized() * 3.0
 
@@ -400,18 +425,128 @@ func grow_to(s: int) -> bool:
 	stage = s
 	if has_home and world:
 		_keep_zone()
-		var r := (CHAMBER_TILES + CHAMBER_GROWTH * (stage - 1)) * 16.0
-		var c := world.shape.cell_at(home)
-		var n := ceili(r / 16.0)
-		for y in range(-n, n + 1):
-			for x in range(-n, n + 1):
-				var cell := c + Vector2i(x, y)
-				if world.shape.center_of(cell).distance_to(home) <= r and world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
-					world.dig(cell)
+		_carve()
 		Audio.play("burrow_grow")
 	grew.emit(stage)
 	queue_redraw()
 	return true
+
+
+## Carves this stage's chamber round the bed (only what a worm of this stage could eat), and from
+## the house stage the inside of the buried house too.
+func _carve() -> void:
+	if world == null or not has_home:
+		return
+	var r := chamber_tiles() * 16.0
+	var c := world.shape.cell_at(home)
+	var n := ceili(r / 16.0)
+	for y in range(-n, n + 1):
+		for x in range(-n, n + 1):
+			var cell := c + Vector2i(x, y)
+			if world.shape.center_of(cell).distance_to(home) <= r and world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
+				world.dig(cell)
+	if has_house():
+		var hs := house_size()
+		var up := home.normalized()
+		var side := up.orthogonal()
+		var base := house_base()
+		for fy in range(0, int(hs.y / 16.0)):
+			for fx in range(0, int(hs.x / 16.0)):
+				var at := base + up * (fy + 0.5) * 16.0 + side * ((fx + 0.5) * 16.0 - hs.x * 0.5)
+				var cell := world.shape.cell_at(at)
+				if world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
+					world.dig(cell)
+
+
+# --- the buried house (from growth.house_stage) ---------------------------------------------------
+
+func house_size() -> Vector2:
+	return growth.house_tiles * 16.0
+
+
+## The middle of the house's floor (world-local px). It stands on the cavern floor beside the bed,
+## its far side sunk into the cavern wall: a house that was buried here long ago.
+func house_base() -> Vector2:
+	var up := home.normalized()
+	var r := chamber_tiles() * 16.0
+	return home - up * (r - 14.0) + up.orthogonal() * r * 0.45
+
+
+## Furniture spot k (rooms across, then floors up): where a trophy stands in the house.
+func house_spot(k: int) -> Vector2:
+	var hs := house_size()
+	var up := home.normalized()
+	var side := up.orthogonal()
+	var room := k % growth.house_rooms
+	var fl := k / growth.house_rooms
+	var rw := hs.x / growth.house_rooms
+	var fh := hs.y / growth.house_floors
+	return house_base() + side * (-hs.x * 0.5 + (room + 0.5) * rw) + up * (fl * fh + 9.0)
+
+
+func house_spot_cells() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if world == null or not has_house():
+		return out
+	for k in growth.house_spots():
+		out.append(world.shape.cell_at(house_spot(k)))
+	return out
+
+
+## The free furniture spot nearest `near`; Vector2i(-99999, -99999) with no house or none free.
+func free_house_spot(near: Vector2) -> Vector2i:
+	var best := Vector2i(-99999, -99999)
+	var best_d := INF
+	var cells := house_spot_cells()
+	for k in cells.size():
+		if trophy_cells.has(cells[k]):
+			continue
+		var d := house_spot(k).distance_to(near)
+		if d < best_d:
+			best_d = d
+			best = cells[k]
+	return best
+
+
+# --- the trait wall (D-13) ------------------------------------------------------------------------
+
+## Gives the worm the burrow's chooser (BurrowWall) instead of the placeholder panel. Safe to call
+## again. Hook: this sets Worm._wall (scripts/worm/ has no public setter; see REPORT.md).
+func install_wall(w: Worm) -> void:
+	if w._wall is BurrowWall:
+		(w._wall as BurrowWall).burrow = self
+		return
+	if w._wall != null:
+		if w.wall_open:
+			return   # never swap a wall that is open right now
+		w._wall.queue_free()
+	var bw := BurrowWall.new()
+	bw.worm = w
+	bw.burrow = self
+	w._wall = bw
+	w.add_child(bw)
+
+
+## The wall shut and the player chose nothing: the newest earned trait equips itself (swapping out
+## the oldest active one when every slot is full). Once per trait per player. Returns its id or &"".
+func auto_equip(w: Worm) -> StringName:
+	var m := w.model
+	if m.slots() <= 0 or m.earned.is_empty():
+		return &""
+	var newest: StringName = m.earned[-1]
+	var done: Array = offered.get(w.player, [])
+	if m.is_active(newest) or newest in done:
+		return &""
+	done.append(newest)
+	offered[w.player] = done
+	if m.active.size() >= m.slots():
+		m.toggle(m.active[0])
+	if not m.toggle(newest):
+		return &""
+	Audio.play("trait_swap")
+	_flash[w.player] = 0.8
+	queue_redraw()
+	return newest
 
 
 # --- save -----------------------------------------------------------------------------------------
@@ -427,7 +562,14 @@ func to_dict() -> Dictionary:
 		"trophies": trophies.map(func(t): return String(t)), "cells": cells,
 		"seeds": seeds.duplicate(true), "pets": pet_list, "pantry": pantry.size(),
 		"met": met.map(func(m): return String(m)),
-		"stage": stage, "fallback": _fallback }
+		"stage": stage, "fallback": _fallback, "offered": _offered_to_save() }
+
+
+func _offered_to_save() -> Dictionary:
+	var out := {}
+	for p in offered:
+		out[str(p)] = (offered[p] as Array).map(func(t): return String(t))
+	return out
 
 
 func from_dict(d: Dictionary) -> void:
@@ -436,6 +578,10 @@ func from_dict(d: Dictionary) -> void:
 	home = Vector2(h[0], h[1])
 	stage = int(d.get("stage", 1))
 	_fallback = int(d.get("fallback", 0))
+	offered.clear()
+	var off: Dictionary = d.get("offered", {})
+	for k in off:
+		offered[int(k)] = (off[k] as Array).map(func(t): return StringName(t))
 	trophies.clear()
 	trophy_cells.clear()
 	var cells: Array = d.get("cells", [])
@@ -475,7 +621,11 @@ func from_dict(d: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	if has_home and int(_t * 4.0) != int((_t - delta) * 4.0):
+	for p in _flash.keys():
+		_flash[p] = float(_flash[p]) - delta
+		if _flash[p] <= 0.0:
+			_flash.erase(p)
+	if has_home and (not _flash.is_empty() or int(_t * 4.0) != int((_t - delta) * 4.0)):
 		queue_redraw()
 
 
@@ -485,29 +635,16 @@ func _draw() -> void:
 	var down := -home.normalized()
 	var rot := down.angle() - PI / 2.0   # "up" of the burrow points away from the core
 	# Room outline: a faint warm ring shows how big home is (it grows with the stage).
-	draw_arc(home, room_tiles() * 16.0, 0.0, TAU, 48, Color(1, 0.85, 0.55, 0.10), 2.0)
+	draw_arc(home, room_tiles() * 16.0, 0.0, TAU, 64, Color(1, 0.85, 0.55, 0.10), 2.0)
+	if has_house():
+		_draw_house()
 	# Bed: a soft leaf mat where the worm sleeps.
 	draw_set_transform(bed_position(), rot, Vector2.ONE)
 	draw_rect(Rect2(-15, -3, 30, 6), Color(0.48, 0.7, 0.36, 0.9))
 	draw_rect(Rect2(-15, -3, 30, 6), Color("2a1a14"), false, 1.0)
 	draw_circle(Vector2(-12, -2), 3.5, Color(0.9, 0.85, 0.7))   # pillow
-	# Trait wall (placeholder plaque above the bed): one socket per earned trait of each worm.
-	draw_set_transform(home, rot, Vector2.ONE)
-	var y := -1.4 * 16.0
-	draw_rect(Rect2(-30, y - 8, 60, 16), Color("4a3524"))
-	draw_rect(Rect2(-30, y - 8, 60, 16), Color("2a1a14"), false, 2.0)
-	var x := -24.0
-	for w in Worm.all():
-		# Lit = what the one resolver (WormStats) has active; dark = earned, waiting; rings = free slots.
-		var lit: Array[StringName] = w.model.stats.active
-		for id in w.model.earned:
-			var t := w.rules.find_trait(id)
-			var col := t.color if t else Color.WHITE
-			draw_circle(Vector2(x, y), 4.0, col if id in lit else col.darkened(0.5))
-			x += 10.0
-		for i in maxi(0, w.model.slots() - lit.size()):
-			draw_arc(Vector2(x, y), 3.5, 0.0, TAU, 12, Color(1, 0.9, 0.7, 0.6), 1.0)
-			x += 10.0
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_draw_wall()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for i in trophies.size():
 		_draw_trophy(i)
@@ -534,3 +671,103 @@ func _draw_trophy(i: int) -> void:
 		var s := p + bob - down * (r + 3.0) + side * 3.0
 		draw_line(s - side * 2.0, s + side * 2.0, Color(1, 1, 0.8), 1.0)
 		draw_line(s - down * 2.0, s + down * 2.0, Color(1, 1, 0.8), 1.0)
+
+
+## The wall of pictures over the bed: a row per worm, one framed picture per earned trait (lit when
+## active, dark while it waits), then an empty peg for each free slot. Placeholder, drawn in code.
+func _draw_wall() -> void:
+	var up := home.normalized()
+	var rot := (-up).angle() - PI / 2.0
+	var px := growth.picture_for(stage)
+	var row := 0
+	for w in Worm.all():
+		var m := w.model
+		if m == null or m.earned.is_empty() and m.slots() == 0:
+			continue
+		var n := m.earned.size() + maxi(0, m.slots() - m.active.size())
+		var step := px * 1.35
+		var y := 1.3 * 16.0 + px * 0.6 + row * (px * 1.5 + 4.0)
+		draw_set_transform(home + up * y, rot, Vector2.ONE)
+		var x := -step * (n - 1) * 0.5
+		var col: Color = Players.COLOR[w.player]
+		# The string the pictures hang from, in the player's colour.
+		draw_line(Vector2(x - step * 0.6, -px * 0.75), Vector2(-x + step * 0.6, -px * 0.75), col, 1.5)
+		var flash := float(_flash.get(w.player, 0.0))
+		for id in m.earned:
+			var t := m.rules.find_trait(id)
+			_draw_picture(Vector2(x, 0), px, t, m.is_active(id), m.stage, flash if id == m.earned[-1] else 0.0)
+			x += step
+		for i in maxi(0, m.slots() - m.active.size()):
+			draw_circle(Vector2(x, -px * 0.75), 1.6, Color("c8a070"))   # a free peg: room for one more
+			draw_arc(Vector2(x, 0), px * 0.35, 0.0, TAU, 12, Color(1, 0.9, 0.7, 0.5), 1.0)
+			x += step
+		row += 1
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_picture(at: Vector2, px: float, t: TraitData, on: bool, s: int, flash: float) -> void:
+	var r := Rect2(at - Vector2.ONE * px * 0.5, Vector2.ONE * px)
+	var col := t.color if t else Color.WHITE
+	draw_line(at + Vector2(0, -px * 0.75), at + Vector2(0, -px * 0.5), Color("c8a070"), 1.0)
+	draw_rect(r.grow(1.5), Color("7a5230"))
+	draw_rect(r, col.darkened(0.2 if on else 0.7))
+	var tex: Texture2D = t.part_texture(s) if t else null
+	if tex != null:
+		var k := px * 0.8 / maxf(tex.get_width(), tex.get_height())
+		var size := tex.get_size() * k
+		draw_texture_rect(tex, Rect2(at - size * 0.5, size), false, Color.WHITE if on else Color(0.45, 0.45, 0.45))
+	else:
+		draw_circle(at, px * 0.3, col if on else col.darkened(0.5))
+	if on:
+		draw_rect(r.grow(1.5), Color(1, 1, 0.8), false, 1.0)
+	if flash > 0.0:
+		draw_arc(at, px * (1.2 - flash * 0.5), 0.0, TAU, 20, Color(1, 1, 0.8, flash), 2.0)
+
+
+## The buried house: an old little house sunk into the cavern wall, its rooms full of furniture
+## (a trophy stands on each piece). Placeholder, drawn in code.
+func _draw_house() -> void:
+	var up := home.normalized()
+	var rot := (-up).angle() - PI / 2.0
+	var hs := house_size()
+	draw_set_transform(house_base(), rot, Vector2.ONE)
+	# House-local: x along the floor, y up is negative.
+	var body := Rect2(-hs.x * 0.5, -hs.y, hs.x, hs.y)
+	draw_rect(body, Color("8a6a4a"))
+	draw_rect(body.grow(-3), Color("5a3f2a"))
+	var roof := PackedVector2Array([Vector2(-hs.x * 0.5 - 6, -hs.y), Vector2(hs.x * 0.5 + 6, -hs.y),
+		Vector2(0, -hs.y - hs.x * 0.32)])
+	draw_colored_polygon(roof, Color("9a4a3a"))
+	draw_polyline(PackedVector2Array([roof[0], roof[2], roof[1]]), Color("2a1a14"), 2.0)
+	draw_rect(body, Color("2a1a14"), false, 2.0)
+	# Chimney and a round attic window.
+	draw_rect(Rect2(hs.x * 0.22, -hs.y - hs.x * 0.3, 8, 14), Color("7a3a2a"))
+	draw_circle(Vector2(0, -hs.y - hs.x * 0.12), 5.0, Color("f0d890"))
+	draw_arc(Vector2(0, -hs.y - hs.x * 0.12), 5.0, 0.0, TAU, 16, Color("2a1a14"), 1.5)
+	# Floors and room walls.
+	var fh := hs.y / growth.house_floors
+	var rw := hs.x / growth.house_rooms
+	for f in range(1, growth.house_floors):
+		draw_line(Vector2(-hs.x * 0.5, -f * fh), Vector2(hs.x * 0.5, -f * fh), Color("8a6a4a"), 3.0)
+	for rm in range(1, growth.house_rooms):
+		var xx := -hs.x * 0.5 + rm * rw
+		draw_line(Vector2(xx, 0), Vector2(xx, -hs.y), Color("8a6a4a"), 2.0)
+	# Furniture: one piece in every room, the trophies stand on them.
+	for k in growth.house_spots():
+		var room := k % growth.house_rooms
+		var fl := k / growth.house_rooms
+		var cx := -hs.x * 0.5 + (room + 0.5) * rw
+		var fy := -fl * fh
+		match k % 3:
+			0:   # a little table
+				draw_rect(Rect2(cx - 8, fy - 6, 16, 2), Color("c8a070"))
+				draw_line(Vector2(cx - 6, fy - 4), Vector2(cx - 6, fy), Color("c8a070"), 1.5)
+				draw_line(Vector2(cx + 6, fy - 4), Vector2(cx + 6, fy), Color("c8a070"), 1.5)
+			1:   # a rug
+				draw_rect(Rect2(cx - 10, fy - 2, 20, 2), Color("b05050"))
+			_:   # a stool
+				draw_rect(Rect2(cx - 5, fy - 6, 10, 2), Color("d8b880"))
+				draw_line(Vector2(cx, fy - 4), Vector2(cx, fy), Color("d8b880"), 2.0)
+	# A door on the bed side.
+	draw_rect(Rect2(-hs.x * 0.5 + 3, -14, 9, 14), Color("3a2414"))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

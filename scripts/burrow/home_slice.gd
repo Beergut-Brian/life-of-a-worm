@@ -120,6 +120,7 @@ func _on_worm(w: Worm) -> void:
 		w.tackle_pressed.connect(open_box)
 		w.stage_changed.connect(func(_p: int, _f: int, to: int) -> void: level.burrow.grow_to(to))
 	level.burrow.grow_to(w.model.stage)
+	level.burrow.install_wall(w)   # the trait wall is the burrow's chooser (BurrowWall)
 	TrophyBonus.apply(w, level.burrow.bonus())
 	if not _charms.has(w.player) or not is_instance_valid(_charms[w.player]):
 		var c := TrophyCharms.new()
