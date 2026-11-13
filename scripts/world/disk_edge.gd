@@ -68,6 +68,7 @@ static func make_for(p_world: TileWorld) -> DiskEdge:
 			e.attach(p_world, poly)
 			parent.add_child(e)
 			parent.move_child(e, poly.get_index() + 1)
+			FarGround.make_for(p_world)   # K-08: unstreamed ground shows its ring colour, not the wall
 			return e
 	return null
 
