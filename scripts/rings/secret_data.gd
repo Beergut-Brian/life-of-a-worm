@@ -28,3 +28,12 @@ extends Resource
 @export var lead_picture: StringName = &""
 ## Seconds the shared camera holds on the hall when it is found (0 = no camera beat).
 @export var camera_beat := 0.0
+## X-08: spots kept for later Jarling cameos (CameoSpot). Each stands on open, kept floor inside
+## this place (a side room with no food, or the open-air hall), clear of everything placed here.
+@export var cameos: Array[CameoSpot] = []
+
+
+## A cameo spot in px, relative to the hall centre at `centre` (same axes as RingsDirector.rooms_of).
+static func cameo_offset(c: CameoSpot, centre: Vector2) -> Vector2:
+	var up := centre.normalized() if centre != Vector2.ZERO else Vector2.UP
+	return (up.orthogonal() * c.at.x + up * c.at.y) * 16.0
