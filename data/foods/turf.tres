@@ -10,6 +10,7 @@ growth = 2.0
 size_stage = 3
 color = Color(0.5451, 0.6902, 0.2902, 1)
 radius = 7.0
+eat_cue = "world_sprout"
 ring = &"surface"
 regrow_time = 0.0
 plants = &""
