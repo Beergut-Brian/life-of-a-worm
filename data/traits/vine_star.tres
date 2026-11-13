@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"vine_star"
+requires = {}
+add = {"space_reach": 26.0}
+mul = {}
+part_slot = &"tail"
+part_shape = &"leaf"
+part_priority = 0
+part_spin = 0.0
+star = true
+star_planet = &"jungle"
+cue = "trait_green_thumb"
+color = Color(0.37254903, 0.8901961, 0.41568628, 1)

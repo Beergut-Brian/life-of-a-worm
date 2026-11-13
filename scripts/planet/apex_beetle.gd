@@ -30,6 +30,8 @@ const WANDER_RANGE := 120.0
 ## The ring stage whose apex this is (eating it opens size_stage).
 @export var ring_stage := 1
 @export var radius := 15.0
+## How it is drawn: &"dirt" (round purple beetle) or &"topsoil" (green stag beetle with a horn).
+@export var look := &"dirt"
 var world: PolarWorld
 var home := Vector2.ZERO
 var mode := Mode.WANDER
@@ -180,15 +182,16 @@ func _move_toward(p: Vector2, speed: float, delta: float) -> void:
 	_move(facing * speed * delta)
 
 
-## Moves and chews its own tunnel through what a stage-1 mouth could eat (dirt), never stone.
+## Moves and chews its own tunnel through what a mouth of its ring's stage could eat (the dirt apex:
+## dirt; the topsoil apex: topsoil and dirt), never stone.
 func _move(v: Vector2) -> void:
 	var to := position + v
 	if world:
 		var cell := world.shape.cell_at(to + facing * radius * 0.6)
-		if world.is_solid(cell) and not world.is_edible_by(1, cell):
+		if world.is_solid(cell) and not world.is_edible_by(ring_stage, cell):
 			return  # stone: it turns instead (next frame's wander target)
 		for o in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-			if world.is_edible_by(1, cell + o):
+			if world.is_edible_by(ring_stage, cell + o):
 				world.dig(cell + o)
 	position = to
 
@@ -210,7 +213,10 @@ func _draw() -> void:
 	elif mode == Mode.FULL:
 		swell = 1.15
 	draw_set_transform(jitter, facing.angle(), Vector2.ONE * swell)
+	var stag := look == &"topsoil"
 	var shell := Color("c9b8ff") if food else Color("3b2d63")
+	if stag:
+		shell = Color("ffe9a0") if food else Color("9a4a12")   # bronze on the green topsoil
 	var rim := Color("2a1a14")
 	# Legs (three a side), walking.
 	for i in 3:
@@ -224,6 +230,12 @@ func _draw() -> void:
 	draw_circle(Vector2(-r * 0.3, -r * 0.35), r * 0.25, shell.lightened(0.35))   # shine
 	# Head with eyes: smug half-lids as a threat, wide eyes as food.
 	var hc := Vector2(r * 0.95, 0)
+	if stag:
+		# The stag's horn: one big curved prong over the head (droops when it is food).
+		var tip := hc + Vector2(r * 1.1, -r * (0.25 if food else 0.9))
+		draw_line(hc + Vector2(r * 0.2, -r * 0.3), tip, rim, 6.0)
+		draw_line(hc + Vector2(r * 0.2, -r * 0.3), tip, Color("c98a3a"), 3.0)
+		draw_circle(tip, 3.0, Color("c98a3a"))
 	draw_circle(hc, r * 0.55 + 2.0, rim)
 	draw_circle(hc, r * 0.55, shell.darkened(0.2))
 	for sgn in [-1.0, 1.0]:

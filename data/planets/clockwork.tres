@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_sn1ac"]
 [ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_8fvbj"]
 [ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="3_qdpae"]
+[ext_resource type="Resource" path="res://data/traits/tick_star.tres" id="4_star"]
 
 [sub_resource type="Resource" id="Resource_0rvua"]
 script = ExtResource("1_sn1ac")
@@ -31,16 +32,6 @@ size_stage = 6
 color = Color(0.9411765, 0.8392157, 0.5411765, 1)
 radius = 56.0
 
-[sub_resource type="Resource" id="Resource_4xv3r"]
-script = ExtResource("3_qdpae")
-id = &"tick_star"
-add = {
-"space_speed": 20.0,
-"space_steady": 0.25
-}
-part_slot = &"space"
-color = Color(1, 0.8117647, 0.3529412, 1)
-
 [resource]
 script = ExtResource("2_8fvbj")
 id = &"clockwork"
@@ -49,4 +40,5 @@ accent = Color(0.56078434, 0.41568628, 0.13333334, 1)
 radius = 320.0
 foods = Array[ExtResource("1_sn1ac")]([SubResource("Resource_0rvua"), SubResource("Resource_gtf7j"), SubResource("Resource_dpdbd")])
 drift = 20.0
-star_trait = SubResource("Resource_4xv3r")
+star_trait = ExtResource("4_star")
+star_chance = 0.0

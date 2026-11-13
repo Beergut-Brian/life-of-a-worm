@@ -25,7 +25,7 @@ signal secret_found(id: StringName)
 ## The core's chain (core crystals scattered and growing back live; lava blobs counted only, no
 ## body yet) runs in play too (W-02).
 const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres"),
-		preload("res://data/rings/core_life.tres")]
+		preload("res://data/rings/core_life.tres"), preload("res://data/rings/deep_rock_life.tres")]
 ## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
 const SKY: SkyLife = preload("res://data/rings/sky_life.tres")
 ## The surface ring (W-06): its counters (apples, the lawnmower) and the apples on the grass. Its
@@ -77,6 +77,8 @@ var cities: Dictionary = {}           # secret id -> centre (world px)
 var live: Dictionary = {}             # species -> Array[Node2D]
 var castings_speed := 1.0
 var dressing: TopsoilDressing
+## G-06: castings in the topsoil sprout while it rains (scripts/rings/castings_sprouts.gd).
+var sprouts: CastingsSprouts
 var balloon: SkyBalloon
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
@@ -191,6 +193,11 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	dressing.name = "TopsoilDressing"
 	dressing.director = self
 	add_child(dressing)
+	sprouts = CastingsSprouts.new()
+	sprouts.name = "CastingsSprouts"
+	sprouts.director = self
+	sprouts.world = world
+	add_child(sprouts)
 	for s in SECRETS:
 		var spot := SecretSpot.new()
 		spot.name = "Secret_%s" % s.id
