@@ -7,6 +7,8 @@
 ##   t = 0.5   the ring that opens at this stage (StageData.opens_ring) pulses round the planet:
 ##             that is the new food;
 ##   t = 1.6   the stage's dock cutscene (Story, once per tin; story scenes are the story lane's).
+## It also owns the TraitBeat (trait_beat.gd): every worm in the tree gets the trait camera beat,
+## held back while a stage-up's "why" picture is up.
 ## Every number is in data/stages.tres or here; the level only connects and saves.
 class_name StageBeat
 extends Node2D
@@ -26,12 +28,27 @@ var make_story := true
 ## Every beat played: {player, from, to, cause, zoom_cap, ring}.
 var history: Array[Dictionary] = []
 
+var trait_beat := TraitBeat.new()
+
 var _rings: Array[Dictionary] = []   # {radius, color, t}
 
 
 func _init() -> void:
 	name = "StageBeat"
 	z_index = 40
+	add_child(trait_beat)
+
+
+func _ready() -> void:
+	trait_beat.camera = camera
+	get_tree().node_added.connect(_on_node_added)
+	for w in Worm.all():
+		trait_beat.watch(w)
+
+
+func _on_node_added(n: Node) -> void:
+	if n is Worm:
+		trait_beat.watch(n)
 
 
 ## Hook a worm: its stage-ups play the beat.
@@ -62,6 +79,7 @@ func play(w: Worm, from: int, to: int) -> void:
 	var cap := zoom_cap()
 	if camera != null:
 		camera.max_fit_index = cap
+	trait_beat.hold(WHY_LIFE)
 	var why := StageWhy.new()
 	why.worm = w
 	why.cause = cause

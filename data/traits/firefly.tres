@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"firefly"
+requires = {"bug": 4, "crystal": 4}
+add = {"light_radius": 0.9}
+mul = {"speed": 1.1}
+part_slot = &"tail"
+part_priority = 1
+part_spin = 0.0
+part_shape = &"pinwheel"
+cue = "trait_glow"
+color = Color(0.718, 0.782, 0.555, 1)

@@ -163,6 +163,7 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	_all.erase(self)
 	if _all.is_empty():
+		WormJuice.clear_cache()
 		WormHooks.release()   # static texture caches go with the last worm (no leak line at exit)
 
 
@@ -217,6 +218,7 @@ func set_world(w: PolarWorld) -> void:
 func _on_tile_eaten(cell: Vector2i, _block: StringName, p: int) -> void:
 	if p != player:
 		return
+	WormJuice.tile(self, cell)   # crumbs fall toward the core (A-14)
 	bite_tile(world.ring_of(cell).flavour if world else &"")
 
 
@@ -365,6 +367,7 @@ func feed(food: FoodData) -> void:
 	crumbs.color = food.color
 	crumbs.restart()
 	crumbs.emitting = true
+	WormJuice.bite(self, food)   # specks in the food's colour, a capped nudge (A-14)
 	_pop(look, 1.25)
 	for w in Worm.all():
 		if w != self:
@@ -721,11 +724,22 @@ func _add_segment_node(flavour: StringName, pop := true) -> void:
 	body.add_child(node)
 	body.move_child(node, 0)
 	_seg_nodes.append(node)
+	_mark_tail()
 	if pop:
 		node.set_meta("pop", 0.1)
 		var tw := create_tween()
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 0.1, 1.5, 0.12)
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.5, 1.0, 0.12)
+
+
+## The last segment wears the stage set's tail sprite (WormLook kind &"tail"), every other one the
+## body sprite; WormSegment re-asks WormLook for its kind at its stage whenever either changes.
+func _mark_tail() -> void:
+	for i in _seg_nodes.size():
+		var want: StringName = &"tail" if i == _seg_nodes.size() - 1 else &"body"
+		var seg := _seg_nodes[i] as WormSegment
+		if seg.kind != want:
+			seg.kind = want
 
 
 func _on_segment_added(flavour: StringName) -> void:
@@ -745,12 +759,14 @@ func _on_segment_lost() -> void:
 	_positions.pop_back()
 	_float_fx(STAR_TEX, node.position, Color(1, 1, 1), 0.6)
 	node.queue_free()
+	_mark_tail()
 	_refresh_parts(false)
 	segment_lost.emit(player)
 
 
 func _on_stage_changed(from: int, to: int) -> void:
 	Audio.play("stage_up")
+	WormJuice.worm_flash(self)   # two white frames (A-14)
 	_pop(look, 1.6)
 	stage_changed.emit(player, from, to)
 

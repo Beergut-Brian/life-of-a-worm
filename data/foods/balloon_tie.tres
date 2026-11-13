@@ -10,6 +10,7 @@ growth = 1.0
 size_stage = 5
 color = Color(0.95, 0.95, 0.9, 1)
 radius = 7.0
+eat_cue = "boing"
 ring = &"sky"
 regrow_time = 0.0
 plants = &""

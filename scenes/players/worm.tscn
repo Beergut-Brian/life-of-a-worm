@@ -1,8 +1,14 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
+[ext_resource type="Script" path="res://scripts/gameplay/burst_nudge.gd" id="burst_nudge"]
+[ext_resource type="Script" path="res://scripts/gameplay/partner_stars.gd" id="partner_stars"]
+[ext_resource type="Script" path="res://scripts/gameplay/eaten_beat.gd" id="eaten_beat"]
+[ext_resource type="Script" path="res://scripts/traits/trait_hello.gd" id="trait_hello"]
+[ext_resource type="Script" path="res://scripts/traits/trait_knacks.gd" id="knacks"]
 [ext_resource type="Script" path="res://scripts/worm/worm.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/worm/food_voice.gd" id="food_voice"]
 [ext_resource type="Script" path="res://scripts/worm/pull_drag.gd" id="pull_drag"]
+[ext_resource type="Script" path="res://scripts/worm/castings_hook.gd" id="castings_hook"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_head"]
 radius = 6.0
@@ -67,5 +73,23 @@ z_index = 20
 [node name="FoodVoice" type="Node" parent="."]
 script = ExtResource("food_voice")
 
+[node name="Knacks" type="Node" parent="."]
+script = ExtResource("knacks")
+
+[node name="BurstNudge" type="Node2D" parent="."]
+script = ExtResource("burst_nudge")
+
+[node name="PartnerStars" type="Node" parent="."]
+script = ExtResource("partner_stars")
+
+[node name="EatenBeat" type="Node" parent="."]
+script = ExtResource("eaten_beat")
+
+[node name="TraitHello" type="Node" parent="."]
+script = ExtResource("trait_hello")
+
 [node name="PullDrag" type="Node2D" parent="."]
 script = ExtResource("pull_drag")
+
+[node name="CastingsHook" type="Node" parent="."]
+script = ExtResource("castings_hook")

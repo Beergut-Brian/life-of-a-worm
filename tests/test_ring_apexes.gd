@@ -73,7 +73,7 @@ func _topsoil() -> ApexBeetle:
 
 func test_the_topsoil_has_its_own_apex_that_lives_in_the_topsoil() -> void:
 	_open()
-	assert_int(_level.apexes.size()).is_equal(2)
+	assert_int(_level.apexes.size()).is_equal(5)   # + the deep ones (test_deep_apexes.gd)
 	assert_object(_level.apexes[0]).is_same(_level.beetle)
 	var t := _topsoil()
 	assert_object(t).is_not_null()

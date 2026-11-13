@@ -9,12 +9,35 @@ const RED := Color("e4393c")
 const IDS: Array[StringName] = [&"worm", &"worm_tiny", &"worm_two", &"worm_big", &"worm_huge", &"worm_up",
 		&"stone_worm", &"sandwich", &"hook", &"fish", &"comet", &"chili", &"purple_rock", &"socks",
 		&"lightning", &"wish", &"planet", &"planet_bite", &"moon_bite", &"shed_sink", &"hill_bite",
-		&"eat", &"no", &"burp", &"dock"]
+		&"eat", &"no", &"burp", &"dock", &"sun", &"bait_tin"]
 
 
 static func register_all() -> void:
 	for id in IDS:
 		PictoBubble.register(id, _draw)
+	PictoBubble.register_prefix("trait:", _draw_trait)
+
+
+## "trait:<id>": a trait in a picture (its colour disc and its part, else a star): the heirloom.
+static func _draw_trait(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float) -> void:
+	var t := WormRules.default_rules().find_trait(StringName(String(id).trim_prefix("trait:")))
+	var u := s / 22.0
+	ci.draw_circle(c, 9.5 * u, _ink(a))
+	ci.draw_circle(c, 8.0 * u, Color(t.color if t else Color.WHITE, a))
+	var tex: Texture2D = t.part_texture(1) if t else null
+	if tex:
+		var k := 13.0 * u / maxf(tex.get_width(), tex.get_height())
+		ci.draw_texture_rect(tex, Rect2(c - tex.get_size() * k * 0.5, tex.get_size() * k), false, Color(1, 1, 1, a))
+	else:
+		PictoBubble.picture(ci, &"star", c, s * 0.6, a)
+
+
+## Old Reel's bait tin: a grey tin with a lid and a red band (as on the dock rail).
+static func bait_tin(ci: CanvasItem, c: Vector2, u: float, a: float, band := Color("c94a3a")) -> void:
+	ci.draw_rect(Rect2(c + Vector2(-8, -6) * u, Vector2(16, 13) * u), Color(Color("9aa4ad"), a))
+	ci.draw_rect(Rect2(c + Vector2(-8, -1) * u, Vector2(16, 4) * u), Color(band, a))
+	ci.draw_rect(Rect2(c + Vector2(-9, -8) * u, Vector2(18, 3) * u), Color(Color("c3ccd3"), a))
+	ci.draw_rect(Rect2(c + Vector2(-9, -8) * u, Vector2(18, 15) * u), _ink(a), false, 1.2 * u)
 
 
 static func _ink(a: float) -> Color:
@@ -115,6 +138,13 @@ static func _draw(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float
 		&"burp":
 			for k in 3:
 				ci.draw_arc(c + Vector2(-4 + k * 4, 2 - k * 4) * u, (2.0 + k) * u, 0.0, TAU, 12, _ink(a), 1.2 * u)
+		&"sun":
+			ci.draw_circle(c, 6.5 * u, Color(Color("ffc93a"), a))
+			for k in 8:
+				var d := Vector2.from_angle(k * TAU / 8.0)
+				ci.draw_line(c + d * 7.5 * u, c + d * 10.0 * u, Color(Color("ff8a1e"), a), 1.6 * u)
+		&"bait_tin":
+			bait_tin(ci, c, u, a)
 		&"dock":
 			ci.draw_rect(Rect2(c + Vector2(-9, -1) * u, Vector2(18, 3) * u), Color(Color("a07a4e"), a))
 			ci.draw_rect(Rect2(c + Vector2(-9, 2) * u, Vector2(18, 6) * u), Color(Color("3a7fb5"), a))

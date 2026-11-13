@@ -163,6 +163,12 @@ func test_seeds_and_creatures_are_not_for_swapping() -> void:
 	assert_bool(_shop().trade(w)).is_false()
 	assert_object(w.carrying).is_same(seed)
 	assert_int(Audio.played.get("boop", 0)).is_greater(0)
+	# A carried creature is not for swapping either (S-20: trading one played its first-bite sting).
+	var bug := Creature.new()
+	w.carrying = bug
+	assert_bool(_shop().can_trade(w)).is_false()
+	w.carrying = seed
+	bug.free()
 
 
 func test_the_shop_is_saved_with_its_loose_seeds() -> void:

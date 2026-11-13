@@ -57,6 +57,9 @@ func test_contact_through_physics_eats_the_small_planet() -> void:
 	small.position = s.worm.position + Vector2(90, 0)
 	var ate: Array = []
 	s.ate.connect(func(p, what, g): ate.append(what))
+	# P-26: counted through signals (ate, the planet leaving the tree), never by polling state.
+	var gone := [0]
+	small.tree_exiting.connect(func() -> void: gone[0] += 1)
 	for i in 6:
 		await get_tree().physics_frame
 	assert_int(s.eaten).is_equal(1)
@@ -64,7 +67,8 @@ func test_contact_through_physics_eats_the_small_planet() -> void:
 	assert_bool(big.eaten).is_false()
 	for i in 30:
 		await get_tree().physics_frame
-	assert_bool(is_instance_valid(small)).is_false()
+	assert_int(gone[0]).is_equal(1)
+	assert_array(ate).is_equal([&"planet_candy"])   # eaten once, never again on later contacts
 
 
 func test_gravity_is_off() -> void:
