@@ -27,6 +27,12 @@ func mouth_position() -> Vector2:
 	return head_position() + Vector2.from_angle(head_angle + PI / 2.0) * seg_radius * 1.3
 
 
+## In the planet shot, the camera beat (P-14, scripts/chomp/chomp_beat.gd) rides along as a child.
+func _ready() -> void:
+	if get_parent() is PlanetChomp and get_node_or_null(^"ChompBeat") == null:
+		add_child(ChompBeat.new())
+
+
 func _process(_delta: float) -> void:
 	queue_redraw()
 
