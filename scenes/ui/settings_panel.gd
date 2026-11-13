@@ -2,10 +2,15 @@
 ## Per install, saved through Save.set_setting the moment a value changes. Up/down picks a row,
 ## left/right (or A) changes it, B goes back. The lobby and the pause menu each hold one.
 ## Games read screen shake with SettingsPanel.screen_shake() before shaking the camera.
+## Start fresh: a game with a persistent save sets `restore_check` on the lobby's panel; while it
+## answers true the panel shows a fifth row, Restore old world, and A on it emits restore_asked (the
+## game asks first, with its held-A card). The pause menu's panel leaves it unset (no row).
 class_name SettingsPanel
 extends Control
 
 signal closed()
+## A on Restore old world, by `player`.
+signal restore_asked(player: int)
 
 const MUSIC := "music_volume"
 const SOUND := "sound_volume"
@@ -13,16 +18,19 @@ const SHAKE := "screen_shake"
 const SOLO := "solo_playtest"
 const DEFAULTS := { MUSIC: 0.8, SOUND: 1.0, SHAKE: true, SOLO: false }
 
-enum Row { MUSIC, SOUND, SHAKE, SOLO }
+enum Row { MUSIC, SOUND, SHAKE, SOLO, RESTORE }
 
 var active := false
 var focus := Row.MUSIC
+## Returns true while there is an old world to restore (shows the Restore row). Unset = never.
+var restore_check: Callable
 
 var _tw: Tween
 
 @onready var _card: Control = $Card
 @onready var _wedge: Control = $Wedge
-@onready var _rows: Array = [$Card/Rows/Music, $Card/Rows/Sound, $Card/Rows/Shake, $Card/Rows/Solo]
+@onready var _restore: MenuItem = _make_restore_row()
+@onready var _rows: Array = [$Card/Rows/Music, $Card/Rows/Sound, $Card/Rows/Shake, $Card/Rows/Solo, _restore]
 
 
 static func screen_shake() -> bool:
@@ -39,6 +47,27 @@ func _ready() -> void:
 	add_to_group("openjar_skinned")
 	apply_skin()
 	Players.solo_changed.connect(_on_solo_changed)
+
+
+func _make_restore_row() -> MenuItem:
+	var row := MenuItem.new()
+	row.name = "Restore"
+	row.text = "Restore old world"
+	row.height = 104.0
+	row.height_focused = 120.0
+	row.text_size = 56
+	row.text_size_focused = 62
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.visible = false
+	row.disabled = true
+	$Card/Rows.add_child(row)
+	return row
+
+
+## Re-read the values and whether Restore old world is offered.
+func refresh() -> void:
+	if is_node_ready():
+		_refresh()
 
 
 func apply_skin() -> void:
@@ -78,6 +107,11 @@ func handle(input: Dictionary) -> void:
 		return
 	if input.move.y != 0:
 		move_focus(input.move.y)
+	if focus == Row.RESTORE:
+		if input.a != -1:
+			_restore.press()
+			restore_asked.emit(input.a)
+		return
 	if input.move.x != 0:
 		adjust(input.move.x)
 	elif input.a != -1:
@@ -127,6 +161,11 @@ func _refresh() -> void:
 	_rows[Row.SOUND].value = value_of(SOUND)
 	_rows[Row.SHAKE].value = 1.0 if value_of(SHAKE) else 0.0
 	_rows[Row.SOLO].value = 1.0 if Players.solo else 0.0
+	var offer := restore_check.is_valid() and bool(restore_check.call())
+	_restore.visible = offer
+	_restore.disabled = not offer
+	if not offer and focus == Row.RESTORE:
+		_set_focus(Row.SOLO, false)
 
 
 func _set_focus(to: Row, sound := true) -> void:
