@@ -1058,3 +1058,37 @@ Sound: earn = `TraitData.cue` + reveal ring, once. Any later equip (`traits_chan
 the cue again, no ring. At work = the cue, a small ring, the part pops (throttled 0.4 s).
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
+
+### Juice (worm-juice-1)
+
+`feature/worm-juice-1` (PLAN-STATUS A-14). `scripts/worm/juice.gd`, class `WormJuice` (static
+functions, no autoload, no art, no cues). Strength numbers are constants at the top of the file.
+
+- **Switch:** `const ENABLED := true`. `WormJuice.on` starts from it at runtime; `false` = no
+  bursts, no debris, no shake, no flash anywhere (the hooks API below included).
+- **Worm hooks** (four lines in `scripts/worm/worm.gd`):
+  - `Worm.feed(food)` → `WormJuice.bite(worm, food) -> CPUParticles2D`: a one-shot burst named
+    `JuiceBurst` at `mouth_position()` in `food.color` (FoodData, never a table);
+    `specks_for_ratio(ratio)` 3 to 22 specks; `shake_worm(worm, shake_for_ratio(ratio))`.
+    `ratio = food.radius / model.stage_info().collision_radius`. Shake is 0 under 0.5, then
+    0.18 per ratio, capped at `SHAKE_CAP` 0.3 (PolarCamera units, about 7 px on screen).
+  - `shake_worm(worm, s)` shakes `worm.get_viewport().get_camera_2d()` only, and only if that
+    camera's `targets` holds the worm (a camera following someone else is never shaken). Honours
+    `SettingsPanel.screen_shake()`.
+  - `Worm._on_tile_eaten` → `WormJuice.tile(worm, cell)`: `JuiceDebris` crumbs in the ring's `hue`,
+    thrown away from the core and pulled by `world.shape.gravity_at()` turned into global space
+    (`fall_direction(world, pos)`), never a fixed down. Throttled to one puff per worm per
+    `DEBRIS_EVERY` (0.12 s).
+  - `Worm._on_stage_changed` → `WormJuice.worm_flash(worm)`: every drawn CanvasItem of the worm
+    (not particles or lights) borrows one white canvas shader material for exactly
+    `FLASH_FRAMES` (2) drawn frames, then gets its own material back. Frames are counted with
+    `Engine.get_process_frames()`, so it is two frames at any frame rate. `is_flashing(worm)`.
+- Bursts and crumbs live in global space (`local_coords = false`) under the worm's parent, free
+  themselves on `finished`, with a timer backstop at lifetime + 0.25 s.
+- **WormHooks API, same signatures as the stub:** `chomp(pos, colour, size)`, `shake(strength)`
+  (capped at `BEAT_SHAKE_CAP` 1.0), `stage_flash()` (whole screen white for exactly 2 frames, no
+  fade), `debris(pos)` (falls toward the core of the first worm's world). `calls` logs
+  `[fn, args]` like the stub (last 64). `WormHooks.JUICE_PATH` still names
+  `scripts/fx/juice.gd`, so the stage beat, crust burst, props and loose fall still use the stub;
+  pointing it here is a one-line change in `worm_hooks.gd` plus `JUICE_STUB` → `WormJuice` in
+  `test_stages_beat`, `test_surface_ring`, `test_world_destruct` (left to the producer).
