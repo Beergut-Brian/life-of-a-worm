@@ -20,6 +20,10 @@ const RING_DELAY := 0.5
 const RING_LIFE := 2.4
 const STORY_DELAY := 1.6
 const SWELL := 2.2
+## Seconds into an opened tin before a missed stage scene plays again (Story.catch_up, Y-08).
+const CATCH_UP_DELAY := 2.0
+## Test suites switch the catch-up off (SuiteSandbox); the game never does.
+static var catch_up_enabled := true
 
 var camera: PolarCamera
 var world: PolarWorld
@@ -44,6 +48,12 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 	for w in Worm.all():
 		trait_beat.watch(w)
+	get_tree().create_timer(CATCH_UP_DELAY, false).timeout.connect(_on_catch_up_time)
+
+
+func _on_catch_up_time() -> void:
+	if catch_up_enabled and make_story and is_instance_valid(self):
+		catch_up()
 
 
 func _on_node_added(n: Node) -> void:
@@ -123,6 +133,23 @@ func _story(player: int, from: int, to: int) -> void:
 		get_parent().add_child(story)
 	if story != null:
 		story.on_stage_changed(player, from, to)
+
+
+## The tin was closed during (or before) its newest stage scene: play it now, once (Y-08). The
+## biggest worm on the planet decides; the demo tin never does it. True when a scene starts.
+func catch_up() -> bool:
+	if not is_inside_tree() or Game.demo:
+		return false
+	var s := 1
+	for w in Worm.all():
+		s = maxi(s, w.model.stage)
+	if s < 2:
+		return false
+	var story := Story.find(get_tree())
+	if story == null:
+		story = Story.new()
+		get_parent().add_child(story)
+	return story.catch_up(s)
 
 
 func _ring_radius(id: StringName) -> float:
