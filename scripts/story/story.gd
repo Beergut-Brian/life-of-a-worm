@@ -12,6 +12,9 @@
 ## here can softlock. Seen scene ids are kept in the tin's save (`story_seen`) for the tackle box.
 ## Lines are voiced, not written: subtitles (the line's script, for Kaden) show only when the
 ## `subtitles` setting is on, and it is off by default. Off, nothing on screen is ever text.
+## The world under a scene waits (Y-11): while any scene plays, the planet or space stage the Story
+## lives in stops processing, so no worm steers, bursts on the skip press or gets eaten behind the
+## dock picture; it picks up exactly where it was when the last queued scene ends.
 class_name Story
 extends Node
 
@@ -62,6 +65,11 @@ var _queue: Array[StringName] = []
 var _pressed := false
 var _locked := false
 var _subtitle: Label
+## Hold the level this Story lives in while a scene plays (Y-11). Only a PlanetLevel or SpaceStage
+## parent is held, never a test suite or a preview root.
+var hold_world := true
+var _held: Node
+var _held_mode := Node.PROCESS_MODE_INHERIT
 
 
 static func find(tree: SceneTree) -> Story:
@@ -92,6 +100,7 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	_close()
+	_release_world()
 	StoryVoice.clear_cache()
 
 
@@ -106,8 +115,31 @@ func play(id: StringName) -> bool:
 		if not _queue.has(id):
 			_queue.append(id)
 		return true
+	_hold_world()
 	_open(id)
 	return true
+
+
+## The node waiting under the scene right now (null when nothing is held).
+func held() -> Node:
+	return _held if _held != null and is_instance_valid(_held) else null
+
+
+func _hold_world() -> void:
+	if not hold_world or held() != null:
+		return
+	var p := get_parent()
+	if not (p is PlanetLevel or p is SpaceStage):
+		return
+	_held = p
+	_held_mode = p.process_mode
+	p.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _release_world() -> void:
+	if held() != null:
+		_held.process_mode = _held_mode
+	_held = null
 
 
 func is_playing() -> bool:
@@ -154,6 +186,18 @@ func on_stage_changed(_player: int, from: int, to: int) -> void:
 	if id == &"" or seen.has(id) or _queue.has(id) or current() == id:
 		return
 	play(id)
+
+
+## Y-08: a tin opened again plays the newest planet stage scene it reached but never finished (the
+## game was closed while it played, or while it waited in the queue), once. Older missed scenes
+## stay as they are; stage 7 and the ending belong to space. False when nothing plays.
+func catch_up(stage: int) -> bool:
+	if stage < 2 or stage > 6:
+		return false
+	var id := scene_for_stage(stage)
+	if id == &"" or seen.has(id) or _queue.has(id) or current() == id:
+		return false
+	return play(id)
 
 
 # --- running a scene -----------------------------------------------------------------------------
@@ -308,9 +352,12 @@ func _on_finished(id: StringName, skipped: bool) -> void:
 	if _locked:
 		_locked = false
 		input_locked.emit(false)
+	var more := not _queue.is_empty()
+	if not more:
+		_release_world()   # before finished, so its listeners (the opening's glide) see a live world
 	finished.emit(id, skipped)
 	cutscene_finished.emit(id)
-	if not _queue.is_empty():
+	if more:
 		_open(_queue.pop_front())
 
 

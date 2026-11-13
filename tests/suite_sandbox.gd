@@ -35,6 +35,7 @@ static func enter(name: String, roster_path := ROSTER) -> void:
 			"data": Roster.data_path, "args": Roster.args_override }
 	suite = name
 	OpeningHook.enabled = false   # a new tin opened from main.tscn would start the opening (Y-01)
+	StageBeat.catch_up_enabled = false   # a loaded tin would replay a missed stage scene (Y-08)
 	Save.use_profile(profile_for(name))
 	Save.wipe()
 	Save.settings_path = settings_for(name)
@@ -63,6 +64,7 @@ static func leave() -> void:
 	_real = {}
 	suite = ""
 	OpeningHook.enabled = true
+	StageBeat.catch_up_enabled = true
 	Roster.reload()
 
 
