@@ -5,10 +5,15 @@
 ##    spilling out, a tipped jam jar and jam drops on the floor, a warm glow;
 ##  - cloud_nest (sky): a cloud island high in the air, a bird's nest of twigs with three blue eggs on
 ##    top, a small rainbow over it and sparkles drifting. The sky's birds (SkyFlock) circle near it.
+##  - hollow_stump (surface): an old tree stump standing alone on the far meadow, opposite the town.
+##    The crust is too thin for a carved hall, so the place stands on the grass: the stump is drawn
+##    cut away, a warm hollow inside with a pile of golden acorns on a leaf bed, roots, moss, a
+##    toadstool and a new sprout on top. A worm reaches it once it can bite out through the crust
+##    (stage 5), and the find beat plays when its head gets into the hollow.
 class_name SecretHalls
 extends SecretSpot
 
-const DRAWS: Array[StringName] = [&"picnic_basket", &"cloud_nest"]
+const DRAWS: Array[StringName] = [&"picnic_basket", &"cloud_nest", &"hollow_stump"]
 
 const CHECK_RED := Color("e0483a")
 const CLOTH := Color("fff6ea")
@@ -17,6 +22,12 @@ const WICKER_DARK := Color("8a5a30")
 const JAM := Color("dc3657")
 const CLOUD := Color("f4f7ff")
 const CLOUD_SHADE := Color("cfdcf5")
+const BARK := Color("9a6a3e")
+const BARK_DARK := Color("6e4526")
+const HOLLOW := Color("e2a866")
+const HOLLOW_GLOW := Color(1.0, 0.86, 0.5, 0.35)
+const MOSS := Color("6fcf5a")
+const LEAF := Color("f08a3c")
 const RAINBOW: Array[Color] = [Color("e0483a"), Color("ffb03a"), Color("ffd23f"), Color("6fcf5a"), Color("4f9be0"), Color("8a7be0")]
 
 
@@ -32,6 +43,8 @@ func _draw() -> void:
 			_draw_picnic_basket()
 		&"cloud_nest":
 			_draw_cloud_nest()
+		&"hollow_stump":
+			_draw_hollow_stump()
 		_:
 			super._draw()
 
@@ -125,3 +138,95 @@ func _draw_cloud_nest() -> void:
 		var tw := 0.5 + 0.5 * sin(_t * 3.0 + i)
 		draw_line(sp + Vector2(-3 * tw, 0), sp + Vector2(3 * tw, 0), Color(1, 1, 1, 0.9), 1.0)
 		draw_line(sp + Vector2(0, -3 * tw), sp + Vector2(0, 3 * tw), Color(1, 1, 1, 0.9), 1.0)
+
+
+## Height (px) of the hall's centre above the planet's surface: the stump's foot stands on the grass.
+func ground_y() -> float:
+	if director == null or director.planet_radius_px <= 0.0:
+		return -data.radius_tiles * 16.0 * 1.2
+	return director.planet_radius_px - position.length()
+
+
+func _draw_hollow_stump() -> void:
+	var r := data.radius_tiles * 16.0
+	var g := ground_y()          # the grass line, below the centre (negative y)
+	var top := r * 0.95          # the cut top
+	var w := r * 1.05            # half width of the trunk
+	# roots spreading into the grass
+	for side in [-1.0, 1.0]:
+		_poly([Vector2(side * w * 0.7, g + 22), Vector2(side * (w + 26), g - 2), Vector2(side * (w + 30), g - 6),
+				Vector2(side * w * 0.95, g + 4)], BARK, 2.5)
+	# the trunk: a slightly wider foot, the cut top
+	_poly([Vector2(-w * 1.08, g - 2), Vector2(w * 1.08, g - 2), Vector2(w, top), Vector2(-w, top)], BARK, 3.0)
+	for k in 5:    # bark grooves
+		var x := lerpf(-w * 0.85, w * 0.85, k / 4.0)
+		draw_line(_p(x, g + 6), _p(x * 0.96, top - 8), BARK_DARK, 2.0)
+	# the cut top: rings in a flat ellipse
+	var ell := PackedVector2Array()
+	for k in 24:
+		var t := TAU * k / 24.0
+		ell.append(_p(cos(t) * w, top + sin(t) * 10.0))
+	draw_colored_polygon(ell, INK)
+	var ell2 := PackedVector2Array()
+	for k in 24:
+		var t := TAU * k / 24.0
+		ell2.append(_p(cos(t) * (w - 3), top + sin(t) * 8.0))
+	draw_colored_polygon(ell2, Color("e8c48a"))
+	for ring in [0.7, 0.45, 0.2]:
+		var rr := PackedVector2Array()
+		for k in 25:
+			var t := TAU * k / 24.0
+			rr.append(_p(cos(t) * w * ring, top + sin(t) * 7.0 * ring))
+		draw_polyline(rr, Color("c49a5e"), 1.5)
+	# a new sprout on the top, two leaves nodding
+	var sway := sin(_t * 1.6) * 2.0
+	draw_line(_p(w * 0.3, top), _p(w * 0.3 + sway, top + 22), INK, 3.0)
+	draw_line(_p(w * 0.3, top), _p(w * 0.3 + sway, top + 22), MOSS, 1.5)
+	for side in [-1.0, 1.0]:
+		_poly([Vector2(w * 0.3 + sway, top + 20), Vector2(w * 0.3 + sway + side * 12, top + 26),
+				Vector2(w * 0.3 + sway + side * 4, top + 18)], MOSS, 1.5)
+	# the cut-away hollow: warm wood inside, lit from within
+	var hy := (g + top) * 0.5 - 4.0
+	var hw := w * 0.72
+	var hh := (top - g) * 0.36
+	draw_circle(_p(0, hy), hh * 1.3, HOLLOW_GLOW)
+	var hol := PackedVector2Array()
+	var hol2 := PackedVector2Array()
+	for k in 28:
+		var t := TAU * k / 28.0
+		hol.append(_p(cos(t) * (hw + 3), hy + sin(t) * (hh + 3)))
+		hol2.append(_p(cos(t) * hw, hy + sin(t) * hh))
+	draw_colored_polygon(hol, INK)
+	draw_colored_polygon(hol2, HOLLOW)
+	for k in 3:    # the inside wall's grain
+		var y := hy + hh * (0.5 - k * 0.3)
+		var half := hw * sqrt(maxf(0.0, 1.0 - pow((y - hy) / hh, 2.0))) * 0.8
+		draw_line(_p(-half, y), _p(half, y + 2), Color("c98c52"), 1.5)
+	# a leaf bed on the hollow's floor and a pile of golden acorns on it
+	var fy := hy - hh * 0.78
+	for k in 6:
+		var x := lerpf(-hw * 0.7, hw * 0.7, k / 5.0)
+		_poly([Vector2(x - 9, fy), Vector2(x + 9, fy + 2), Vector2(x, fy + 7)], LEAF if k % 2 == 0 else Color("ffb03a"), 1.0)
+	for spec in [Vector2(-16, 6), Vector2(-3, 7), Vector2(10, 6), Vector2(-9, 15), Vector2(4, 16)]:
+		var c := _p(spec.x, fy + spec.y)
+		draw_circle(c, 6.5, INK)
+		draw_circle(c, 5.2, Color("ffc83a"))
+		var cap := _p(spec.x, fy + spec.y + 4.0)
+		draw_circle(cap, 4.2, INK)
+		draw_circle(cap, 3.2, Color("a0683a"))
+		draw_circle(c + _p(-1.5, 1.0), 1.4, Color(1, 1, 1, 0.7))
+	# twinkles over the pile
+	for i in 4:
+		var tw := 0.5 + 0.5 * sin(_t * 3.0 + i * 1.7)
+		var sp := _p(-20.0 + i * 13.0, fy + 26.0 + (i % 2) * 6.0)
+		draw_line(sp + Vector2(-3 * tw, 0), sp + Vector2(3 * tw, 0), Color(1, 1, 0.8, 0.9), 1.2)
+		draw_line(sp + Vector2(0, -3 * tw), sp + Vector2(0, 3 * tw), Color(1, 1, 0.8, 0.9), 1.2)
+	# moss on the foot and a red toadstool by the roots
+	for k in 5:
+		draw_circle(_p(-w * 0.95 + k * 7.0, g + 4 + (k % 2) * 3.0), 5.0, MOSS)
+	var tx := w * 0.75
+	draw_line(_p(tx, g), _p(tx, g + 12), INK, 4.0)
+	draw_line(_p(tx, g), _p(tx, g + 12), Color("fff6ea"), 2.0)
+	_poly([Vector2(tx - 10, g + 11), Vector2(tx + 10, g + 11), Vector2(tx, g + 20)], Color("e0483a"), 1.5)
+	draw_circle(_p(tx - 2, g + 14), 1.5, Color.WHITE)
+	draw_circle(_p(tx + 3, g + 13), 1.2, Color.WHITE)
