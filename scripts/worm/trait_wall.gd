@@ -77,6 +77,8 @@ func _draw_wall() -> void:
 			_root.draw_texture_rect(tex, Rect2(r.get_center() - size * 0.5, size), false, tint)
 		if on:
 			_root.draw_rect(r, Color(1, 1, 0.8), false, 4.0)
+		if t.star:   # a Star trait (D-10): a gold star on its corner, from the space planet it came from
+			_star_marker(r.position + Vector2(TILE - 14.0, 14.0), 13.0)
 		if i == cursor:
 			_root.draw_rect(r.grow(8.0), col, false, 6.0)
 	# Slot sockets under the row: filled for each active trait.
@@ -88,3 +90,12 @@ func _draw_wall() -> void:
 		if i < model.active.size():
 			_root.draw_circle(c, 11.0, model.rules.find_trait(model.active[i]).color)
 		_root.draw_arc(c, 14.0, 0.0, TAU, 24, col, 3.0)
+
+
+func _star_marker(c: Vector2, r: float) -> void:
+	var pts: PackedVector2Array = []
+	for i in 10:
+		pts.append(c + Vector2.from_angle(-PI / 2.0 + i * PI / 5.0) * (r if i % 2 == 0 else r * 0.45))
+	_root.draw_colored_polygon(pts, Color("ffd94a"))
+	pts.append(pts[0])
+	_root.draw_polyline(pts, Color("2a1a14"), 2.0)
