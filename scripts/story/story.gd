@@ -10,6 +10,8 @@
 ## scenes/story/dock.tscn), so the game world underneath is never touched. Any button skips
 ## (after the player's 0.5 s grace); the cutscene player also skips itself past 90 s, so nothing
 ## here can softlock. Seen scene ids are kept in the tin's save (`story_seen`) for the tackle box.
+## Lines are voiced, not written: subtitles (the line's script, for Kaden) show only when the
+## `subtitles` setting is on, and it is off by default. Off, nothing on screen is ever text.
 class_name Story
 extends Node
 
@@ -28,11 +30,15 @@ const SCENES: Array[StringName] = [&"opening", &"stage_2", &"stage_3", &"stage_4
 const STAGE_SCENES := {1: &"opening", 2: &"stage_2", 3: &"stage_3", 4: &"stage_4", 5: &"stage_5", 6: &"stage_6", 7: &"stage_7"}
 const SAVE_KEY := "story_seen"
 const LAYER := 90
+## Save setting that turns subtitles on (default off, GAME.md "Rules for cutscenes").
+const SUBTITLES_SETTING := "subtitles"
 
 ## Keep `seen` in Save (off in tests).
 var persist := true
 ## Play speed (tests and previews speed scenes up).
 var speed := 1.0
+## Show each line's script as a subtitle. Off by default; `_ready` reads the Save setting.
+var subtitles := false
 ## Scene ids already watched this tin, in order.
 var seen: Array[StringName] = []
 ## Lines the last scene voiced: [line id, character, "file" | "bark" | "sfx" | "none"].
@@ -47,6 +53,7 @@ var _viewport: SubViewport
 var _queue: Array[StringName] = []
 var _pressed := false
 var _locked := false
+var _subtitle: Label
 
 
 static func find(tree: SceneTree) -> Story:
@@ -65,6 +72,8 @@ func _init() -> void:
 func _ready() -> void:
 	add_to_group(&"story")
 	StoryPictures.register_all()
+	if _save() != null:
+		subtitles = bool(_save().call("get_setting", SUBTITLES_SETTING, false))
 	if persist and _save() != null:
 		for id in _save().call("get_value", SAVE_KEY, []):
 			if not seen.has(StringName(id)):
@@ -102,6 +111,18 @@ func current() -> StringName:
 func skip() -> void:
 	if is_playing():
 		player.skip()
+
+
+## The subtitle on screen now: "" whenever subtitles are off or nobody is talking.
+func subtitle_text() -> String:
+	return _subtitle.text if _subtitle != null and is_instance_valid(_subtitle) and _subtitle.visible else ""
+
+
+## A line's script without its [voice directions], for the subtitle.
+static func spoken_text(line_id: String) -> String:
+	var t := String(CutscenePlayer.line(line_id).get("text", ""))
+	var re := RegEx.create_from_string("\\[[^\\]]*\\]\\s*")
+	return re.sub(t, "", true).strip_edges()
 
 
 func has_seen(id: StringName) -> bool:
@@ -152,6 +173,21 @@ func _open(id: StringName) -> void:
 	player.speed = speed
 	player.cues = {"start": "story_start", "skip": "story_skip", "hop": "story_hop", "item": "story_item", "no_bark": "story_blip"}
 	ui.add_child(player)
+	_subtitle = null
+	if subtitles:
+		_subtitle = Label.new()
+		_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_subtitle.add_theme_font_size_override("font_size", maxi(18, _viewport.size.y / 30))
+		_subtitle.add_theme_color_override("font_outline_color", Color.BLACK)
+		_subtitle.add_theme_constant_override("outline_size", 6)
+		_subtitle.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		_subtitle.offset_top = -_viewport.size.y * 0.2
+		_subtitle.offset_bottom = -_viewport.size.y * 0.12
+		_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_subtitle.visible = false
+		ui.add_child(_subtitle)
+		player.beat.connect(_on_beat)
 	player.finished.connect(_on_finished)
 	said = player.said
 	calls.clear()
@@ -160,7 +196,18 @@ func _open(id: StringName) -> void:
 	started.emit(id)
 
 
+func _on_beat(kind: String, detail: String) -> void:
+	if _subtitle == null or not is_instance_valid(_subtitle):
+		return
+	if kind == "line":
+		_subtitle.text = spoken_text(detail)
+		_subtitle.visible = _subtitle.text != ""
+	elif kind in ["fade", "end", "skip"]:
+		_subtitle.visible = false
+
+
 func _close() -> void:
+	_subtitle = null
 	if _layer != null and is_instance_valid(_layer):
 		_layer.queue_free()
 	_layer = null

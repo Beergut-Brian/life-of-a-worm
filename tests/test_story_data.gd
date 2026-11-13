@@ -130,3 +130,53 @@ func test_voice_files_expected_one_per_line() -> void:
 	assert_int(files.size()).is_equal(_line_ids().size())
 	for id in files:
 		assert_str(String(files[id])).is_equal("res://assets/story/voice/%s.ogg" % id)
+
+
+## Y-01: the opening plays the design's beats in order (GAME.md "Opening"): dawn dock, the sandwich
+## on the hook, "worms were small", two fingers apart, the warm flashback, the worm plops into the
+## dirt, the camera follows it underground, then the handoff that gives the player the stick.
+func test_opening_has_every_beat_in_order() -> void:
+	var steps: Array = _scene(&"opening").steps
+	var beats := {
+		"dawn": func(s): return s.do == "call" and s.fn == "time" and String(s.args.of) == "dawn",
+		"sandwich_on_the_hook": func(s): return s.do == "line" and String(s.line) == "op_bobber_why" and s.get("pics", []).has("sandwich"),
+		"worms_were_small": func(s): return s.do == "line" and String(s.line) == "op_reel_worms",
+		"two_fingers_apart": func(s): return s.do == "call" and s.fn == "hands" and float(s.args.w) > 0.0,
+		"warm_flashback": func(s): return s.do == "call" and s.fn == "warm" and bool(s.args.on),
+		"plop_into_the_dirt": func(s): return s.do == "sound" and String(s.cue) == "story_plop",
+		"camera_follows_underground": func(s): return s.do == "camera" and String(s.to) == "burrow",
+		"you_have_the_stick": func(s): return s.do == "call" and s.fn == "handoff" and bool(s.get("always", false)) and String(s.args.what) == "follow_worm_underground",
+	}
+	var at := -1
+	for name: String in beats:
+		var found := -1
+		for i in range(at + 1, steps.size()):
+			if beats[name].call(steps[i]):
+				found = i
+				break
+		assert_int(found).override_failure_message("opening: beat '%s' missing or out of order" % name).is_greater(at)
+		at = maxi(at, found)
+	assert_str(String(_scene(&"opening").time_of_day)).is_equal("dawn")
+	assert_str(String(_line_ids()["op_reel_worms"].text).to_lower()).contains("little")
+	# The handoff is the last step, so nothing plays after the player has the stick.
+	assert_int(at).is_equal(steps.size() - 1)
+
+
+## Y-09: played in story order, every scene that asks "what happened?" gets a different excuse
+## from the one before; any three in a row are all different. No line, script or direction
+## names the Strangestone.
+func test_excuse_changes_every_time_reel_is_asked_in_story_order() -> void:
+	var lines := _line_ids()
+	var asked: Array = []
+	for sid in StoryDock.ORDER:
+		for s in _scene(sid).steps:
+			if s.do == "line" and lines.has(String(s.line)) and lines[String(s.line)].has("excuse"):
+				asked.append(String(lines[String(s.line)].excuse))
+	assert_int(asked.size()).is_greater_equal(3)
+	for i in range(1, asked.size()):
+		assert_str(asked[i]).override_failure_message("excuse %d repeats the last: %s" % [i, asked[i]]).is_not_equal(asked[i - 1])
+	for i in range(2, asked.size()):
+		assert_int({asked[i - 2]: 1, asked[i - 1]: 1, asked[i]: 1}.size()).override_failure_message("three in a row repeat at %d" % i).is_equal(3)
+	for l in _lines().lines:
+		for k in ["text", "delivery"]:
+			assert_bool(String(l.get(k, "")).to_lower().contains("strange")).override_failure_message("%s %s names the Strangestone" % [l.id, k]).is_false()
