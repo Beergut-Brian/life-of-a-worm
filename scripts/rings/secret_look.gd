@@ -17,7 +17,8 @@ const ROCK := Color("6f7586")
 const GOLD := Color("ffd23f")
 
 ## The pictures this file can draw (secret ids).
-const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall", &"geode_cathedral"]
+const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall", &"geode_cathedral",
+		&"picnic_basket", &"cloud_nest"]
 const GEMS: Array[Color] = [Color("c46cff"), Color("5fe8ff"), Color("ff7ad9"), Color("ffd23f")]
 
 
@@ -45,6 +46,10 @@ static func draw(ci: CanvasItem, id: StringName, c: Vector2, s: float, a := 1.0,
 			_fossil_hall(ci, c, u, a, t)
 		&"geode_cathedral":
 			_geode_cathedral(ci, c, u, a, t)
+		&"picnic_basket":
+			_picnic_basket(ci, c, u, a, t)
+		&"cloud_nest":
+			_cloud_nest(ci, c, u, a, t)
 		_:
 			_star(ci, c, 8.0 * u, Color(GOLD, a), Color(INK, a))
 
@@ -218,3 +223,56 @@ static func _grow(pts: PackedVector2Array, d: float) -> PackedVector2Array:
 	for p in pts:
 		out.append(p + (p - mid).normalized() * d)
 	return out
+
+
+## The topsoil's hidden place: a picnic basket buried under the grass, its red-and-white cloth
+## spilling out and a tipped jam jar dripping jam drops.
+static func _picnic_basket(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var o := c + Vector2(0, 2.0) * u
+	# the cloth, a checked square under the basket
+	var cloth := PackedVector2Array([o + Vector2(-11, 3) * u, o + Vector2(10, 1) * u, o + Vector2(12, 9) * u, o + Vector2(-10, 10) * u])
+	ci.draw_colored_polygon(cloth, Color(INK, a))
+	for i in 4:
+		for j in 2:
+			var p := o + Vector2(-9 + i * 5.2, 3.4 + j * 3.2) * u
+			ci.draw_rect(Rect2(p, Vector2(2.4, 2.4) * u), Color(Color("e0483a") if (i + j) % 2 == 0 else Color.WHITE, a))
+	# the basket and its handle
+	ci.draw_arc(o + Vector2(-2, -3) * u, 6.0 * u, PI, TAU, 10, Color(INK, a), 2.6 * u)
+	ci.draw_arc(o + Vector2(-2, -3) * u, 6.0 * u, PI, TAU, 10, Color(WOOD, a), 1.4 * u)
+	var basket := PackedVector2Array([o + Vector2(-9, -3) * u, o + Vector2(5, -3) * u, o + Vector2(3, 4) * u, o + Vector2(-7, 4) * u])
+	ci.draw_colored_polygon(basket, Color(INK, a))
+	var inner := PackedVector2Array([o + Vector2(-8, -2) * u, o + Vector2(4, -2) * u, o + Vector2(2.4, 3) * u, o + Vector2(-6.4, 3) * u])
+	ci.draw_colored_polygon(inner, Color(WOOD, a))
+	for k in 3:
+		ci.draw_line(o + Vector2(-7.5 + k * 0.4, -0.5 + k * 1.3) * u, o + Vector2(3.5 - k * 0.4, -0.5 + k * 1.3) * u, Color(WOOD_DARK, a), 0.8 * u)
+	# the tipped jam jar and two drops
+	ci.draw_circle(o + Vector2(8, -2) * u, 3.4 * u, Color(INK, a))
+	ci.draw_circle(o + Vector2(8, -2) * u, 2.6 * u, Color(Color("dc3657"), a))
+	ci.draw_circle(o + Vector2(7, -3) * u, 0.8 * u, Color(1, 1, 1, 0.8 * a))
+	for k in 2:
+		var bob := sin(t * 3.0 + k) * 0.6
+		ci.draw_circle(o + Vector2(11.5 + k * 2.5, 1.5 + bob) * u, 1.4 * u, Color(Color("dc3657"), a))
+
+
+## The sky's hidden place: a cloud island with a bird's nest on top, a little rainbow over it and
+## rainbow drops hanging in the air.
+static func _cloud_nest(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var o := c + Vector2(0, 3.0 + sin(t * 1.5) * 0.6) * u
+	var bands: Array[Color] = [Color("e0483a"), Color("ffb03a"), Color("ffd23f"), Color("6fcf5a"), Color("4f9be0")]
+	for i in bands.size():
+		ci.draw_arc(o + Vector2(0, -1) * u, (12.0 - i * 1.3) * u, PI, TAU, 18, Color(bands[i], a), 1.3 * u)
+	for p in [Vector2(-7, 3), Vector2(0, 1), Vector2(7, 3), Vector2(-3, 5), Vector2(4, 5)]:
+		ci.draw_circle(o + p * u, 5.2 * u, Color(INK, a))
+	for p in [Vector2(-7, 3), Vector2(0, 1), Vector2(7, 3), Vector2(-3, 5), Vector2(4, 5)]:
+		ci.draw_circle(o + p * u, 4.4 * u, Color(Color("f4f7ff"), a))
+	# the nest: a brown bowl of twigs with three speckled eggs peeking out
+	var nest := o + Vector2(0, -3) * u
+	for k in 3:
+		ci.draw_circle(nest + Vector2(-2.2 + k * 2.2, -1.4) * u, 1.6 * u, Color(Color("bfe8ff"), a))
+	ci.draw_arc(nest, 4.6 * u, 0.0, PI, 10, Color(INK, a), 3.2 * u)
+	ci.draw_arc(nest, 4.6 * u, 0.0, PI, 10, Color(WOOD, a), 1.8 * u)
+	# rainbow drops
+	for k in 2:
+		var d := o + Vector2(-11 + k * 22, -6 + sin(t * 2.0 + k) * 0.8) * u
+		ci.draw_circle(d, 2.0 * u, Color(INK, a))
+		ci.draw_circle(d, 1.4 * u, Color(Color("b496ff"), a))
