@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lamp_fish"
+requires = {"crystal": 4, "water": 4}
+add = {"light_radius": 0.6}
+mul = {"drag/water": 0.5, "turn_rate": 1.2}
+part_slot = &"under"
+part_priority = 0
+part_spin = 0.0
+part_shape = &"snowflake"
+cue = "trait_slick"
+color = Color(0.331, 0.733, 1.0, 1)
