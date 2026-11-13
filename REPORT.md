@@ -1,138 +1,39 @@
-# Regrowth lane report (feature/worm-regrow-1, 2026-11-12)
+# Audio hooks lane report (feature/worm-audio-hooks-1)
 
-## Rows moved
-- **G-02** partial -> built: food regrows faster *and bigger* in castings.
-- **G-04** partial -> built: the whole world regrows on its own; a ring is never exhausted until outgrown.
+PLAN-STATUS IDs moved: **U-09, U-11, U-14** → built. No new audio, no ElevenLabs, no music (U-12 untouched).
 
-## What was built (all in `scripts/world/`, `data/rings/`, tests, contracts)
-- **Food sizes per tile.** A tile that grows back in castings comes back at `RingDef.castings_size`
-  (written as 2 for every ring in `data/rings/rings.tres`). It is drawn plump (a code-drawn shiny
-  dome, `Sizes_*` TileMapLayer per live chunk, no art). Eaten, it gives the worm's normal tile growth
-  plus `(size - 1) x RingSet.size_growth` (1.0) plain tiles more, in the ring flavour, with the
-  existing cue `chomp_bite` (rate limited). Size never changes edibility, so the kid can always eat
-  it. Plain ground (dug by anything but a worm) comes back size 1. Saved as `sizes` in the planet
-  dict; older tins load with every tile plain. Frame: `handoff/shots/regrow/t001.0s.png` (left:
-  regrown big tiles, right: open castings, around: plain dirt).
-- **A ring never runs out.** `PolarWorld` now counts eaten-and-waiting cells per ring. Past
-  `RingSet.scarce_share` (0.5) of a ring eaten, its regrow times shrink, down to `scarce_factor`
-  (0.2x) when bare, so the emptier a ring is the faster it fills. The crust (regrow 0 once outgrown)
-  is the only ring that can empty, by design.
-- **Jar view.** The planet shot (ChompDirector) already disables the world node; a test now proves
-  the clock and regrowth stand still there and resume on "not yet". `PolarWorld.frozen` is an
-  explicit switch for any other view that shows the planet without playing it.
+## What changed
 
-## Regrow numbers used (planet seconds, `data/rings/rings.tres`)
-| Ring | Plain | In castings (x0.25) | Castings size |
-| --- | --- | --- | --- |
-| core | 900 | 225 | 2 |
-| deep rock | 600 | 150 | 2 |
-| dirt | 240 (now written in the file, was the script default) | 60 | 2 |
-| topsoil | 180 | 45 | 2 |
-| surface | 120 | 30 | 2 |
-
-Green thumb halves the castings times again (unchanged, `test_gardens_rules.gd` still green).
-`size_growth` 1.0, `scarce_share` 0.5, `scarce_factor` 0.2.
-
-## 30-minute resident runs (real radius 300, stage speed and bite from Worm, tunnelling 100% of the time)
-```
-dirt s1:      ate 8474 tiles, most eaten at once 2%,  least left 130736, least in reach 191
-topsoil s2:   ate 8336 tiles, most eaten at once 3%,  least left 82943,  least in reach 185
-deep_rock s4: ate 17586 tiles, most eaten at once 4%, least left 51268,  least in reach 267
-surface s4:   ate 4554 tiles, most eaten at once 14%, least left 5779,   least in reach 130
-core s5:      ate 15463 tiles, most eaten at once 54%, least left 1862,  least in reach 96
-```
-The core is the one ring where a worm can really eat most of it in half an hour; the floor is what
-keeps it fed.
-
-## Not done / for other lanes
-- Scattered ring *pickups* (`RingFood` in `*_life.tres`) are driven by `scripts/rings/rings_director.gd`,
-  not my folder; untouched. `deep_rock_life.tres` is still not in `RingsDirector.LIVES`, so deep-rock
-  pickups (ore nuggets, fossils) are never scattered (already noted on W-03). Tiles there regrow fine.
-- Big tiles are not in `data/BALANCE.md`'s simulated runs (it models tunnelling new ground only);
-  farming castings now pays twice. The Content lane may want to fold it in or lower `size_growth`.
-- Values are untuned by play; the big-tile look is a placeholder until the Worm art round.
-# REPORT: Session flow lane (feature/worm-session-1)
-
-Base: `origin/dev` 7504102. Not pushed, not tagged. (`origin/dev` has since moved to 7044fdf, PR #35
-kid-fixes; not merged here.)
-
-## Rows moved (PLAN-STATUS)
-
-| ID | From | To |
+| ID | Where | What |
 | --- | --- | --- |
-| P-09 solo playtest mode | partial | built |
-| P-06 pause menu with the big back-to-launcher icon | partial | built |
-| C-08 Start = pause | partial | built |
-| P-07 no auto-steer, fit to a cap, edge arrow, held-B warp | partial | built |
-| C-03 worms on opposite sides: zoom out until both fit | partial | built (closed by P-07) |
-| C-14 smaller worm's held B warps to a far partner | partial | built (was "untested") |
+| U-09 `breakthrough` | none (already wired) | `CrustBurst._burst()` (`scripts/gameplay/crust_burst.gd`) already called `Audio.play("breakthrough")`; PLAN-STATUS was out of date. I only added a test that the call resolves to the real `breakthrough.ogg` and fires once per worm per tin. |
+| U-11 `space_drift` | `scripts/space/space_stage.gd` (+15 lines) | `drift_bed = Audio.loop_player("space_drift")` at `DRIFT_DB = -4.0`, `autoplay` on, added as a child in `_ready`; `_exit_tree` stops it. So it plays whenever the space stage is in the tree and stops when the stage leaves. |
+| U-14 ring beds | new `scripts/audio/ring_ambience.gd`; one node added to `scenes/levels/planet.tscn` | `RingAmbience` finds the level's `world` and the lowest-numbered worm in the level, reads which ring the head is in (`RingDef.id`) and plays `amb_<id>` at `LEVEL_DB = -6.0` (constant at the top of the file). When the ring changes, the old bed fades out and the new one fades in over `FADE = 1.5` s, at the same time. Above `SkyLife.inner` (1.03 x planet radius) the id is `sky`. If an id has no `amb_<id>.ogg` it plays nothing: no placeholder beep, no warning. All beds fade out while the chomp shot or space is on screen (`level.chomp.busy()`). |
 
-## What was already there, and the gaps I found
+Contract: `docs/contracts.md` → `### Audio hooks (worm-audio-hooks-1)` (appended).
 
-Most of P-09 and P-06 existed from the template and the grey-box lane: `--solo`, the Select + Start
-hold (real seconds), session-only solo (a saved `solo_playtest` setting is ignored at boot), Select
-handing the pad to the other worm in play, the "Back to Open Jar" bar with its Stay/Leave question,
-and "Restart" already renamed "Main menu" in `scenes/main.gd`. I closed these gaps:
+## Each cue: what the tests prove, what a human still has to hear
 
-1. **No big icon on the pause menu.** Kaden's rule asks for a big icon back to the launcher, and
-   there was only a text bar. Added `Card/DoorIcon` (the template's unused `IconButton`, `Icon.DOOR`,
-   drawn in code, no new art), under the door bar. It lights and wobbles with the bar; A asks, Leave
-   calls `Game.quit()` (exit 0).
-2. **Pause hint strip was cut off** ("Move  A S..."): it placed its text while the card was still
-   sliding in and never redrew. It now redraws when the slide ends.
-3. **Pause over the tackle box or a rewatched cutscene.** Both run with `PROCESS_MODE_ALWAYS` on
-   canvas layers 60 and 90, above the pause menu (layer 1). Start opened the menu *under* the box,
-   both read the pad at once, and Resume unpaused the tree with the box still open (the worms ran
-   under it). Now, while paused, `main.gd` holds every always-processing node under the level and
-   hides its canvas layers; `Game.resume()` restores whatever pause was there before (the box keeps
-   the game held). Main menu and quit from there both work.
-4. **P-07 past the cap.** The camera used to keep centring between the worms when they no longer
-   fit the widest zoom, so both could end up off screen. `FarCamera` (`scripts/planet/far_camera.gd`)
-   now frames both until they don't fit `min_fit_index`, then follows one worm: in solo the one the
-   pad drives (the camera follows the active player), in co-op the bigger one (the smaller is the
-   one whose held B goes to its partner, C-14), a tie keeps the current one (P1 first). The far
-   worm gets the HUD's edge arrow in its colour. Both are framed again once they fit with 15% spare.
-   Nobody is ever moved; held B moves only the worm that held it (tested).
-5. **Solo icon covered the HUD.** The two-heads icon sat top-left on top of Gulp's stage icon. It
-   is now top-right (the template's `solo_marker.gd`).
+| Cue | Test proved (`tests/test_audio_hooks.gd`) | Still needs a listen on the TV |
+| --- | --- | --- |
+| `breakthrough` | The first crust bite at stage 5 adds 1 to `Audio.played["breakthrough"]`, and exactly one pool player holds `breakthrough.ogg` (the file, not the grey beep). Two more crust bites add nothing. Reloading the tin plays no second one (`test_stages_crust`). | Whether the crumble and birds land with the flash and debris, and whether it's loud enough over the bite cue (`burst`) that plays in the same frame. |
+| `space_drift` | When the space stage enters the tree, `DriftBed` is playing `space_drift.ogg` with `loop = true` at `DRIFT_DB`. Still playing a frame later. `remove_child` stops it, adding the stage back starts it again. A planet level never has a player on `space_drift.ogg`. | Level against `warp` and the space cues (`DRIFT_DB` -4 dB on a -28 LUFS file); whether the 16 s loop seam can be heard; whether it should fade in after the warp instead of starting at full level. |
+| `amb_dirt`, `amb_topsoil`, `amb_deep_rock`, `amb_core`, `amb_surface` | Every ring in `data/rings/rings.tres` has a bed file. A bed starts silent and fades up to exactly `LEVEL_DB` (below 0 dB). On a ring change, halfway through the fade both beds are playing, one going down and one going up. After the fade the old bed has stopped, and going back brings it back. On the real planet, a few frames after spawn the playing bed is the head's ring. `ring_id_at` returns dirt, topsoil and deep_rock for cells in those rings, and `sky` above the grass. When the worm is removed, the bed fades out and stops. | Whether -6 dB feels "under the music" (there is no music yet, U-12). Whether a 1.5 s crossfade is too slow or fast when a worm bobs along a ring border; if it flutters, add hysteresis. Whether the beds suit the rings. |
+| unknown id / `sky` | `follow(&"no_such_ring")` and `follow(&"sky")` make no player, fade the old bed out, and play no placeholder beep (`Audio.played` stays empty). | Flying up into the sky goes quiet (the wind stops), since there is no `amb_sky`. Decide whether that's right (see follow-ups). |
 
-## Tests
+## Choices made
 
-`tests/test_worm_session.gd` (10 cases, own sandbox profile and settings file): solo flag from args;
-solo from the 2 s hold (early release does nothing, icon shows, Burp hatches, hold again turns it
-off); a saved solo never restores at boot; Select in solo hands the pad and, past the cap, the
-camera; Start pauses and the menu has the door icon lit with its bar; door after a Stay still quits
-and the tin is saved; pause over the tackle box holds it, resume gives it back, door still quits;
-Main menu from over the box unpauses; camera fits both then follows one, the far worm is off screen,
-held B warps it to the partner without moving the partner; the camera follows the bigger worm.
-
-Full suite (`handoff/test-output.txt`), after `rm -rf .godot` and `--import`: run 1, 441 cases,
-0 failures; run 2, 12 failures in `test_greybox_planet::test_each_tin_round_trips_on_its_own` and
-`test_jars_slots` while 8 lanes ran gdUnit on the shared `user://` (the known tin flake); run 3 on
-the final code, 441 cases, 0 failures. Zero new failures.
-
-## Frames (`handoff/shots/`, looked at)
-
-- `pause/t002.0s.png`: pause menu, door icon under the door bar, hint strip whole.
-- `pause_door_solo/t002.0s.png`: door bar focused with its icon lit; solo on (icon top-right).
-- `solo_far/t006.0s.png`: solo, worms 240 tiles apart: camera on Gulp, Burp's red edge arrow on
-  the right, stage icons top-left uncovered, solo icon top-right.
-- The menu preview pauses on the dock (the `--ui=pause*` hook), so the frames show the dock blurred
-  behind, not the planet.
-
-## Not checked
-
-- Real pads: the hold and Start were driven through `Players.hold_step` and synthetic actions,
-  not a physical controller. Worth a 30 s check on the TV: hold Select + Start on the planet, and
-  press Start with the tackle box open.
-- The co-op anchor rule (camera stays on the bigger worm) is my call from GAME.md's "the far worm
-  gets an edge arrow ... and holding B warps it to its partner". If Kaden would rather the camera
-  stay with P1, or with whoever moved last, it is one function (`FarCamera.pick_anchor`).
-- A cutscene that plays without pausing the tree (stage-up beats) is also held while paused now;
-  checked by code reading only, no test drives a live stage-up cutscene under the pause.
+- **Which worm in co-op:** the bed follows P1's head (or the lowest player present). Only one bed plays at a time, so two players in different rings don't mix two beds. Change `followed()` to follow the camera centre if Kaden prefers that.
+- **Bus:** the beds and the drift are on the SFX bus, so the sound slider controls them, not the music slider.
+- **Sky:** it follows the brief's rule, so it stays silent until an `amb_sky.ogg` exists. The other option is to alias the sky to `amb_surface` (wind).
+- The node is in `scenes/levels/planet.tscn`, not `planet_level.gd` (`scripts/planet/` is off-limits). It finds `world` and `chomp` itself through `get_parent()`.
 
 ## Follow-ups for other lanes
 
-- Story lane (`scripts/story/`): `Story` runs with `PROCESS_MODE_ALWAYS`; the session lane now holds
-  it from `main.gd` while paused. If Story ever lives outside the level node, it would need to watch
-  `Game.state` itself.
+- **Audio lane:** `assets/audio/CUES.md` still says `space_drift` has "no call site yet", and that the `amb_*` beds play when the camera is in a ring. Update both to `SpaceStage.drift_bed` and `RingAmbience` (it follows the head). Also an `amb_sky.ogg` if the sky should have its own bed.
+- **Space lane:** the prototype `SpaceLevel` (`scripts/space/space.gd`, `scenes/levels/space.tscn`, used by `planet_chomp.gd`) does not play `space_drift`. If that path is still live, add the same three lines there.
+- **Music (U-12):** when layered music lands, recheck `LEVEL_DB` and `DRIFT_DB` against it.
+
+## Tests
+
+See `handoff/test-output.txt`. The build box sometimes aborts at exit after "Exit code: 0" (known); read the Overall Summary line.
