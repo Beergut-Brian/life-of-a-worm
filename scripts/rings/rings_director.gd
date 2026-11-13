@@ -9,7 +9,7 @@
 ## - gardens: a carried seed (RingFood.plants) dropped in castings plants a patch; garden bites give
 ##   extra growth in the garden's flavour; Green thumb doubles both castings regrowth and that yield;
 ## - the hidden places (every data/secrets/*.tres: the ant city, the sunken rowboat, the fossil
-##   hall, the geode cathedral at the core, the topsoil's picnic basket, the sky's cloud nest): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
+##   hall, the geode cathedral at the core, the topsoil's picnic basket, the sky's cloud nest, the surface's hollow stump): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
 ##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after);
 ## - the sky ring above the grass (data/rings/sky_life.tres, SkyLife): its counters, its scattered
 ##   clouds, toy planes and balloons (sky foods, edible from SkyLife.edible_from), and the balloon
@@ -35,7 +35,7 @@ const SURFACE: SurfaceLife = preload("res://data/rings/surface_life.tres")
 ## Hidden places added after tins were already saved (X-01: the topsoil's picnic basket, the sky's
 ## cloud nest): their foods are placed after every other static, so an older tin's statics keep
 ## their slots. Their halls draw as SecretHalls.
-const LATE_SECRETS: Array[StringName] = [&"picnic_basket", &"cloud_nest"]
+const LATE_SECRETS: Array[StringName] = [&"picnic_basket", &"cloud_nest", &"hollow_stump"]
 const LAWNMOWER: LawnmowerData = preload("res://data/creatures/lawnmower.tres")
 ## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
 static var SECRETS: Array[SecretData] = _load_secrets()

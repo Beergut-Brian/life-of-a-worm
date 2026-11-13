@@ -18,7 +18,7 @@ const GOLD := Color("ffd23f")
 
 ## The pictures this file can draw (secret ids).
 const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall", &"geode_cathedral",
-		&"picnic_basket", &"cloud_nest"]
+		&"picnic_basket", &"cloud_nest", &"hollow_stump"]
 const GEMS: Array[Color] = [Color("c46cff"), Color("5fe8ff"), Color("ff7ad9"), Color("ffd23f")]
 
 
@@ -50,6 +50,8 @@ static func draw(ci: CanvasItem, id: StringName, c: Vector2, s: float, a := 1.0,
 			_picnic_basket(ci, c, u, a, t)
 		&"cloud_nest":
 			_cloud_nest(ci, c, u, a, t)
+		&"hollow_stump":
+			_hollow_stump(ci, c, u, a, t)
 		_:
 			_star(ci, c, 8.0 * u, Color(GOLD, a), Color(INK, a))
 
@@ -276,3 +278,32 @@ static func _cloud_nest(ci: CanvasItem, c: Vector2, u: float, a: float, t: float
 		var d := o + Vector2(-11 + k * 22, -6 + sin(t * 2.0 + k) * 0.8) * u
 		ci.draw_circle(d, 2.0 * u, Color(INK, a))
 		ci.draw_circle(d, 1.4 * u, Color(Color("b496ff"), a))
+
+
+## The surface's hidden place: a cut tree stump on the grass, a hollow in its side with golden
+## acorns inside and a sprout on top.
+static func _hollow_stump(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var o := c + Vector2(0, 1.0) * u
+	ci.draw_rect(Rect2(o + Vector2(-12, 8) * u, Vector2(24, 3) * u), Color(Color("6fcf5a"), a))   # grass
+	var trunk := PackedVector2Array([o + Vector2(-9, 9) * u, o + Vector2(9, 9) * u, o + Vector2(8, -6) * u, o + Vector2(-8, -6) * u])
+	ci.draw_colored_polygon(_grow(trunk, 1.0 * u), Color(INK, a))
+	ci.draw_colored_polygon(trunk, Color(WOOD, a))
+	# the cut top
+	var top := PackedVector2Array()
+	for k in 16:
+		var th := TAU * k / 16.0
+		top.append(o + Vector2(cos(th) * 8.0, -6.0 + sin(th) * 2.0) * u)
+	ci.draw_colored_polygon(top, Color(Color("e8c48a"), a))
+	ci.draw_arc(o + Vector2(0, -6) * u, 4.0 * u, 0.0, TAU, 12, Color(Color("c49a5e"), a), 0.8 * u)
+	# the hollow and two acorns in it
+	ci.draw_circle(o + Vector2(0, 2) * u, 4.6 * u, Color(INK, a))
+	ci.draw_circle(o + Vector2(0, 2) * u, 3.8 * u, Color(Color("e2a866"), a))
+	for k in 2:
+		var p := o + Vector2(-1.6 + k * 3.2, 3.4) * u
+		ci.draw_circle(p, 1.5 * u, Color(Color("ffc83a"), a))
+		ci.draw_circle(p + Vector2(0, -1.0) * u, 1.0 * u, Color(WOOD_DARK, a))
+	# the sprout on top
+	var sway := sin(t * 1.6) * 0.5
+	ci.draw_line(o + Vector2(3, -7) * u, o + Vector2(3 + sway, -11) * u, Color(Color("6fcf5a"), a), 1.0 * u)
+	ci.draw_circle(o + Vector2(4.4 + sway, -11) * u, 1.3 * u, Color(Color("6fcf5a"), a))
+	ci.draw_circle(o + Vector2(1.6 + sway, -11.5) * u, 1.1 * u, Color(Color("6fcf5a"), a))
