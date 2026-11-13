@@ -11,6 +11,11 @@
 ## wears the friend outline. Outgrowing a species is marked once (Outgrown): the flip startles it
 ## pale and wide-eyed, the first bite plays `now_i_eat_you` and the grinning close-up. A gulped
 ## worm goes through Gulp (comic gulp drawn on this creature, out the far end, 0.5 s sparkle).
+## BOUNCE (the lava blob) never chases or bites: a smaller worm that comes near makes it swell
+## (the telegraph, `windup_cue`), and touching it squashes it flat and pushes the worm's head away
+## (`CreatureData.bounce` px, a decaying knock over BOUNCE_TIME) with a boing and a burst at the
+## contact point. A push, never a steer: the worm keeps its stick the whole time. When the nearest
+## worm can eat it, it sits cowered (drawn 0.85x), so food never looks bigger than the worm.
 ## Never steers a worm. Placeholder art drawn in code (Art lane after D92).
 class_name Creature
 extends Node2D
@@ -32,6 +37,14 @@ const WANDER := 70.0
 const GULP_TIME := 0.7
 const STARTLE_TIME := 0.9
 const FRIEND := Color(1.0, 0.93, 0.6, 0.55)
+## BOUNCE: the knock (same shape as the lawnmower's bump: a decaying push added to the head).
+const BOUNCE_DECAY := 8.0
+const BOUNCE_TIME := 0.45
+const SQUASH_TIME := 0.35
+const BOUNCE_COOL := 0.8
+## px past touching where a coming worm makes a bouncer swell (its warning).
+const SWELL_RANGE := 48.0
+const BOUNCE_CUE := "boing"   # existing file
 
 @export var data: CreatureData
 var world: PolarWorld
@@ -60,6 +73,16 @@ var _gulp := 0.0
 var _gulp_dir := Vector2.RIGHT
 var _gulp_color := Color("f29aa0")
 var _startle := 0.0
+## BOUNCE state: knocks in flight ({worm, v, t}), per-player cooldown, the squash and its spot.
+var _bounce_knocks: Array[Dictionary] = []
+var _bounce_cool := {}
+var _squash := 0.0
+var _squash_at := Vector2.ZERO
+var _swell := 0.0
+## BOUNCE: the nearest worm can eat me (I cower, drawn smaller; a same-size worm never scares me).
+var _meek := false
+## How many bounces it has given (tests, frames).
+var bounces := 0
 
 
 func _ready() -> void:
@@ -162,6 +185,8 @@ func step(delta: float) -> void:
 	_barked = maxf(0.0, _barked - delta)
 	_gulp = maxf(0.0, _gulp - delta)
 	_startle = maxf(0.0, _startle - delta)
+	_squash = maxf(0.0, _squash - delta)
+	_bounce_knock_step(delta)
 	if _carried:
 		queue_redraw()
 		return
@@ -191,6 +216,10 @@ func step(delta: float) -> void:
 			_trundle(delta, near_eater, near_d, prey_worm, prey_d)
 		CreatureData.Behaviour.WAVE:
 			_wave(delta, near_eater, near_d, prey_worm, prey_d)
+		CreatureData.Behaviour.BOUNCE:
+			if _scared:
+				_move(global_position - near_eater.head_position(), data.speed, delta)
+			_bounce_step(delta)
 	if data.hunts != &"" and mode != Mode.FULL and not _scared:
 		_hunt()
 	if world:
@@ -213,6 +242,7 @@ func _trundle(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d:
 				target = prey
 				if prey_d < data.strike + data.radius:
 					_set_mode(Mode.WINDUP)
+					_face(prey.head_position() - global_position)
 					if data.windup_cue != "":
 						Audio.play(data.windup_cue)
 				else:
@@ -224,6 +254,65 @@ func _trundle(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d:
 				_move(_wander_to - global_position, data.speed * 0.5, delta)
 		_:
 			_strike(delta)
+
+
+## BOUNCE: smaller worms only (a worm its size or bigger eats it instead). Swells as one comes
+## close, then on contact squashes and knocks it away.
+func can_bounce(w: Node) -> bool:
+	return w != null and w.get("model") != null and not is_jarling() \
+			and CreatureSense.worm_size(w, data) < data.size_stage
+
+
+func _bounce_step(delta: float) -> void:
+	for k in _bounce_cool.keys():
+		_bounce_cool[k] = maxf(0.0, _bounce_cool[k] - delta)
+	var closest := INF
+	var nearest_d := INF
+	_meek = false
+	for w in _worms():
+		var dn: float = w.head_position().distance_to(global_position)
+		if dn < nearest_d:
+			nearest_d = dn
+			_meek = can_be_eaten_by(w)
+		if not can_bounce(w):
+			continue
+		var d: float = w.head_position().distance_to(global_position) - data.radius
+		closest = minf(closest, d)
+		if d <= BITE and _bounce_cool.get(w.player, 0.0) <= 0.0:
+			bounce(w)
+	var near := closest < SWELL_RANGE
+	if near and _swell <= 0.0 and data.windup_cue != "" and _barked <= 0.0:
+		_barked = 3.0
+		Audio.play(data.windup_cue)
+	_swell = move_toward(_swell, 1.0 if near else 0.0, delta * 3.0)
+
+
+## The bounce: push w's head straight away from me, squash flat, a boing and a burst where it
+## touched. Returns the push (px over BOUNCE_TIME).
+func bounce(w: Node) -> Vector2:
+	var away: Vector2 = w.head_position() - global_position
+	away = away.normalized() if away.length() > 0.5 else Vector2.UP
+	var push := away * maxf(data.bounce, 1.0)
+	_bounce_knocks.append({"worm": w, "v": push * BOUNCE_DECAY, "t": 0.0})
+	_bounce_cool[w.player] = BOUNCE_COOL
+	_squash = SQUASH_TIME
+	_squash_at = (away * data.radius).rotated(-rotation)
+	bounces += 1
+	Audio.play(BOUNCE_CUE)
+	return push
+
+
+## The knock: a decaying push added to the head each tick (the worm still steers on top of it).
+func _bounce_knock_step(delta: float) -> void:
+	for i in range(_bounce_knocks.size() - 1, -1, -1):
+		var k: Dictionary = _bounce_knocks[i]
+		var w = k.worm
+		k.t += delta
+		if not is_instance_valid(w) or k.t > BOUNCE_TIME:
+			_bounce_knocks.remove_at(i)
+			continue
+		w.head.global_position += k.v * delta
+		k.v *= exp(-BOUNCE_DECAY * delta)
 
 
 ## WAVE chasers (Centipede) override this; a bare WAVE creature trundles.
@@ -351,6 +440,13 @@ func _move(dir: Vector2, speed: float, delta: float) -> void:
 	_dig_here()
 
 
+## Turn to look along dir (the jaws on the side the prey is).
+func _face(dir: Vector2) -> void:
+	var tangent := Vector2.from_angle(position.angle() + PI / 2.0) if world else Vector2.RIGHT
+	if absf(dir.dot(tangent)) > 0.01:
+		facing = signf(dir.dot(tangent))
+
+
 ## Creatures leave little trails (ants keep theirs open by marching it). Only soft dirt-ring and
 ## topsoil tiles; they regrow at the plain rate like any non-worm edit.
 func _dig_here() -> void:
@@ -387,12 +483,14 @@ static func _length(p: PackedVector2Array) -> float:
 ## Drawn size: smaller and cowering when something can eat it (bigger-than-me reads at a glance).
 func draw_scale() -> float:
 	var s := 1.0
-	if _scared or _carried:
+	if _scared or _carried or _meek:
 		s = 0.85
 	if mode == Mode.WINDUP:
 		s = 1.0 + 0.25 * minf(1.0, _mode_t / data.telegraph_time())
 	if _gulp > 0.0:
 		s = 1.0 + 0.3 * sin(PI * (1.0 - _gulp / GULP_TIME))
+	if _swell > 0.0 and not _scared and not _meek:
+		s = 1.0 + 0.12 * _swell
 	return s
 
 
@@ -414,6 +512,8 @@ func _draw() -> void:
 			_draw_ant(r, shake)
 		CreatureData.Behaviour.WAVE:
 			_draw_wave(r, shake)
+		CreatureData.Behaviour.BOUNCE:
+			_draw_lava(r, shake)
 		_:
 			_draw_beetle(r, shake)
 	if _gulp > 0.0:
@@ -468,6 +568,43 @@ func _eyes(at: Vector2, r: float, spread: float) -> void:
 ## WAVE creatures draw themselves (Centipede); a bare one looks like a beetle.
 func _draw_wave(r: float, o: Vector2) -> void:
 	_draw_beetle(r, o)
+
+
+## The lava blob: a glowing, wobbling drop of lava with bubbles. On a bounce it squashes flat
+## toward the worm and a white burst shows where they touched.
+func _draw_lava(r: float, o: Vector2) -> void:
+	var col := data.color
+	if _scared or _startle > 0.0:
+		col = col.lerp(Color.WHITE, 0.3)
+	var sq := sin(PI * _squash / SQUASH_TIME) if _squash > 0.0 else 0.0
+	var axis := _squash_at.normalized() if _squash_at.length() > 0.1 else Vector2.UP
+	var glow := 0.5 + 0.5 * sin(_t * 3.0)
+	draw_circle(o, r * 1.25 + glow * 2.0, Color(data.accent, 0.22))
+	var outer := PackedVector2Array()
+	var inner := PackedVector2Array()
+	for i in 24:
+		var a := TAU * i / 24.0
+		var d := Vector2.from_angle(a)
+		var k := 1.0 + 0.06 * sin(a * 3.0 + _t * 4.0)
+		# squash: flatter along the contact axis, wider across it
+		var along := d.dot(axis)
+		var across := d - axis * along
+		var p := axis * along * (1.0 - 0.35 * sq) + across * (1.0 + 0.25 * sq)
+		outer.append(o + p * (r * k + 1.2))
+		inner.append(o + p * r * k)
+	draw_colored_polygon(outer, INK)
+	draw_colored_polygon(inner, col)
+	for i in 3:
+		var b := o + Vector2(sin(_t * 1.3 + i * 2.1) * r * 0.45, r * 0.4 - fmod(_t * 0.4 + i * 0.33, 1.0) * r * 0.9)
+		draw_circle(b, maxf(1.0, r * (0.12 + 0.04 * i)), data.accent)
+	draw_circle(o + Vector2(-r * 0.4, -r * 0.45), r * 0.18, Color(1, 1, 1, 0.55))
+	if sq > 0.0:
+		var at := o + _squash_at
+		for i in 6:
+			var a := axis.angle() + (i - 2.5) * 0.45
+			var p0 := at + Vector2.from_angle(a) * 3.0
+			draw_line(p0, p0 + Vector2.from_angle(a) * r * 0.6 * sq, Color.WHITE, 2.0)
+	_eyes(o + Vector2(r * 0.15 * facing, -r * 0.15), r, r * 0.3)
 
 
 func _draw_grub(r: float, o: Vector2) -> void:

@@ -342,6 +342,8 @@ func _doodle(c: Vector2, p: StringName, id: StringName, i: int) -> void:
 				_root.draw_texture_rect(tex, Rect2(c - tex.get_size() * s * 0.5, tex.get_size() * s), false)
 			else:
 				_star(c, 30.0, Color.WHITE)
+			if id == OldReelTin.heirloom():   # S-12: the trait this tin was given, from Reel's tin
+				StoryPictures.bait_tin(_root, c + Vector2(52, 46), 3.0, 1.0)
 		&"secrets":
 			if SecretLook.has(id):   # the same picture as the find bubble over the place
 				_scribble_disc(c, 54.0, Color(PAGE_COLORS[&"secrets"], 0.35), i)

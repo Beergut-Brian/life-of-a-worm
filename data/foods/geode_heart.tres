@@ -10,6 +10,7 @@ growth = 6.0
 size_stage = 5
 color = Color(0.7686, 0.4235, 1.0, 1)
 radius = 12.0
+eat_cue = "jar_clink"
 ring = &"core"
 regrow_time = 900.0
 plants = &""

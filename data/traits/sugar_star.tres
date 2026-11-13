@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sugar_star"
+requires = {}
+add = {"space_pull": 280.0}
+mul = {}
+part_slot = &"crown"
+part_shape = &"pinwheel"
+part_priority = 0
+part_spin = 0.0
+star = true
+star_planet = &"candy"
+cue = "trait_floaty"
+color = Color(1, 0.56078434, 0.8156863, 1)

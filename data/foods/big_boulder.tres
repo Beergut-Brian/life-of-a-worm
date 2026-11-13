@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="FoodData" format=3]
+[gd_resource type="Resource" script_class="RingFood" format=3]
 
-[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
@@ -10,3 +10,9 @@ growth = 4.0
 size_stage = 5
 color = Color(0.4235, 0.4549, 0.502, 1)
 radius = 14.0
+eat_cue = "rock_beetle_clack"
+ring = &"core"
+regrow_time = 600.0
+plants = &""
+look = 7
+accent = Color(0.6, 0.63, 0.68, 1)

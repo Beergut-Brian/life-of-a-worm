@@ -9,11 +9,11 @@
 ## - gardens: a carried seed (RingFood.plants) dropped in castings plants a patch; garden bites give
 ##   extra growth in the garden's flavour; Green thumb doubles both castings regrowth and that yield;
 ## - the hidden places (every data/secrets/*.tres: the ant city, the sunken rowboat, the fossil
-##   hall, the geode cathedral at the core): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
+##   hall, the geode cathedral at the core, the topsoil's picnic basket, the sky's cloud nest, the surface's hollow stump): carved, kept, found once per tin by entering (signal secret_found(id)), each with its
 ##   found beat (SecretSpot: a picture bubble; the tackle box shows the same picture after);
 ## - the sky ring above the grass (data/rings/sky_life.tres, SkyLife): its counters, its scattered
 ##   clouds, toy planes and balloons (sky foods, edible from SkyLife.edible_from), and the balloon
-##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie;
+##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie, and its birds (SkyFlock);
 ## - the surface ring (data/rings/surface_life.tres, SurfaceLife): its counters and its apples, and
 ##   the lawnmower driving the grass (its counter's body from data/creatures/lawnmower.tres).
 ## Everything it keeps goes in the tin under Save key "rings".
@@ -22,16 +22,20 @@ extends Node2D
 
 signal secret_found(id: StringName)
 
-## The core's chain (core crystals scattered and growing back live; lava blobs counted only, no
-## body yet) runs in play too (W-02).
+## The core's chain (core crystals scattered and growing back live; lava blobs live in the core
+## and its rim) runs in play too (W-02).
 const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres"),
-		preload("res://data/rings/core_life.tres")]
+		preload("res://data/rings/core_life.tres"), preload("res://data/rings/deep_rock_life.tres")]
 ## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
 const SKY: SkyLife = preload("res://data/rings/sky_life.tres")
 ## The surface ring (W-06): its counters (apples, the lawnmower) and the apples on the grass. Its
 ## props (the town) are data/props/*.tres, stood by WorldDestruct.
 const SURFACE: SurfaceLife = preload("res://data/rings/surface_life.tres")
 ## The lawnmower's body (L-12): the surface's "lawnmower" counter spawns this (give_body), only there.
+## Hidden places added after tins were already saved (X-01: the topsoil's picnic basket, the sky's
+## cloud nest): their foods are placed after every other static, so an older tin's statics keep
+## their slots. Their halls draw as SecretHalls.
+const LATE_SECRETS: Array[StringName] = [&"picnic_basket", &"cloud_nest", &"hollow_stump"]
 const LAWNMOWER: LawnmowerData = preload("res://data/creatures/lawnmower.tres")
 ## Every hidden place in data/secrets/, sorted by id (ant_city first). New ones are data only.
 static var SECRETS: Array[SecretData] = _load_secrets()
@@ -73,10 +77,14 @@ var boot_gap := BOOT_GAP
 var trail := PackedVector2Array()
 var sandwich := Vector2.ZERO
 var anthill := Vector2.ZERO
+## The sky's birds (W-07): flocks circling the band of air, startled by a worm, never food.
+var flock: SkyFlock
 var cities: Dictionary = {}           # secret id -> centre (world px)
 var live: Dictionary = {}             # species -> Array[Node2D]
 var castings_speed := 1.0
 var dressing: TopsoilDressing
+## G-06: castings in the topsoil sprout while it rains (scripts/rings/castings_sprouts.gd).
+var sprouts: CastingsSprouts
 var balloon: SkyBalloon
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
@@ -191,8 +199,13 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	dressing.name = "TopsoilDressing"
 	dressing.director = self
 	add_child(dressing)
+	sprouts = CastingsSprouts.new()
+	sprouts.name = "CastingsSprouts"
+	sprouts.director = self
+	sprouts.world = world
+	add_child(sprouts)
 	for s in SECRETS:
-		var spot := SecretSpot.new()
+		var spot: SecretSpot = SecretHalls.new() if SecretHalls.draws(s.id) else SecretSpot.new()
 		spot.name = "Secret_%s" % s.id
 		spot.data = s
 		spot.position = cities[s.id]
@@ -205,6 +218,10 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	balloon.is_popped = bool(saved.get("balloon", false))
 	balloon.position = polar(SKY.balloon_angle, SKY.balloon_height)
 	add_child(balloon)
+	flock = SkyFlock.new()
+	flock.name = "SkyFlock"
+	flock.setup(self, SKY, p_seed)
+	add_child(flock)
 
 
 ## A point on the planet: angle from the start (radians, + = right of it on screen at the start)
@@ -300,13 +317,8 @@ func _scatter(saved: Array) -> void:
 	for i in 7:
 		placed.append({ "food": SANDWICH_CRUMB, "at": polar(-0.06 + rng.randf_range(-0.012, 0.012), rng.randf_range(0.955, 0.982)) })
 	for s in SECRETS:
-		var food: RingFood = load("res://data/foods/%s.tres" % s.food)
-		var c: Vector2 = cities[s.id]
-		for i in s.food_count:
-			placed.append({ "food": food, "at": c + Vector2.from_angle(TAU * i / s.food_count) * s.radius_tiles * 9.0 })
-		var rooms := rooms_of(s, c)
-		if s.extra_food != &"" and not rooms.is_empty():
-			placed.append({ "food": load("res://data/foods/%s.tres" % s.extra_food), "at": c + Vector2(rooms[0].x, rooms[0].y) })
+		if not s.id in LATE_SECRETS:
+			_place_secret_foods(s, placed)
 	# the sky goes last, so tins saved before it keep their statics in order
 	for i in SKY.scatter_count:
 		if SKY.scatter.is_empty():
@@ -320,6 +332,11 @@ func _scatter(saved: Array) -> void:
 		var at := polar(rng.randf_range(-SURFACE.scatter_spread, SURFACE.scatter_spread),
 				rng.randf_range(SURFACE.scatter_inner, SURFACE.scatter_outer))
 		placed.append({ "food": SURFACE.scatter[i % SURFACE.scatter.size()], "at": at })
+	# hidden places added after the surface, last of all (older tins keep their order)
+	for id in LATE_SECRETS:
+		var late := secret(id)
+		if late:
+			_place_secret_foods(late, placed)
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
 		# A slot only takes its saved "eaten" if the same food was saved there (a tin from before a
@@ -329,6 +346,17 @@ func _scatter(saved: Array) -> void:
 			p.gone_at = float(saved[i][1])
 			p.take()
 			p.gone_at = float(saved[i][1])
+
+
+## A hidden place's foods: food_count around the hall, extra_food in its first side room.
+func _place_secret_foods(s: SecretData, placed: Array[Dictionary]) -> void:
+	var food: RingFood = load("res://data/foods/%s.tres" % s.food)
+	var c: Vector2 = cities[s.id]
+	for i in s.food_count:
+		placed.append({ "food": food, "at": c + Vector2.from_angle(TAU * i / s.food_count) * s.radius_tiles * 9.0 })
+	var rooms := rooms_of(s, c)
+	if s.extra_food != &"" and not rooms.is_empty():
+		placed.append({ "food": load("res://data/foods/%s.tres" % s.extra_food), "at": c + Vector2(rooms[0].x, rooms[0].y) })
 
 
 func add_static(food: RingFood, at: Vector2) -> RingPickup:
@@ -859,6 +887,16 @@ func _stage_shot() -> void:
 				# the worm's own bite eats the tie (a stage-5 mouth on it)
 				get_tree().create_timer(1.5).timeout.connect(func() -> void:
 					w.warp_to(tie_at - (w.mouth_position() - w.head_position())))
+		"birds":
+			# a stage-5 worm in the sky; a flock flies in ahead of it and startles at ~1.5 s
+			var at := polar(0.25, 1.22)
+			w = w if w else level.spawn_worm(Players.P1, at, 5)
+			if w.model.stage < 5:
+				w.model.start_at_stage(5)
+			w.warp_to(at)
+			flock.place(0, 0.25 - 0.05, 1.225)
+			flock._flocks[0].dir = 1.0
+			flock.place(1, 0.25 + 0.05, 1.33)
 		_ when _shot.begins_with("secret:"):
 			# --rings-shot=secret:<id>: the worm (big enough for the hall's ring) just inside the
 			# hall, so the frames show the find beat as it plays.

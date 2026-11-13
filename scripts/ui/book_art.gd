@@ -11,7 +11,8 @@ const PENCIL := Color("4a3a30")
 const GREY := Color("a39d92")
 const GREY_DARK := Color("8a847a")
 const SECTION_COLORS := { &"foods": Color("f08a3c"), &"creatures": Color("e0483a"),
-	&"traits": Color("5fd0e8"), &"secrets": Color("ffd23f"), &"cutscenes": Color("8a7be0") }
+	&"traits": Color("5fd0e8"), &"secrets": Color("ffd23f"), &"cutscenes": Color("8a7be0"),
+	&"planets": Color("4f7fd8") }
 ## Sky per time-of-day word in a cutscene's "time_of_day".
 const SKIES := { "dawn": Color("f6b98a"), "morning": Color("9fd0f0"), "noon": Color("8cc8f4"),
 	"dusk": Color("f09a6a"), "night": Color("26305a") }
@@ -29,6 +30,8 @@ static func draw_entry(ci: CanvasItem, section: StringName, e: Dictionary, c: Ve
 			secret(ci, c, e.id, found, t, i)
 		&"cutscenes":
 			cutscene(ci, c, e.data, found, i)
+		&"planets":
+			planet(ci, c, e.data, found, t, i)
 
 
 ## Section tab icon (always drawn in colour: it names the section, it is not a thing to find).
@@ -46,6 +49,8 @@ static func tab_icon(ci: CanvasItem, section: StringName, c: Vector2, t: float) 
 			mound(ci, c + Vector2(0, 8), 36.0, Color("b07a4a"), true, t)
 		&"cutscenes":
 			dock(ci, c, 40.0, SKIES["dawn"], true)
+		&"planets":
+			ringed(ci, c, 26.0, col, Color.WHITE, true)
 
 
 # --- per section ----------------------------------------------------------------------------------
@@ -124,6 +129,34 @@ static func cutscene(ci: CanvasItem, c: Vector2, d: Dictionary, found: bool, i: 
 		if tod.begins_with(k):
 			sky = SKIES[k]
 	dock(ci, c, 72.0, sky if found else GREY, found, tod.begins_with("night"))
+
+
+## A space planet type: its own colour and accent band, its foods circling it, a sleepy face, and
+## its Star trait twinkling beside it. Unfound: the same round outline in flat grey, nothing else.
+static func planet(ci: CanvasItem, c: Vector2, d: PlanetData, found: bool, t: float, i: int) -> void:
+	var r := 52.0
+	if not found:
+		blob(ci, c, r, GREY, i, false)
+		return
+	for j in mini(3, d.foods.size()):   # its foods, in orbit
+		var a := t * 0.6 + TAU * j / 3.0
+		var fc := c + Vector2(cos(a) * r * 1.35, sin(a) * r * 0.55)
+		ci.draw_circle(fc, 9.0, d.foods[j].color)
+		ci.draw_circle(fc, 9.0, PENCIL, false, 2.0)
+	ringed(ci, c, r, d.color, d.accent, true, i)
+	# Sleepy: two closed-lid arcs and a small smile.
+	for sx: float in [-1.0, 1.0]:
+		ci.draw_arc(c + Vector2(sx * r * 0.32, -r * 0.12), r * 0.12, 0.2, PI - 0.2, 8, PENCIL, 3.0)
+	ci.draw_arc(c + Vector2(0, r * 0.18), r * 0.18, 0.3, PI - 0.3, 8, PENCIL, 2.5)
+	if d.star_trait != null:
+		star(ci, c + Vector2(r * 0.95, -r * 0.9), 13.0 + 2.0 * sin(t * 4.0 + i), d.star_trait.color, true)
+
+
+## A round planet with one accent band across it (also the planets tab icon).
+static func ringed(ci: CanvasItem, c: Vector2, r: float, col: Color, accent: Color, found: bool, seed_i := 2) -> void:
+	_fill(ci, _wobbly(c, Vector2(r, r), seed_i), col, found)
+	ci.draw_line(c + Vector2(-r * 0.92, r * 0.28), c + Vector2(r * 0.92, r * 0.02), Color(accent, 0.85), maxf(3.0, r * 0.16))
+	ci.draw_circle(c + Vector2(-r * 0.38, -r * 0.42), r * 0.14, Color(1, 1, 1, 0.75))
 
 
 # --- shapes ---------------------------------------------------------------------------------------

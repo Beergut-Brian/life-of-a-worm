@@ -1,39 +1,57 @@
-# Audio hooks lane report (feature/worm-audio-hooks-1)
+# REPORT: worm-old-reel-tin-1 (S-12, the story after the sun)
 
-PLAN-STATUS IDs moved: **U-09, U-11, U-14** → built. No new audio, no ElevenLabs, no music (U-12 untouched).
+Branch `feature/worm-old-reel-tin-1`, based on `origin/dev` c1fe0c6. Not pushed.
 
-## What changed
+## What a player sees
 
-| ID | Where | What |
-| --- | --- | --- |
-| U-09 `breakthrough` | none (already wired) | `CrustBurst._burst()` (`scripts/gameplay/crust_burst.gd`) already called `Audio.play("breakthrough")`; PLAN-STATUS was out of date. I only added a test that the call resolves to the real `breakthrough.ogg` and fires once per worm per tin. |
-| U-11 `space_drift` | `scripts/space/space_stage.gd` (+15 lines) | `drift_bed = Audio.loop_player("space_drift")` at `DRIFT_DB = -4.0`, `autoplay` on, added as a child in `_ready`; `_exit_tree` stops it. So it plays whenever the space stage is in the tree and stops when the stage leaves. |
-| U-14 ring beds | new `scripts/audio/ring_ambience.gd`; one node added to `scenes/levels/planet.tscn` | `RingAmbience` finds the level's `world` and the lowest-numbered worm in the level, reads which ring the head is in (`RingDef.id`) and plays `amb_<id>` at `LEVEL_DB = -6.0` (constant at the top of the file). When the ring changes, the old bed fades out and the new one fades in over `FADE = 1.5` s, at the same time. Above `SkyLife.inner` (1.03 x planet radius) the id is `sky`. If an id has no `amb_<id>.ogg` it plays nothing: no placeholder beep, no warning. All beds fade out while the chomp shot or space is on screen (`level.chomp.busy()`). |
+1. **The sun is eaten.** The space lane's beat plays as before: gold flash, glow, and the "five planets = sun" bubble.
+   The offer is saved at that moment, so quitting here loses nothing.
+2. **5.5 s later: Old Reel's `new_tin` dock scene.** It is a normal Story scene (letterbox, input
+   locked, any button skips, camera on Reel). Bobber asks "then what?" (worm, sun, ?). Reel holds up a new bait tin (tin, planet), then tells him "a
+   worm that big keeps one little thing" (worm, star, tin), hands Bobber the tin, and Bobber says "Again!". There are four new
+   voiced lines (`nt_*` in `data/story/lines.json`). Each one has a `bark:` fallback, the same as the story lane's lines. No voice files exist yet.
+   Frames: `handoff/shots/old-reel-tin/01`, `02`.
+3. **The heirloom pick.** The new tin sits open in the middle. Its band and the planet on it show
+   the new planet's type. The traits this worm has earned float above it. The stick moves a ring in the player's colour (with a tick sound), and A drops the trait
+   into the tin with the trait's own sting. The lid shuts (`box_close`) and the tin slides down onto a dock rail (`jar_clink`), with a
+   ring and the trait over it. Only earned traits are offered, and there is no empty choice. With nothing earned, the empty tin still goes on the
+   rail. Frames `03`..`05`.
+4. **The dock.** The new tin is in the next free slot, shown as "New planet" (frame `06`, TIN 2).
+5. **Opening the new tin.** It builds a new planet from its own seed. Every worm that spawns gets the heirloom
+   earned and equipped. The worm's own trait reveal plays (sting, ring, part pops on), and a picture
+   bubble over it shows bait tin = trait = happy face. At stage 1, where there are no slots, the heirloom stays on as an extra.
+   From stage 2 the normal slot rules apply. The tackle box draws a small bait tin on the heirloom's
+   sketch on the traits page. `new_tin` is on the cutscenes page so it can be rewatched.
 
-Contract: `docs/contracts.md` → `### Audio hooks (worm-audio-hooks-1)` (appended).
+The worms are never moved. While the scene or the pick is up their stick input is ignored (steer is set to 0), so they hold still.
 
-## Each cue: what the tests prove, what a human still has to hear
+## Rules decided here (Gary can veto)
+- **One heirloom per tin, given to both worms.** The worm that ate the sun picks from its own earned
+  traits, and every worm in the new tin gets the chosen trait. This avoids co-op jealousy.
+- **The rail spot** is the first tin slot with no file at all. A tin is never overwritten. If all three are
+  full, the offer stays saved in the old tin (`slot: ""`) and is placed the next time space loads with a free slot.
+  If the pick was not made, the pick opens again then (without the scene).
+- **The planet type** is the first planet of the new seed's `SpaceDrift.shuffled` order (the existing
+  random-order rule). It is stored as `theme` in the new tin.
+- Offers happen only in real tins (`tin1`..`tin3`), never in the demo or the profile's own file.
 
-| Cue | Test proved (`tests/test_audio_hooks.gd`) | Still needs a listen on the TV |
-| --- | --- | --- |
-| `breakthrough` | The first crust bite at stage 5 adds 1 to `Audio.played["breakthrough"]`, and exactly one pool player holds `breakthrough.ogg` (the file, not the grey beep). Two more crust bites add nothing. Reloading the tin plays no second one (`test_stages_crust`). | Whether the crumble and birds land with the flash and debris, and whether it's loud enough over the bite cue (`burst`) that plays in the same frame. |
-| `space_drift` | When the space stage enters the tree, `DriftBed` is playing `space_drift.ogg` with `loop = true` at `DRIFT_DB`. Still playing a frame later. `remove_child` stops it, adding the stage back starts it again. A planet level never has a player on `space_drift.ogg`. | Level against `warp` and the space cues (`DRIFT_DB` -4 dB on a -28 LUFS file); whether the 16 s loop seam can be heard; whether it should fade in after the warp instead of starting at full level. |
-| `amb_dirt`, `amb_topsoil`, `amb_deep_rock`, `amb_core`, `amb_surface` | Every ring in `data/rings/rings.tres` has a bed file. A bed starts silent and fades up to exactly `LEVEL_DB` (below 0 dB). On a ring change, halfway through the fade both beds are playing, one going down and one going up. After the fade the old bed has stopped, and going back brings it back. On the real planet, a few frames after spawn the playing bed is the head's ring. `ring_id_at` returns dirt, topsoil and deep_rock for cells in those rings, and `sky` above the grass. When the worm is removed, the bed fades out and stops. | Whether -6 dB feels "under the music" (there is no music yet, U-12). Whether a 1.5 s crossfade is too slow or fast when a worm bobs along a ring border; if it flutters, add hysteresis. Whether the beds suit the rings. |
-| unknown id / `sky` | `follow(&"no_such_ring")` and `follow(&"sky")` make no player, fade the old bed out, and play no placeholder beep (`Audio.played` stays empty). | Flying up into the sky goes quiet (the wind stops), since there is no `amb_sky`. Decide whether that's right (see follow-ups). |
+## Placeholder art (said plainly)
+The bait tin, the rail, the trait discs and the lid are code-drawn shapes. They reuse the dock tin's grey,
+the existing trait part textures, and `StarParts` for Star traits. The dock-scene "hold"/"item" tin is
+the new `bait_tin` picture.
 
-## Choices made
-
-- **Which worm in co-op:** the bed follows P1's head (or the lowest player present). Only one bed plays at a time, so two players in different rings don't mix two beds. Change `followed()` to follow the camera centre if Kaden prefers that.
-- **Bus:** the beds and the drift are on the SFX bus, so the sound slider controls them, not the music slider.
-- **Sky:** it follows the brief's rule, so it stays silent until an `amb_sky.ogg` exists. The other option is to alias the sky to `amb_surface` (wind).
-- The node is in `scenes/levels/planet.tscn`, not `planet_level.gd` (`scripts/planet/` is off-limits). It finds `world` and `chomp` itself through `get_parent()`.
-
-## Follow-ups for other lanes
-
-- **Audio lane:** `assets/audio/CUES.md` still says `space_drift` has "no call site yet", and that the `amb_*` beds play when the camera is in a ring. Update both to `SpaceStage.drift_bed` and `RingAmbience` (it follows the head). Also an `amb_sky.ogg` if the sky should have its own bed.
-- **Space lane:** the prototype `SpaceLevel` (`scripts/space/space.gd`, `scenes/levels/space.tscn`, used by `planet_chomp.gd`) does not play `space_drift`. If that path is still live, add the same three lines there.
-- **Music (U-12):** when layered music lands, recheck `LEVEL_DB` and `DRIFT_DB` against it.
+## Follow-ups for other lanes (off-limits here)
+- **UI / planet lane (`scripts/planet/dock.gd`, `bait_tins.gd`):** the dock tin should show its heirloom
+  (the trait picture on the tin) and its planet type. Right now it reads only "New planet". `BaitTins.summary`
+  could return `heirloom` / `theme` from the file.
+- **Planet lane (`scripts/planet/planet_level.gd`):** the new planet ignores `theme`. A themed tint or
+  foods would make "a new planet" visible. Also, the heirloom hook lives in `scenes/main.gd`
+  (`level.worm_spawned`), so a level opened another way (`--demo`, shots) does not give it.
+- **Audio:** voice files for `nt_bobber_then_what`, `nt_reel_new_tin`, `nt_reel_keep_one`,
+  `nt_bobber_again`.
+- **Story lane:** the `ending` scene is still not played anywhere. It could be queued before `new_tin`.
+- **Systems:** `Save.dir` was added (default `user://saves`, used only by tests to write under `.scratch/`).
 
 ## Tests
-
-See `handoff/test-output.txt`. The build box sometimes aborts at exit after "Exit code: 0" (known); read the Overall Summary line.
+`tests/test_old_reel_tin.gd` (7 cases, all saves under `res://.scratch/old_reel_saves`). The
+`test_story_data` scene count is now 9. Full-suite result: see `handoff/test-output.txt`.

@@ -3,7 +3,8 @@
 ## the worm bonks off it (the world's dig_blocked), which is the cause the player sees. The first
 ## bite through, once per worm per tin and saved, is the breakthrough: the "breakthrough" cue, a
 ## grass-and-dirt burst, a flash and shake, a short camera pull-back and the why-bubble (sky over
-## the worm). Crust tiles a worm eats never grow back (StageTable.apply_crust), so the disk shrinks.
+## the worm). Crust tiles a worm eats never grow back (StageTable.apply_crust), so the disk shrinks,
+## and `edge` (DiskEdge, W-12) makes the planet's outline sink where it is eaten open to the sky.
 ## The level only connects, sets its zoom through steer_camera() and saves to_dict(). Placeholder visuals.
 class_name CrustBurst
 extends Node
@@ -26,6 +27,9 @@ var broken: Array[int] = []
 var eaten := 0
 ## Every breakthrough played: {player, cell, stage}.
 var history: Array[Dictionary] = []
+## The planet's eaten outline (scripts/world/disk_edge.gd), next to the level's back wall; null
+## when the world has none (a bare test world).
+var edge: DiskEdge
 
 var _pull_t := 0.0
 var _base_min := -1
@@ -40,6 +44,8 @@ func watch(p_world: PolarWorld) -> void:
 	world = p_world
 	if not world.tile_eaten.is_connected(_on_tile_eaten):
 		world.tile_eaten.connect(_on_tile_eaten)
+	if edge == null:
+		edge = DiskEdge.make_for(world)
 
 
 func crust_ring() -> StringName:

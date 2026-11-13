@@ -20,3 +20,13 @@ extends RingLife
 @export var balloon_string := 110.0
 @export var balloon_tie: StringName = &"balloon_tie"
 @export var balloon_color := Color("e8483a")
+## The sky's birds (SkyFlock, W-07): flocks of little birds circling the band of air. Never food,
+## never a threat: a worm coming near startles a flock (a tweet, the birds burst apart and flap
+## up), and it settles back into its V a moment later. flock_speed is radians a second round the
+## planet; flock_startle is how close (px) a worm's head comes before they scatter.
+@export var flocks := 3
+@export var flock_birds := 5
+@export var flock_speed := 0.012
+@export var flock_startle := 260.0
+@export var flock_cue := "bird_tweet"
+@export var flock_colors: Array[Color] = [Color("ffd23f"), Color("f08a3c"), Color("ff7ad9")]

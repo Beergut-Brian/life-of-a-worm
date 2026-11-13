@@ -15,6 +15,8 @@ func _draw() -> void:
 		return
 	var rf := data as RingFood
 	var look := rf.look if rf else RingFood.Look.BLOB
+	if rf and look == RingFood.Look.BLOB and rf.ring == &"sky":
+		look = RingFood.Look.CLOUD
 	var accent := rf.accent if rf else data.color.lightened(0.4)
 	var r := data.radius
 	var o := Vector2(0, sin(_t * 3.0) * 0.6)
@@ -87,11 +89,86 @@ func _draw() -> void:
 				var b := o + Vector2.from_angle(a) * r * 0.78
 				draw_colored_polygon(PackedVector2Array([b + Vector2.from_angle(a + 1.6) * r * 0.18, o + Vector2.from_angle(a) * r * 0.42, b + Vector2.from_angle(a - 1.6) * r * 0.18]), accent)
 			draw_circle(o, r * 0.3, Color(1, 1, 1, 0.55 + 0.35 * glow))
+		RingFood.Look.NUGGET:
+			# a lumpy, faceted lump of ore with a glint (placeholder)
+			var pts := look_shape(RingFood.Look.NUGGET, r)
+			var outer := PackedVector2Array()
+			var inner := PackedVector2Array()
+			for p in pts:
+				outer.append(o + p * (1.0 + 1.2 / r))
+				inner.append(o + p)
+			draw_colored_polygon(outer, INK)
+			draw_colored_polygon(inner, data.color)
+			draw_colored_polygon(PackedVector2Array([o + pts[0] * 0.55, o + pts[1] * 0.6, o, o + pts[7] * 0.5]), accent)
+			draw_line(o + pts[3] * 0.3, o + pts[4] * 0.75, data.color.darkened(0.3), 1.0)
+			var tw := 0.5 + 0.5 * sin(_t * 2.0)
+			var g := o + pts[1] * 0.7
+			draw_line(g + Vector2(-2.5 * tw, 0), g + Vector2(2.5 * tw, 0), Color.WHITE, 1.0)
+			draw_line(g + Vector2(0, -2.5 * tw), g + Vector2(0, 2.5 * tw), Color.WHITE, 1.0)
+		RingFood.Look.FOSSIL:
+			# a curled shell in the stone: round, ribbed, a spiral in its accent (placeholder)
+			draw_circle(o, r + 1.0, INK)
+			draw_circle(o, r, data.color)
+			var spiral := look_shape(RingFood.Look.FOSSIL, r)
+			for i in spiral.size():
+				spiral[i] += o
+			draw_polyline(spiral, accent, 1.5)
+			for i in 10:
+				var a := TAU * i / 10.0
+				draw_line(o + Vector2.from_angle(a) * r * 0.72, o + Vector2.from_angle(a) * r * 0.95, accent, 1.0)
+			face = o + Vector2(0, r * 0.15)
+		RingFood.Look.CLOUD:
+			# a puffy cloud: five overlapping puffs, a shaded underside, the face in the middle
+			var puffs := [Vector3(-0.55, 0.15, 0.5), Vector3(-0.15, -0.2, 0.62), Vector3(0.3, -0.12, 0.55),
+					Vector3(0.65, 0.18, 0.42), Vector3(0.05, 0.25, 0.55)]
+			for q in puffs:
+				draw_circle(o + Vector2(q.x, q.y) * r, q.z * r + 1.5, INK)
+			for q in puffs:
+				draw_circle(o + Vector2(q.x, q.y + 0.08) * r, q.z * r, accent)
+			for q in puffs:
+				draw_circle(o + Vector2(q.x, q.y - 0.04) * r, q.z * r * 0.86, data.color)
+		RingFood.Look.PLANE:
+			# a toy plane: a long body, a wing across it, a tail fin, a spinning propeller
+			var body := PackedVector2Array([o + Vector2(-r, -r * 0.18), o + Vector2(r * 0.75, -r * 0.28),
+					o + Vector2(r, 0), o + Vector2(r * 0.75, r * 0.28), o + Vector2(-r, r * 0.18)])
+			var wing := PackedVector2Array([o + Vector2(-r * 0.1, -r * 0.85), o + Vector2(r * 0.25, -r * 0.85),
+					o + Vector2(r * 0.3, r * 0.85), o + Vector2(-r * 0.05, r * 0.85)])
+			var fin := PackedVector2Array([o + Vector2(-r, -r * 0.15), o + Vector2(-r * 0.75, -r * 0.15), o + Vector2(-r * 1.05, -r * 0.6)])
+			for poly in [wing, fin, body]:
+				var ol := PackedVector2Array()
+				for q in poly:
+					ol.append(o + (q - o) * 1.12)
+				draw_colored_polygon(ol, INK)
+			draw_colored_polygon(wing, accent)
+			draw_colored_polygon(fin, accent)
+			draw_colored_polygon(body, data.color)
+			var spin := absf(sin(_t * 30.0))
+			draw_line(o + Vector2(r * 1.05, -r * 0.5 * spin), o + Vector2(r * 1.05, r * 0.5 * spin), INK, 2.0)
+			draw_circle(o + Vector2(r * 1.05, 0), maxf(1.0, r * 0.1), INK)
+			face = o + Vector2(r * 0.4, 0)
+			r *= 0.6
 		_:
 			draw_circle(o, r + 1.0, INK)
 			draw_circle(o, r, data.color)
 			draw_circle(o + Vector2(-r * 0.35, -r * 0.4), maxf(1.0, r * 0.25), accent)
 	_face(face, r)
+
+
+## The outline of a code-drawn look, around (0, 0) at radius r: NUGGET's lumpy 8-point rock,
+## FOSSIL's spiral (a polyline from the rim curling in). Empty for the other looks.
+static func look_shape(look: RingFood.Look, r: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	match look:
+		RingFood.Look.NUGGET:
+			var lumps := [1.0, 0.82, 0.95, 0.75, 0.9, 0.8, 1.0, 0.78]
+			for i in 8:
+				var a := TAU * i / 8.0 - PI / 2.0 + 0.2
+				out.append(Vector2.from_angle(a) * r * lumps[i] * Vector2(1.1, 0.9))
+		RingFood.Look.FOSSIL:
+			for i in 40:
+				var k := float(i) / 39.0
+				out.append(Vector2.from_angle(k * TAU * 2.2) * r * lerpf(0.72, 0.08, k))
+	return out
 
 
 func _face(at: Vector2, r: float) -> void:

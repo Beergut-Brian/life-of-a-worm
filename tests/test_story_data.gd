@@ -32,7 +32,7 @@ func test_a_scene_for_every_stage_plus_opening_and_ending() -> void:
 		assert_bool(_scene(id).is_empty()).override_failure_message("missing data/cutscenes/%s.json" % id).is_false()
 	assert_str(String(Story.scene_for_stage(1))).is_equal("opening")
 	assert_bool(_scene(&"ending").is_empty()).is_false()
-	assert_int(Story.SCENES.size()).is_equal(8)
+	assert_int(Story.SCENES.size()).is_equal(9)   # + new_tin (S-12, after the sun)
 
 
 func test_every_scene_loads_and_uses_only_known_lines_steps_and_pictures() -> void:
