@@ -9,10 +9,19 @@
 ## worm is shown in its jaws (Creature._draw_gulp). A missed lunge is a give-up too.
 ## Placeholder art drawn in code: tinted circles for the segments, a sneaker on every foot (a
 ## coloured shape per leg; no 2D gear path exists for creatures). Never steers a worm.
+## feature/worm-centipede-1: the wind-up shows a hump that runs down its body, head to tail, twice
+## (`windup_wave`), and the first time it gives up the camera leans in one step for BEAT_TIME
+## (`gave_up_beat`; no shake, it is a sulk, not a hit).
 class_name Centipede
 extends Creature
 
+## The first give-up's camera beat (once per centipede).
+signal gave_up_beat(at: Vector2)
+
 const GIVE_UP_TIME := 1.2
+const BEAT_TIME := 0.8
+## Humps that run down the body during one wind-up.
+const WINDUP_PASSES := 2.0
 const TRAIL_STEP := 4.0
 const TRAIL_MAX := 24
 
@@ -25,10 +34,67 @@ var give_ups := 0
 var _phase := 0.0
 var _trail: Array[Vector2] = []   # recent head positions (parent space), newest first
 var _away := Vector2.ZERO
+## Camera beats played (tests): at most one, on the first give-up.
+var beats := 0
+var _beat_t := 0.0
+var _camera: PolarCamera
+var _leaning := false
+var _wary := false   # the nearest worm can eat me (K-01: then I cower)
 
 
 func _cd() -> CentipedeData:
 	return data as CentipedeData
+
+
+func step(delta: float) -> void:
+	super.step(delta)
+	_wary = _nearest_can_eat_me()
+	if _beat_t > 0.0:
+		_beat_t -= delta
+		if _beat_t <= 0.0:
+			_release_camera()
+
+
+## K-01: a worm of my own stage can eat me too (equal size is food) but does not scare me off, so
+## without this I would loom 1.1x over a stage-3 worm's head. Cower like the bird instead.
+func draw_scale() -> float:
+	var s := super.draw_scale()
+	if _wary and mode != Mode.WINDUP and _gulp <= 0.0:
+		s = minf(s, 0.85)
+	return s
+
+
+func _nearest_can_eat_me() -> bool:
+	var best: Node = null
+	var best_d := INF
+	for w in _worms():
+		var d: float = w.head_position().distance_to(global_position)
+		if d < best_d:
+			best_d = d
+			best = w
+	return best != null and can_be_eaten_by(best)
+
+
+func _exit_tree() -> void:
+	_release_camera()
+
+
+## Where the wind-up hump is along the body: 0 at the head, 1 at the tail; -1 when not winding up.
+## It runs WINDUP_PASSES times over the telegraph, so the last pass reaches the tail as it lunges.
+func windup_wave() -> float:
+	if mode != Mode.WINDUP or data == null:
+		return -1.0
+	var k := clampf(_mode_t / data.telegraph_time(), 0.0, 1.0) * WINDUP_PASSES
+	return 1.0 if k >= WINDUP_PASSES else fmod(k, 1.0)
+
+
+## How much segment i (0 head .. n tail) is lifted by the wind-up hump, 0..1.
+func _hump(i: int, n: int) -> float:
+	var k := windup_wave()
+	if k < 0.0 or n <= 0:
+		return 0.0
+	var d := (float(i) / float(n) - k) * float(n) / 1.1
+	return exp(-d * d)
 
 
 func _wave(delta: float, eater: Node2D, eater_d: float, prey: Node2D, prey_d: float) -> void:
@@ -93,6 +159,34 @@ func give_up() -> void:
 	give_ups += 1
 	_set_mode(Mode.GIVE_UP)
 	Audio.play("bird_offended")   # existing huffy 'hmph'; no centipede cue yet
+	if give_ups == 1:
+		_beat()
+
+
+## The first give-up's beat: the camera leans in one step so the turn-away and huff read.
+func _beat() -> void:
+	beats += 1
+	_beat_t = BEAT_TIME
+	gave_up_beat.emit(global_position)
+	_camera = _find_camera()
+	if _camera != null and not _leaning:
+		_leaning = true
+		_camera.lean_in += 1
+
+
+func _release_camera() -> void:
+	if _leaning and is_instance_valid(_camera):
+		_camera.lean_in = maxi(0, _camera.lean_in - 1)
+	_leaning = false
+
+
+func _find_camera() -> PolarCamera:
+	if not is_inside_tree():
+		return null
+	var rings := get_tree().get_first_node_in_group(&"rings")
+	if rings and rings.get("level") and rings.level.get("camera") is PolarCamera:
+		return rings.level.camera
+	return get_viewport().get_camera_2d() as PolarCamera
 
 
 ## The wave: straight at the worm, plus a side-to-side swing (the derivative of a sine, so the
@@ -169,8 +263,8 @@ func _body(r: float, o: Vector2, n: int) -> Array[Vector2]:
 			p += Vector2(-facing * want, 0.0)
 			at = path.size()   # past the trail: the rest goes straight back
 		p.y += sin(_t * 7.0 - i * 1.1) * r * 0.06
-		out.append(p)
 		prev = p
+		out.append(p - Vector2(0.0, _hump(i, n) * r * 0.45))   # the wind-up hump, head to tail
 	return out
 
 
@@ -197,9 +291,11 @@ func _draw_wave(r: float, o: Vector2) -> void:
 	# body, tail first so the head sits on top
 	for i in range(n, 0, -1):
 		var p: Vector2 = pts[i]
-		var s := sr * (1.0 - 0.05 * i)
+		var hump := _hump(i, n)
+		var s := sr * (1.0 - 0.05 * i) * (1.0 + 0.3 * hump)
+		var sc := col if i % 2 == 0 else col.darkened(0.12)
 		draw_circle(p, s + 1.2, INK)
-		draw_circle(p, s, col if i % 2 == 0 else col.darkened(0.12))
+		draw_circle(p, s, sc.lerp(data.accent, 0.55 * hump))
 		draw_circle(p + Vector2(-s * 0.3, -s * 0.4), s * 0.25, data.accent)
 	_draw_head(o, r * 0.75, col)
 

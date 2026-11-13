@@ -1244,3 +1244,19 @@ data/foods/ore_nugget.tres          look NUGGET     data/foods/fossil.tres   loo
 RingsDirector.LIVES                 + deep_rock_life.tres (appended last: older tins' statics after
                                     the deep-rock fossils shift and start uneaten, as with the core)
 ```
+### Centipede (worm-centipede-1)
+
+`feature/worm-centipede-1` (PLAN-STATUS W-04, the centipede part). Additions to `Centipede`
+(`scripts/creatures/centipede.gd`); the worm-creatures-2 API above is unchanged.
+
+```gdscript
+signal gave_up_beat(at: Vector2)   # the first give-up only (once per centipede)
+const BEAT_TIME := 0.8             # camera lean_in +1 for this long, no shake; released on free
+const WINDUP_PASSES := 2.0         # humps run head to tail during one wind-up
+var beats: int                     # camera beats played (0 or 1)
+func windup_wave() -> float        # hump position, 0 head .. 1 tail; -1 outside WINDUP
+func draw_scale() -> float         # super, but 0.85x when the nearest worm can eat it (K-01 at stage 3)
+```
+
+Camera: `level.camera` via the "rings" group, else the viewport's `PolarCamera` (as the lawnmower).
+No new cues, no new forced movement (a bite is still `Gulp`). Data and `dirt_life.tres` unchanged.

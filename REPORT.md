@@ -1,78 +1,34 @@
-# Deep rock lane report (feature/worm-deep-rock-1, 2026-11-12)
+# Centipede lane report (feature/worm-centipede-1, 2026-11-12)
 
 ## Rows moved
-- **W-03** partial -> **built**: the deep rock runs in play (rock beetles live, ore nuggets live,
-  fossils scattered and regrowing, nugget and fossil have their own looks).
-- **W-02** stays **partial** (notes updated): the lava blob now has a body and bounces, but
-  `live_max` is still 0 so it never appears in play. That is the one thing left (see follow-ups).
+None. **W-04** stays partial with a new note: the centipede part is built, the Mole is still open. L-08 was already built.
 
-## What was built
-1. **Rock beetle body.** `scenes/creatures/rock_beetle.tscn` (the shared `Creature`, drawn with the
-   beetle placeholder in the data's grey shell and gold spot). `deep_rock_life.tres` points
-   `rock_beetle.live` at it with `live_scale 0.5`, `live_max 3`. **These two numbers are mine:** the
-   data said `live_max 0` (no body), so there was no number to reuse; I took the dirt beetle's shape
-   (a few bodies near the worm, start 6 -> 3 live). Tune them freely; the counter chain is unchanged
-   and `test_thinning_rock_beetles_lets_ore_nuggets_build_up` stays green. Eating a live beetle thins
-   the counter (tested). Also in `creature.gd`: a TRUNDLE creature that goes straight into its wind-up
-   (worm already inside strike range) now turns to face the worm first; before, it could wind up
-   and lunge facing away (seen in the first frames).
-2. **Deep rock life in `RingsDirector.LIVES`** (that line only). 5 fossils are scattered in the deep
-   rock and grow back where they were (`regrow_time` 600); ore nuggets come live from their counter.
-   Side effect, same as when the core joined: fossils go into the static list before the picnic
-   crumbs, sky and apples, so in an **old tin** those later slots shift (they start uneaten; the
-   slot-id check already guards this) and their scattered positions move once.
-3. **Nugget and fossil looks**, `RingFood.Look.NUGGET` / `FOSSIL`, drawn in code in
-   `scripts/rings/ring_pickup.gd`. **These are placeholders** (no new art; held until Kaden picks the
-   Worm art direction). Nugget: a lumpy gold 8-point rock with a pale facet and a twinkling glint.
-   Fossil: a cream disc with a ribbed rim and a curled spiral shell. Both keep the usual face.
-4. **Lava blob body and bounce (W-02).** `CreatureData.Behaviour.BOUNCE` (appended, index 6),
-   `CreatureData.bounce` (px), `scenes/creatures/lava_blob.tscn` (code-drawn wobbling lava drop with
-   rising bubbles and a glow). For a smaller worm (stage <= 5):
-   - the telegraph: within 48 px it swells 12% and plays `lava_blob_swell`;
-   - contact (head within radius + 14 px): it squashes flat toward the worm, a white burst at the
-     contact point, `boing`, and the worm's head is pushed straight away 80 px over 0.45 s. The worm
-     keeps its stick the whole time (the push is added to the head; heading untouched). 0.8 s
-     cooldown per worm so holding against it is a slow boing-boing, not a buzz;
-   - a worm bonking it also gets the existing smug squint and its bark `lava_blob_blorp` (worm code,
-     unchanged).
-   A stage-6 worm is never bounced; it eats the blob (tested). `core_life.tres` now points
-   `lava_blob.live` at the scene, **`live_max` stays 0**, so lava blobs still never spawn.
+## Found
+The centipede data, script and `dirt_life.tres` row were already on dev from worm-creatures-2: stage 3, a 1.1 s wind-up, a 3 s chase, gives up past 200 px, live_max 2. I left the data alone and added the missing parts.
+
+## New on this branch
+- **Wind-up wave:** a lifted, lighter hump runs from head to tail twice over the telegraph and reaches the tail as it lunges (`windup_wave()`).
+- **Give-up beat:** the first give-up only leans the camera in one step for 0.8 s, with no shake (`gave_up_beat`).
+- **K-01 fix:** at worm stage 3 the centipede counts as food but never cowered, so it was drawn 1.10x a stage-3 head. It now cowers (0.85x) like the bird.
+- No new cues, art or forced movement (a bite still goes through `Gulp`).
 
 ## Tests
-- New `tests/test_deep_rock.gd` (11 cases, runs in its own `SuiteSandbox` profile).
-- `tests/test_rings_content.gd`: three "no scene yet" assertions now expect the scenes; the lava blob
-  is BOUNCE with `bounce > 0`.
-- Full suite after `rm -rf .godot; godot --headless --path . --import`: see
-  `handoff/test-output.txt` (465 test cases, 0 errors, 0 failures on three runs; the third overlapped
-  the second and two other lanes' gdUnit runs).
+`tests/test_centipede.gd` has 6 new tests (14 total): the wave before every lunge, the hump position, a single camera beat that gets released, never moving a worm, never bigger than a stage-3 or stage-4 head, and counter spawns only in the dirt band up to live_max. The suite runs in `SuiteSandbox.enter("centipede")`.
+Full suite after a clean import, run twice: **460 cases, 0 errors, 0 failures** both times, with no leak line.
 
-## Frames
-`handoff/shots/deep-rock/` (scratch scene `.scratch/deep_rock_shot/shot.tscn`, no planet, camera
-zoom 4 so the shapes read; looked at all four):
-- `t000.3s`: left, the rock beetle (grey shell, gold spot) beside a stage-3 worm, the nugget and the
-  fossil below; right, a stage-5 worm driving into the lava blob.
-- `t001.0s`: the beetle has turned to the worm and is swelling (wind-up); the worm has been
-  bounced back off the blob, which squints smug.
-- `t001.6s`: the beetle lunges and gulps the small worm; the blob is squashed flat with the white
-  burst at the contact point as the worm comes back in.
-- `t002.0s`: the beetle mid-gulp (the worm a bulge in it); the blob back to round.
+## Frames (`handoff/shots/centipede/`)
+From a scratch scene with no world. The green blob behind the tail is the worm's body, left behind because the head is teleported.
+- `t000.9s`: the chase, along a wavy path.
+- `t001.2s`/`t001.6s`/`t002.0s`: the wind-up. Jaws open, the pale hump moves down the body, then the second pass reaches the tail.
+- `t002.3s`: the lunge.
+- `t002.7s`/`t003.1s`: the give-up. Eyes shut, antennae drooped, greyed, huffing.
+The camera beat is not in the frames; only a test covers it.
 
-## What I could not check
-- **Not seen on a real planet.** The frames are a scratch scene without `PolarWorld` (no rotation,
-  no rock). In play the knock moves the worm's head directly (the lawnmower does the same), so a
-  bounce could push the head a few px into solid core rock; I could not see how the worm handles
-  that there. Only matters once lava blobs spawn.
-- Not seen on the TV or with a controller; frame rate on the software renderer means nothing.
-- K-01 size check passes for both creatures (`test_kid_checks`), but the swell (+12%) and squash
-  were not checked against a stage-5 head on screen in play.
-- Saves: the brief asked for `.scratch/` save paths; `Save` (systems lane, not mine) only writes to
-  `user://saves/<profile>.json`, so the suite uses the standard `SuiteSandbox` profile
-  `gdunit_deep_rock` instead (never the family's tin). The frames write no save.
+## Outside owned files
+`docs/contracts.md` (appended section) and the `PLAN-STATUS.md` W-04 row.
 
-## Follow-ups (not mine)
-- **Gary (design): spawn lava blobs?** One number: `data/rings/core_life.tres` `lava_blob`
-  `live_scale` / `live_max` (the counter sits at 4-10; e.g. `live_scale 0.3`, `live_max 2` gives
-  1-2 near a stage-5 worm in the core). Then check a real-planet frame for the head-into-rock push
-  above, and mark W-02 built.
-- Art lane: replace the NUGGET / FOSSIL / lava blob / rock beetle placeholders once the Worm art
-  direction is picked.
+## Follow-ups
+- The Mole in the dirt ring.
+- The sneakers from dev are still drawn while gear and art are held. Keep them or not?
+- A centipede give-up cue (it borrows `bird_offended`).
+- A real-planet frame of the camera beat.
