@@ -14,6 +14,7 @@ alt_hue = Color(0.41568628, 0.9098039, 1, 1)
 alt_share = 0.22
 edible_from = 5
 regrow_time = 900.0
+castings_size = 2
 flavour = &"crystal"
 
 [sub_resource type="Resource" id="Resource_dsajy"]
@@ -27,6 +28,7 @@ alt_hue = Color(0.7882353, 0.63529414, 0.2901961, 1)
 alt_share = 0.1
 edible_from = 4
 regrow_time = 600.0
+castings_size = 2
 flavour = &"stone"
 
 [sub_resource type="Resource" id="Resource_170wb"]
@@ -37,6 +39,8 @@ tile = &"dirt"
 alt_tile = &"clay"
 hue = Color(0.5411765, 0.3529412, 0.19607843, 1)
 alt_hue = Color(0.6901961, 0.47058824, 0.3137255, 1)
+regrow_time = 240.0
+castings_size = 2
 flavour = &"root"
 
 [sub_resource type="Resource" id="Resource_7ffi2"]
@@ -50,6 +54,7 @@ alt_hue = Color(0.8509804, 0.7607843, 0.627451, 1)
 alt_share = 0.08
 edible_from = 2
 regrow_time = 180.0
+castings_size = 2
 flavour = &"root"
 
 [sub_resource type="Resource" id="Resource_wampu"]
@@ -62,10 +67,14 @@ alt_hue = Color(0.9098039, 0.84705883, 0.2901961, 1)
 alt_share = 0.08
 edible_from = 4
 regrow_time = 120.0
+castings_size = 2
 flavour = &"junk"
 
 [resource]
 script = ExtResource("2_7qqrw")
+size_growth = 1.0
+scarce_share = 0.5
+scarce_factor = 0.2
 rings = Array[ExtResource("1_e0svs")]([SubResource("Resource_i8tvw"), SubResource("Resource_dsajy"), SubResource("Resource_170wb"), SubResource("Resource_7ffi2"), SubResource("Resource_wampu")])
 garden_tiles = Dictionary[StringName, StringName]({
 &"crystal": &"garden_crystal",
