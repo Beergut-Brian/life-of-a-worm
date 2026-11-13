@@ -10,10 +10,14 @@
 ##    cut away, a warm hollow inside with a pile of golden acorns on a leaf bed, roots, moss, a
 ##    toadstool and a new sprout on top. A worm reaches it once it can bite out through the crust
 ##    (stage 5), and the find beat plays when its head gets into the hollow.
+##  - stuck_balloon (sky): the balloon stuck in the sky (X-06, drawn by SkyBalloon at the same spot)
+##    has Old Reel's lost party sweets tied under it on curly ribbons. This draws only the ribbons
+##    (to each sweet still there, while the balloon is up) and a few twinkles; once the balloon is
+##    popped the sweets just float where they were. Found when a worm's head comes up to the balloon.
 class_name SecretHalls
 extends SecretSpot
 
-const DRAWS: Array[StringName] = [&"picnic_basket", &"cloud_nest", &"hollow_stump"]
+const DRAWS: Array[StringName] = [&"picnic_basket", &"cloud_nest", &"hollow_stump", &"stuck_balloon"]
 
 const CHECK_RED := Color("e0483a")
 const CLOTH := Color("fff6ea")
@@ -45,6 +49,8 @@ func _draw() -> void:
 			_draw_cloud_nest()
 		&"hollow_stump":
 			_draw_hollow_stump()
+		&"stuck_balloon":
+			_draw_stuck_balloon()
 		_:
 			super._draw()
 
@@ -230,3 +236,42 @@ func _draw_hollow_stump() -> void:
 	_poly([Vector2(tx - 10, g + 11), Vector2(tx + 10, g + 11), Vector2(tx, g + 20)], Color("e0483a"), 1.5)
 	draw_circle(_p(tx - 2, g + 14), 1.5, Color.WHITE)
 	draw_circle(_p(tx + 3, g + 13), 1.2, Color.WHITE)
+
+
+## The sweets still hanging in this place (statics of data.food), in this node's frame.
+func sweets() -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	if director == null:
+		return out
+	for st in director._statics:
+		var n: Node2D = st.node
+		if st.food.id == data.food and is_instance_valid(n) and n.visible:
+			out.append(n.position - position)
+	return out
+
+
+## True while the balloon (SkyBalloon) is still up on its string.
+func balloon_up() -> bool:
+	return director != null and is_instance_valid(director.balloon) and not director.balloon.is_popped
+
+
+func _draw_stuck_balloon() -> void:
+	var up_now := balloon_up()
+	var knot := _p(0.0, -SkyBalloon.RADII.y)
+	var i := 0
+	for sw in sweets():
+		if up_now:
+			# a curly ribbon from the balloon's knot down to the sweet
+			var pts := PackedVector2Array()
+			for k in 9:
+				var f := k / 8.0
+				var side := (knot - sw).orthogonal().normalized()
+				pts.append(knot.lerp(sw, f) + side * sin(f * TAU * 1.5 + _t * 2.0 + i) * 4.0 * (1.0 - f * 0.6))
+			draw_polyline(pts, INK, 3.0)
+			draw_polyline(pts, RAINBOW[(i * 2) % RAINBOW.size()], 1.6)
+		# a twinkle beside each sweet so the place reads as special
+		var tw := 0.5 + 0.5 * sin(_t * 3.0 + i * 2.0)
+		var sp := sw + _p(14.0, 10.0)
+		draw_line(sp + Vector2(-4 * tw, 0), sp + Vector2(4 * tw, 0), Color(1, 1, 0.8, 0.9), 1.5)
+		draw_line(sp + Vector2(0, -4 * tw), sp + Vector2(0, 4 * tw), Color(1, 1, 0.8, 0.9), 1.5)
+		i += 1
