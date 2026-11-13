@@ -3,45 +3,42 @@
 Branch `feature/worm-star-trait-1`, not pushed. Ended: **complete**.
 
 ## Rows moved
-- **D-10** missing → **built**. **D-13** stays partial (note: Stars show on the wall with a gold star corner).
+**D-10** missing → built. D-13 stays partial (note added: Stars show on the wall).
 
-## The five Star traits (`data/traits/*_star.tres`, one per `data/planets/*.tres`)
-| Star | Planet | Felt (one stat, space) | Seen |
+## The Star traits (`data/traits/*_star.tres`)
+| Star | Planet | Felt in space | Seen |
 | --- | --- | --- | --- |
-| frost_star | ice | top speed +110 px/s | snowflake |
-| vine_star | jungle | mouth +26 px (green ring) | leaf |
-| anchor_star | junk | bumps knock half as far | hex nut |
-| sugar_star | candy | small food within 280 px drifts to the mouth (dotted ring) | pinwheel sweet |
-| tick_star | clockwork | steering accel x2.2, sharper turns | cog |
+| frost_star | ice | top speed +110 | snowflake |
+| vine_star | jungle | mouth +26 px (ring) | leaf |
+| anchor_star | junk | half knock-back | hex nut |
+| sugar_star | candy | small food within 280 px drifts in (dotted ring) | pinwheel sweet |
+| tick_star | clockwork | sharper turns (accel x2.2) | cog |
 
-Earn: each planet wears its Star (gold star with the part, orbiting it) before it is eaten; eating the
-planet earns it once per run through SpaceDrift's existing `star_earned` path. Reveal (`StarAward`,
-child of `space_stage.tscn`): the trait's sting, two rings, a 1.8 s camera lean-in, the part flies
-from a big gold star into orbit round the head. Then it's written into the planet worm and the
-tin, listed on the trait wall with a gold star corner, and toggles like any trait. Never from
-flavours (empty `requires`), never a curse (one positive add), foods never carry it (`star_chance` 0).
-Parts are code-drawn (`StarParts`, no text, no files).
+Each planet shows its Star (gold star plus part) before it is eaten. Eating the planet earns it,
+once per run, via SpaceDrift's existing `star_earned`. `StarAward` (in `space_stage.tscn`) plays the
+sting and two rings, leans the camera in for 1.8 s and flies the part into orbit. The Star is then
+written onto the planet worm and into the tin. It shows on the trait wall with a gold star corner
+and toggles like any trait. It never comes from flavours, it is never a curse, and foods never carry it.
+Parts are code-drawn (`StarParts`) and have no text.
 
 ## Tests
-`tests/test_star_traits.gd`, 7 cases (one Star per planet; each planet eaten gives exactly its own;
-foods never carry one; never from flavours; reveal once per earn, cue once, camera beat, not again
-after reload; turn and pull felt; record + re-equip + wall toggle). Contacts resolved directly, no pile.
-Full suite after `rm -rf .godot` + import: run 1 **461 cases, 0 errors, 0 failures**; run 2 the same (461, 0, 0).
-Both print "20 ObjectDB instances were leaked at exit" (known stings-at-exit line, see build notes).
+`tests/test_star_traits.gd`, 7 cases, with contacts resolved directly (no pile). After a clean
+import I ran the full suite twice: **461 cases, 0 errors, 0 failures** both times. Both runs print
+"20 ObjectDB instances were leaked at exit" (stings still playing at exit).
 
-## Frames (`handoff/shots/star-trait/`, looked at)
-1. `1-before.png`: worm left of the ripe jungle planet; the planet's gold Star with the leaf on its rim.
-2. `2-reveal.png`: camera leaned in; big gold star with the leaf above the head, green and gold rings, debris.
-3. `3-after.png`: back to the normal view; leaf on a small gold star orbiting the head, green reach ring at the mouth.
-4. `4-wall.png`: planet worm's trait wall: glow, vine and frost tiles, the two Stars with gold star corners; snowflake above the head, leaf on the tail.
+## Frames (`handoff/shots/star-trait/`)
+1. `1-before`: the worm next to the ripe jungle planet, with the gold Star and leaf on the planet's rim.
+2. `2-reveal`: the camera leans in, a big gold star with the leaf above the head, and rings.
+3. `3-after`: the leaf on a small gold star orbiting the head, with the reach ring at the mouth.
+4. `4-wall`: the trait wall with the vine and frost tiles marked with gold stars, and their parts on the worm.
 
-## Changes outside my own files
-- `scripts/worm/trait_data.gd` (`part_shape`, `star`, `star_planet`), `trait_wall.gd` (star marker), `worm_rules.tres` (+5).
-- `data/planets/*.tres`: inline star trait → the trait file, `star_chance` 0; `scripts/tools/make_space_data.gd` matches.
-- `scenes/levels/space_stage.tscn`: added the `StarAward` node. No `scripts/space/` or `scripts/chomp/` edits.
-- Tests: `test_traits_rules` skips Stars; `test_space_planets` star check accepts `space_turn`/`space_pull`.
+## Outside my files
+- `trait_data.gd` (`part_shape`, `star`, `star_planet`), `trait_wall.gd` (marker), `worm_rules.tres`.
+- `data/planets/*.tres` (star trait → file, `star_chance` 0), `make_space_data.gd` to match.
+- `space_stage.tscn` (+ `StarAward` node). No `scripts/space/` or `scripts/chomp/` edits.
+- `test_traits_rules` skips Stars; `test_space_planets` accepts `space_turn`/`space_pull`.
 
-## Follow-ups for the producer
-- **Cues are borrowed** (`trait_slick`, `trait_green_thumb`, `trait_magnet`, `trait_floaty`, `trait_drill_head`): assets/ was off-limits. Audio lane: five `trait_<id>` files, then change `cue` in each .tres.
-- `space_*` stats do nothing on the planet worm (part shows only). Fine while there's no way back from space; decide for S-12 heirloom.
-- Supersedes unmerged `feature/worm-star-traits-1` (random food rider, edits in scripts/space); reused its `StarParts`. Don't merge both.
+## Follow-ups
+- **The cues are borrowed** from the slice traits (slick, green_thumb, magnet, floaty, drill_head) because assets/ was off-limits. The Audio lane needs to add five `trait_<id>` files, then change `cue` in each .tres.
+- The `space_*` stats do nothing on the planet worm. Decide this with S-12.
+- This replaces the unmerged `feature/worm-star-traits-1` (it reused its `StarParts`). Merge only one of them.
