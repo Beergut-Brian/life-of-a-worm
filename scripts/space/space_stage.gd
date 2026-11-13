@@ -16,6 +16,9 @@ const WHY_TIME := 4.5
 const BODY_SHAPE := 46.0
 const MOUTH_SHAPE := 62.0
 const SUN_WHY_TIME := 5.0
+## The space_drift bed (U-11): looped while this stage is in the tree, stopped when it leaves.
+const DRIFT_CUE := "space_drift"
+const DRIFT_DB := -4.0
 
 signal ate(player: int, what: StringName, growth: float)
 
@@ -34,6 +37,8 @@ var _flash: ColorRect
 ## 0 on the planet shot .. 1 following the worms.
 var ease_k := 0.0
 var _t := 0.0
+## The looping space_drift player (U-11).
+var drift_bed: AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -90,6 +95,16 @@ func _ready() -> void:
 	add_child(why)
 	why.show_for(WHY_TIME)
 	Audio.play("warp")
+	drift_bed = Audio.loop_player(DRIFT_CUE)
+	drift_bed.name = "DriftBed"
+	drift_bed.volume_db = DRIFT_DB
+	drift_bed.autoplay = true   # plays every time the stage enters the tree
+	add_child(drift_bed)
+
+
+func _exit_tree() -> void:
+	if drift_bed:
+		drift_bed.stop()
 
 
 func _add_worm(p: int, at: Vector2) -> SpaceWorm:
