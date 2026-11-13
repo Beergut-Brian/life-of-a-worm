@@ -10,6 +10,7 @@ growth = 2.0
 size_stage = 3
 color = Color(0.9569, 0.9373, 0.8941, 1)
 radius = 6.0
+eat_cue = "boop"
 ring = &"surface"
 regrow_time = 0.0
 plants = &""

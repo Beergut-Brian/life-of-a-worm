@@ -27,6 +27,10 @@ var wall_row_of_ring := PackedInt32Array()
 var ring_outer := PackedFloat32Array()
 var _meta: Dictionary = {}
 var _radius := 0.0
+## (cell) -> bool: true where an air cell is open to the sky (DiskEdge.is_open_to_sky, W-12). Those
+## get no back wall, so the sky shows where the planet's rim has been eaten away. Unset: every air
+## cell in the disk has its wall.
+var sky_open := Callable()
 
 
 func _init(p_world: TileWorld) -> void:
@@ -132,6 +136,8 @@ func solid_coords(cell: Vector2i, id: int, open: int) -> Vector2i:
 func wall_coords(cell: Vector2i, _base_id: int, ceiling: bool) -> Vector2i:
 	var ri := ring_index(cell)
 	if ri < 0:
+		return NO_TILE
+	if sky_open.is_valid() and sky_open.call(cell):
 		return NO_TILE
 	return Vector2i((variants if ceiling else 0) + cell_hash(cell) % variants, wall_row_of_ring[ri])
 

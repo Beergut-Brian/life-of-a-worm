@@ -10,6 +10,7 @@ growth = 4.0
 size_stage = 4
 color = Color(0.9098, 0.8706, 0.7608, 1)
 radius = 14.0
+eat_cue = "rock_beetle_clack"
 ring = &"deep_rock"
 regrow_time = 600.0
 plants = &""

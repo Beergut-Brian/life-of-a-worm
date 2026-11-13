@@ -47,7 +47,7 @@ func _ready() -> void:
 			func(w: Worm) -> Dictionary: return _toward(w, _ladybird().position, { "carry": true }))],
 		["ladybird_home", _until(func(_w: Worm) -> bool: return not level.burrow.pets.is_empty(),
 			func(w: Worm) -> Dictionary: return _toward(w, level.burrow.home, { "carry": true }))],
-		["pet_soon", _once(func(_w: Worm) -> void: level.burrow.pets[0].t = level.burrow.pets[0].data.every - 5.0)],
+		["pet_soon", _once(func(_w: Worm) -> void: if not level.burrow.pets.is_empty(): level.burrow.pets[0].t = level.burrow.pets[0].data.every - 5.0)],
 		["meet_beetle", _go(level.local_point(-12, 0), {})],
 		["eaten", _until(func(_w: Worm) -> bool: return _eaten, {})],
 		["grub_trail", _path(trail)],

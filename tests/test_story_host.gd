@@ -135,3 +135,75 @@ func test_unknown_scene_is_refused() -> void:
 	var story := _story()
 	assert_bool(story.play(&"no_such_scene")).is_false()
 	assert_bool(story.is_playing()).is_false()
+
+
+## Y-01: a button pressed on the opening's very first frame skips the whole opening (the press is
+## kept through the player's short grace), unlocks input and still hands off underground.
+func test_opening_skips_from_the_first_frame() -> void:
+	var story := _story(1.0)
+	var asked: Array = []
+	var locks: Array = []
+	story.handoff.connect(func(id, what): asked.append([id, what]))
+	story.input_locked.connect(func(on): locks.append(on))
+	assert_bool(story.play(&"opening")).is_true()
+	var ev := InputEventJoypadButton.new()
+	ev.button_index = JOY_BUTTON_A
+	ev.pressed = true
+	story._input(ev)
+	var ended: bool = await _until(func(): return not _done.is_empty(), 2.0)
+	assert_bool(ended).override_failure_message("opening ignored a first-frame press").is_true()
+	assert_array(_done[0]).is_equal([&"opening", true])
+	assert_array(asked).is_equal([[&"opening", "follow_worm_underground"]])
+	assert_bool(story.is_playing()).is_false()
+	if not locks.is_empty():
+		assert_bool(locks.back()).is_false()
+
+
+## Y-10: subtitles are off by default (no setting saved), and then a line with no voice file
+## plays its bark: fallback while nothing on screen is text.
+func test_subtitles_off_by_default_and_unvoiced_lines_bark_without_text() -> void:
+	var fresh := Story.new()
+	assert_bool(fresh.subtitles).is_false()
+	fresh.free()
+	var save := get_node_or_null(^"/root/Save")
+	var old_path := ""
+	if save != null:
+		old_path = save.settings_path
+		save.settings_path = "user://test_story_subtitles_settings.json"
+		save.wipe_settings()
+	var story := _story(30.0)
+	assert_bool(story.subtitles).is_false()
+	story.play(&"opening")
+	var texts: Array = []
+	while not story.is_playing() and _done.is_empty():
+		await get_tree().process_frame
+	while _done.is_empty():
+		if story.subtitle_text() != "":
+			texts.append(story.subtitle_text())
+		if story._viewport != null and is_instance_valid(story._viewport):
+			assert_int(story._viewport.find_children("*", "Label", true, false).size()).is_equal(0)
+		await get_tree().process_frame
+	if save != null:
+		save.settings_path = old_path
+		save.reload_settings()
+	assert_array(texts).is_empty()
+	assert_int(story.said.size()).is_greater(0)
+	for s in story.said:
+		var l := CutscenePlayer.line(String(s[0]))
+		var file := ResourceLoader.exists("res://assets/story/voice/%s.ogg" % s[0])
+		assert_bool(String(l.fallback).begins_with("bark:")).is_true()
+		assert_str(String(s[2])).override_failure_message("%s played %s" % [s[0], s[2]]).is_equal("file" if file else "bark")
+
+
+## Y-10: turned on (for Kaden), a subtitle shows the line's script without its [directions].
+func test_subtitles_on_show_the_script_without_directions() -> void:
+	assert_str(Story.spoken_text("op_reel_worms")).is_equal("Worms? Heh. Back in my day, worms were little.")
+	var story := _story(1.0)
+	story.subtitles = true
+	story.play(&"opening")
+	var seen := await _until(func(): return story.subtitle_text() != "", 15.0)
+	assert_bool(seen).is_true()
+	assert_bool(story.subtitle_text().contains("[")).is_false()
+	story.skip()
+	await _until(func(): return not _done.is_empty(), 3.0)
+	assert_str(story.subtitle_text()).is_equal("")

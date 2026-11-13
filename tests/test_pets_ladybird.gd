@@ -104,7 +104,7 @@ func test_a_ladybird_carried_home_alive_becomes_a_pet() -> void:
 	assert_object(w.carrying).is_null()
 	assert_bool(bug.is_available()).is_false()   # the wild one left (it turns up again later)
 	assert_int(Audio.played.get("pet_home", 0)).is_equal(1)
-	assert_float(_level.burrow.pets[0].position.distance_to(_level.burrow.home)).is_less(Burrow.ROOM_TILES * 16.0)
+	assert_float(_level.burrow.pets[0].position.distance_to(_level.burrow.home)).is_less(Burrow.room_tiles_for(1) * 16.0)
 
 
 func test_a_wild_ladybird_is_small_food_and_comes_back() -> void:

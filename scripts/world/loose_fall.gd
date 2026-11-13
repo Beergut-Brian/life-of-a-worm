@@ -94,6 +94,13 @@ func launch(v: Vector2) -> void:
 func _land(body: Node2D, p: Vector2) -> void:
 	var speed := velocity.length()
 	velocity = Vector2.ZERO
+	# Touch down on the tile, not up to a step above it (the wall check stops a step early): a
+	# resting thing is always supported, so it never creeps on after its landing.
+	var down := -p.normalized()
+	for i in ceili(STEP_PX * 2.0):
+		if supported_at(p) or world.is_solid(world.shape.cell_at(p + down * 0.5)):
+			break
+		p += down * 0.5
 	resting = true
 	body.global_position = world.to_global(p)
 	if speed < LAND_SPEED or _land_cool > 0.0:

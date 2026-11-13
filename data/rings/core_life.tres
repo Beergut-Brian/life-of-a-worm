@@ -4,6 +4,8 @@
 [ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
 [ext_resource type="Resource" path="res://data/foods/core_crystal.tres" id="f0"]
+[ext_resource type="Resource" path="res://data/foods/big_boulder.tres" id="f1"]
+[ext_resource type="Resource" path="res://data/foods/crystal.tres" id="f2"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -37,15 +39,15 @@ efficiency = 0.5
 immigration = 0.012
 eats = Dictionary[StringName, float]({})
 half_sat = 10.0
-live_scale = 0.0
-live_max = 0
+live_scale = 0.5
+live_max = 3
 live = "res://scenes/creatures/lava_blob.tscn"
-depth_min = 0.0
-depth_max = 0.0
+depth_min = 0.03
+depth_max = 0.135
 
 [resource]
 script = ExtResource("1")
 ring = &"core"
 species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1")])
-scatter = Array[ExtResource("3")]([ExtResource("f0")])
-scatter_count = 4
+scatter = Array[ExtResource("3")]([ExtResource("f0"), ExtResource("f0"), ExtResource("f1"), ExtResource("f2")])
+scatter_count = 8

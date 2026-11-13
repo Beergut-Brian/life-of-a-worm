@@ -1064,6 +1064,40 @@ the cue again, no ring. At work = the cue, a small ring, the part pops (throttle
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
 
+### Juice (worm-juice-1)
+
+`feature/worm-juice-1` (PLAN-STATUS A-14). `scripts/worm/juice.gd`, class `WormJuice` (static
+functions, no autoload, no art, no cues). Strength numbers are constants at the top of the file.
+
+- **Switch:** `const ENABLED := true`. `WormJuice.on` starts from it at runtime; `false` = no
+  bursts, no debris, no shake, no flash anywhere (the hooks API below included).
+- **Worm hooks** (four lines in `scripts/worm/worm.gd`):
+  - `Worm.feed(food)` → `WormJuice.bite(worm, food) -> CPUParticles2D`: a one-shot burst named
+    `JuiceBurst` at `mouth_position()` in `food.color` (FoodData, never a table);
+    `specks_for_ratio(ratio)` 3 to 22 specks; `shake_worm(worm, shake_for_ratio(ratio))`.
+    `ratio = food.radius / model.stage_info().collision_radius`. Shake is 0 under 0.5, then
+    0.18 per ratio, capped at `SHAKE_CAP` 0.3 (PolarCamera units, about 7 px on screen).
+  - `shake_worm(worm, s)` shakes `worm.get_viewport().get_camera_2d()` only, and only if that
+    camera's `targets` holds the worm (a camera following someone else is never shaken). Honours
+    `SettingsPanel.screen_shake()`.
+  - `Worm._on_tile_eaten` → `WormJuice.tile(worm, cell)`: `JuiceDebris` crumbs in the ring's `hue`,
+    thrown away from the core and pulled by `world.shape.gravity_at()` turned into global space
+    (`fall_direction(world, pos)`), never a fixed down. Throttled to one puff per worm per
+    `DEBRIS_EVERY` (0.12 s).
+  - `Worm._on_stage_changed` → `WormJuice.worm_flash(worm)`: every drawn CanvasItem of the worm
+    (not particles or lights) borrows one white canvas shader material for exactly
+    `FLASH_FRAMES` (2) drawn frames, then gets its own material back. Frames are counted with
+    `Engine.get_process_frames()`, so it is two frames at any frame rate. `is_flashing(worm)`.
+- Bursts and crumbs live in global space (`local_coords = false`) under the worm's parent, free
+  themselves on `finished`, with a timer backstop at lifetime + 0.25 s.
+- **WormHooks API, same signatures as the stub:** `chomp(pos, colour, size)`, `shake(strength)`
+  (capped at `BEAT_SHAKE_CAP` 1.0), `stage_flash()` (whole screen white for exactly 2 frames, no
+  fade), `debris(pos)` (falls toward the core of the first worm's world). `calls` logs
+  `[fn, args]` like the stub (last 64). `WormHooks.JUICE_PATH` still names
+  `scripts/fx/juice.gd`, so the stage beat, crust burst, props and loose fall still use the stub;
+  pointing it here is a one-line change in `worm_hooks.gd` plus `JUICE_STUB` → `WormJuice` in
+  `test_stages_beat`, `test_surface_ring`, `test_world_destruct` (left to the producer).
+
 ### Regrowth (worm-regrow-1)
 
 Food sizes and a ring that never runs out, both on `PolarWorld` (the World above), both data in
@@ -1182,6 +1216,41 @@ func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2
   - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
     `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
   - A new ring needs only `amb_<its id>.ogg`; no code change.
+### Burrow growth and sleep chooser (worm-burrow-1)
+
+PLAN-STATUS B-06, D-13. `scripts/burrow/` only; nothing in `scripts/worm/` changed.
+
+```gdscript
+# BurrowGrowth (Resource, data/burrow/growth.tres; BurrowGrowth.get_default())
+@export var room_tiles, chamber_tiles, picture_px: PackedFloat32Array   # index = stage - 1
+@export var house_stage := 5; house_tiles := Vector2(10, 6); house_rooms := 3; house_floors := 2
+func room_for(stage) -> float; chamber_for(stage) -> float; picture_for(stage) -> float
+func has_house(stage) -> bool; house_spots() -> int
+
+# Burrow additions (ROOM_TILES / ROOM_GROWTH / CHAMBER_* constants are gone: use the data)
+var growth: BurrowGrowth
+var offered: Dictionary                       # player -> trait ids auto-equipped once (saved "offered")
+static func room_tiles_for(stage) -> float    # from data now
+func chamber_tiles() -> float; func has_house() -> bool
+func house_base() -> Vector2; func house_spot(k) -> Vector2; func house_spot_cells() -> Array[Vector2i]
+func free_house_spot(near: Vector2) -> Vector2i   # Vector2i(-99999, -99999) if none
+func install_wall(w: Worm)                    # gives the worm a BurrowWall (HomeSlice does it on spawn)
+func auto_equip(w: Worm) -> StringName        # newest earned trait into a FREE slot, once; &"" if nothing to do
+
+# BurrowWall extends TraitWall (the sleep chooser): var burrow, var touched;
+func pictures() -> Array[StringName]          # the worm's earned traits, in order
+# Shutting it with touched == false calls burrow.auto_equip(worm).
+```
+
+No swap (fix run, 2026-11-12): auto_equip only fills a free slot. With every slot full it equips
+nothing and unequips nothing; the newest trait keeps waiting on the wall (reveal ring and sting are
+the Worm lane's, unchanged), and the next stage that adds a slot equips it (`WormGrowth._check_stage`,
+unchanged). A trait counts as `offered` only once it actually went on. The first run swapped out the
+oldest active trait; that broke the 2026-11-11 rule in GAME.md ("The wall never auto-unequips
+anything"), so it is gone.
+
+Hook wanted from the Worm lane: `Worm._wall` is set from outside by `Burrow.install_wall` (there is
+no public setter). A `wall_factory: Callable` or a public `wall` var on `Worm` would make that clean.
 
 ### Story: Old Reel's dock scenes (story-1; documented by worm-gap-close-1 for W-28)
 
@@ -1303,3 +1372,62 @@ plays `TraitData.cue`, two `WormRing`s, leans the camera in on that worm and fli
 orbit, applies `space_turn`, and calls `StarTraits.record`. `space_speed/reach/steady` stay with
 `SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner. No `scripts/space/`
 or `scripts/chomp/` edits.
+### Dock story follow-up (worm-story-2)
+
+The trait beat (Y-16 / P-14). `StageBeat` owns it, so the level needs no new code.
+
+```gdscript
+# TraitBeat (scripts/gameplay/trait_beat.gd), StageBeat.trait_beat
+signal beat(player: int, trait_id: StringName)
+const LEAN := 1.4       # camera.lean_in += 1 for this long (PolarCamera; the fit never cuts a worm off)
+const GAP := 1.8        # two trait / stage moments never share the bubble spot: later ones queue
+var camera: PolarCamera # StageBeat hands it its own camera in _ready()
+var history: Array[Dictionary]               # {player, trait, recipe}
+func watch(w: Worm) -> void                  # StageBeat watches every Worm already in the tree
+                                             # and every one added later (SceneTree.node_added)
+func hold(secs: float) -> void               # StageBeat.play() holds trait beats for WHY_LIFE
+func play(w: Worm, id: StringName) -> void   # shake 0.35, burst in TraitData.color, lean, TraitWhy
+
+# TraitWhy (scripts/gameplay/trait_why.gd): the wordless "why" bubble over the worm
+var worm: Worm; var trait_data: TraitData; var rules: WormRules; var life := 1.8
+func recipe() -> Array   # [[flavour colour, count], ...] from TraitData.requires, sorted by flavour
+```
+
+- The worm itself still plays the trait's cue and its colour ring (`Worm._on_trait_earned`); the
+  beat adds the camera and the picture: one bead per required segment in its flavour colour, an
+  arrow, the trait's first part texture (else a star in `TraitData.color`).
+- Dock scenes: a background clue (`call clue` with `secs > 0`) always happens with the camera on
+  it. Anchors used for it: `pond` (ripple), `tree`, `shed`, `hill`, `wide`, `sky` (star), `moon`.
+  The dock draws the ripple as a long dark shape under the water, spreading rings and bubbles.
+
+### Old Reel tin (worm-old-reel-tin-1)
+
+S-12: after the sun, Old Reel offers another tin with one earned trait as an heirloom.
+
+```gdscript
+class_name OldReelTin   # scripts/space/old_reel_tin.gd, static helpers, RefCounted
+const KEY := "old_reel_tin"     # in the tin whose sun was eaten (once per tin):
+	# { seed, theme, slot, player, heirloom, picked }
+const HEIRLOOM_KEY := "heirloom" # in the new tin: { trait, from }; plus "seed" and "theme"
+static func make(player: int) -> Dictionary   # once; {} outside "tin1".."tin3"
+static func place() -> bool                   # rail spot = first slot with NO file (never overwrites)
+static func choose(id: StringName) -> bool    # only an id earned_traits(player) lists; once
+static func earned_traits(player: int) -> Array[StringName]  # saved + live earned, known to rules
+static func next_seed(old: int) -> int        # never the old seed
+static func theme_for(seed: int) -> StringName  # SpaceDrift.shuffled(life.planets, seed)[0].id
+static func heirloom() -> StringName          # of the open tin
+static func give(w: Worm) -> bool             # earn + equip; stays on at stage 1 (0 slots)
+
+class_name OldReelOffer  # child "OldReelOffer" of scenes/levels/space_stage.tscn
+signal offered(info: Dictionary)
+signal picked(id: StringName)
+# sun_eaten -> make() at once -> DELAY 5.5 s -> Story.play(&"new_tin") -> HeirloomPick
+# Worms' steer is zeroed (process_priority 100) while the scene or the pick is up.
+```
+
+`scenes/main.gd` connects `level.worm_spawned` to `OldReelTin.give` (+ `HeirloomBubble.show_over`:
+bait tin = trait picture over the worm). `Story.SCENES` gains `new_tin` (9 scenes; lines `nt_*`).
+`StoryPictures` adds `sun`, `bait_tin` and the prefix `trait:<id>`. The tackle box traits page
+draws a small bait tin on the heirloom's sketch. `Save.dir` (default `user://saves`) lets tests write
+under `res://.scratch/`. The new tin has no `"planet"`, so `BaitTins.summary` reads it as empty and
+the dock shows "New planet".

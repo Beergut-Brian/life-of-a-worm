@@ -1,12 +1,18 @@
-[gd_resource type="Resource" script_class="FoodData" format=3]
+[gd_resource type="Resource" script_class="RingFood" format=3]
 
-[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 id = &"bottle_cap"
+eat_cue = "jar_clink"
 flavour = &"junk"
 growth = 1.0
 size_stage = 1
 color = Color(0.902, 0.7608, 0.1608, 1)
 radius = 4.5
+ring = &"topsoil"
+regrow_time = 300.0
+plants = &""
+look = 7
+accent = Color(0.75, 0.55, 0.1, 1)

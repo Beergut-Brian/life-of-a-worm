@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BurrowGrowth" format=3]
+
+[ext_resource type="Script" path="res://scripts/burrow/burrow_growth.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+room_tiles = PackedFloat32Array(4, 5.5, 7, 9, 16, 18, 20)
+chamber_tiles = PackedFloat32Array(2, 3, 4, 5.5, 12, 13, 14)
+picture_px = PackedFloat32Array(9, 10, 12, 14, 26, 28, 30)
+house_stage = 5
+house_tiles = Vector2(10, 6)
+house_rooms = 3
+house_floors = 2

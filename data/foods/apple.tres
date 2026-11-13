@@ -10,6 +10,7 @@ growth = 2.0
 size_stage = 4
 color = Color(0.8471, 0.2667, 0.2275, 1)
 radius = 7.0
+eat_cue = "creature_munch"
 ring = &"surface"
 regrow_time = 120.0
 plants = &""

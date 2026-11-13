@@ -325,6 +325,34 @@
 			"text": "Never did catch it. Glad I didn't.",
 			"delivery": "whisper, smile in the voice, trails off",
 			"fallback": "bark:win"
+		},
+		{
+			"id": "nt_bobber_then_what",
+			"character": "bobber",
+			"text": "Then what, Grandpa? It ate the SUN! What's left?",
+			"delivery": "wide awake again, sitting up, amazed",
+			"fallback": "bark:wait"
+		},
+		{
+			"id": "nt_reel_new_tin",
+			"character": "old_reel",
+			"text": "[chuckles] What's left? A new tin, that's what. Fresh dirt, a whole new world in it.",
+			"delivery": "pleased with himself, slow, taps the lid",
+			"fallback": "bark:cheer"
+		},
+		{
+			"id": "nt_reel_keep_one",
+			"character": "old_reel",
+			"text": "And a worm that big always keeps one little thing from last time. You pick which.",
+			"delivery": "leans in, conspiratorial, warm",
+			"fallback": "bark:ready"
+		},
+		{
+			"id": "nt_bobber_again",
+			"character": "bobber",
+			"text": "Again! Tell it again!",
+			"delivery": "bouncing, delighted",
+			"fallback": "bark:win"
 		}
 	]
 }

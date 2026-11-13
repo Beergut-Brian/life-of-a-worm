@@ -17,5 +17,8 @@ extends RingLife
 @export var scatter_outer := 1.008
 ## How far round from the start the scattered foods go, radians either side.
 @export var scatter_spread := 0.4
+## X-08: bare grass kept for later Jarling cameos (CameoSpot.angle): no prop stands there and the
+## scattered apples stop short of it.
+@export var cameos: Array[CameoSpot] = []
 ## The surface's props (each also a data/props/<id>.tres with a scenes/props/<id>.tscn).
 @export var props: Array[PropData] = []

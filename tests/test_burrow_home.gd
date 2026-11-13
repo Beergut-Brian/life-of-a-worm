@@ -181,7 +181,7 @@ func test_the_burrow_grows_with_the_stage() -> void:
 	assert_bool(b.in_room(far)).is_true()
 	assert_int(Audio.played.get("burrow_grow", 0)).is_equal(1)
 	# The chamber was carved bigger round the bed.
-	var edge := b.home + b.home.normalized().orthogonal() * (Burrow.CHAMBER_TILES + Burrow.CHAMBER_GROWTH - 0.3) * 16.0
+	var edge := b.home + b.home.normalized().orthogonal() * (b.chamber_tiles() - 0.3) * 16.0
 	assert_bool(_level.world.is_solid(_level.world.shape.cell_at(edge))).is_false()
 
 

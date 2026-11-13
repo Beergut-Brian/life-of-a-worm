@@ -46,9 +46,9 @@ func _ready() -> void:
 	shop.position = level.local_point(SHOP_AT.x, SHOP_AT.y)
 	shop.z_index = 2
 	level.add_child(shop)
-	if level.beetle:
-		level.beetle.add_to_group(&"creature")
-		level.beetle.set_meta(&"creature_id", &"beetle")
+	for a in level.apexes:
+		a.add_to_group(&"creature")
+		a.set_meta(&"creature_id", &"beetle")
 	level.burrow.bonus_changed.connect(apply_bonus)
 	level.worm_spawned.connect(_on_worm)
 	for w in Worm.all():
@@ -120,6 +120,7 @@ func _on_worm(w: Worm) -> void:
 		w.tackle_pressed.connect(open_box)
 		w.stage_changed.connect(func(_p: int, _f: int, to: int) -> void: level.burrow.grow_to(to))
 	level.burrow.grow_to(w.model.stage)
+	level.burrow.install_wall(w)   # the trait wall is the burrow's chooser (BurrowWall)
 	TrophyBonus.apply(w, level.burrow.bonus())
 	if not _charms.has(w.player) or not is_instance_valid(_charms[w.player]):
 		var c := TrophyCharms.new()
