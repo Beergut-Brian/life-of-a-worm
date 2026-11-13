@@ -1332,3 +1332,35 @@ plays `TraitData.cue`, two `WormRing`s, leans the camera in on that worm and fli
 orbit, applies `space_turn`, and calls `StarTraits.record`. `space_speed/reach/steady` stay with
 `SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner. No `scripts/space/`
 or `scripts/chomp/` edits.
+
+### Old Reel tin (worm-old-reel-tin-1)
+
+S-12: after the sun, Old Reel offers another tin with one earned trait as an heirloom.
+
+```gdscript
+class_name OldReelTin   # scripts/space/old_reel_tin.gd, static helpers, RefCounted
+const KEY := "old_reel_tin"     # in the tin whose sun was eaten (once per tin):
+	# { seed, theme, slot, player, heirloom, picked }
+const HEIRLOOM_KEY := "heirloom" # in the new tin: { trait, from }; plus "seed" and "theme"
+static func make(player: int) -> Dictionary   # once; {} outside "tin1".."tin3"
+static func place() -> bool                   # rail spot = first slot with NO file (never overwrites)
+static func choose(id: StringName) -> bool    # only an id earned_traits(player) lists; once
+static func earned_traits(player: int) -> Array[StringName]  # saved + live earned, known to rules
+static func next_seed(old: int) -> int        # never the old seed
+static func theme_for(seed: int) -> StringName  # SpaceDrift.shuffled(life.planets, seed)[0].id
+static func heirloom() -> StringName          # of the open tin
+static func give(w: Worm) -> bool             # earn + equip; stays on at stage 1 (0 slots)
+
+class_name OldReelOffer  # child "OldReelOffer" of scenes/levels/space_stage.tscn
+signal offered(info: Dictionary)
+signal picked(id: StringName)
+# sun_eaten -> make() at once -> DELAY 5.5 s -> Story.play(&"new_tin") -> HeirloomPick
+# Worms' steer is zeroed (process_priority 100) while the scene or the pick is up.
+```
+
+`scenes/main.gd` connects `level.worm_spawned` to `OldReelTin.give` (+ `HeirloomBubble.show_over`:
+bait tin = trait picture over the worm). `Story.SCENES` gains `new_tin` (9 scenes; lines `nt_*`).
+`StoryPictures` adds `sun`, `bait_tin` and the prefix `trait:<id>`. The tackle box traits page
+draws a small bait tin on the heirloom's sketch. `Save.dir` (default `user://saves`) lets tests write
+under `res://.scratch/`. The new tin has no `"planet"`, so `BaitTins.summary` reads it as empty and
+the dock shows "New planet".

@@ -11,6 +11,9 @@ var profile: String = "p1"
 ## Which save of this profile is open: "" = the profile's own file; a game with several saves per
 ## profile (Worm's bait tins: "tin1".."tin3") opens one with use_slot(). Never restored at boot.
 var slot := ""
+## Where save files live. Tests point it at a scratch folder (res://.scratch/...) so they never
+## write a real tin; the game never changes it.
+var dir := "user://saves"
 var _data: Dictionary = {}
 var _dirty := false
 ## Tests point this somewhere else so they never touch the real settings.
@@ -48,7 +51,7 @@ func set_value(key: String, value) -> void:
 func flush() -> void:
 	if not _dirty:
 		return
-	DirAccess.make_dir_recursive_absolute("user://saves")
+	DirAccess.make_dir_recursive_absolute(dir)
 	var f := FileAccess.open(_path(), FileAccess.WRITE)
 	if f == null:
 		push_warning("Save: could not open %s" % _path())
@@ -105,7 +108,7 @@ func use_slot(id: String) -> void:
 ## Path of a profile's save, for tools that read a slot without opening it (the tin shelf).
 func path_for(p_slot: String, p_profile := "") -> String:
 	var who := p_profile if p_profile != "" else profile
-	return "user://saves/%s.json" % (who if p_slot == "" else "%s_%s" % [who, p_slot])
+	return "%s/%s.json" % [dir, who if p_slot == "" else "%s_%s" % [who, p_slot]]
 
 
 func wipe() -> void:

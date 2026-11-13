@@ -23,7 +23,7 @@ signal handoff(id: StringName, what: String)
 signal input_locked(on: bool)
 
 const DOCK_SCENE := "res://scenes/story/dock.tscn"
-const SCENES: Array[StringName] = [&"opening", &"stage_2", &"stage_3", &"stage_4", &"stage_5", &"stage_6", &"stage_7", &"ending"]
+const SCENES: Array[StringName] = [&"opening", &"stage_2", &"stage_3", &"stage_4", &"stage_5", &"stage_6", &"stage_7", &"ending", &"new_tin"]
 ## Stage -> the dock scene that marks reaching it (stage 1 is the start: the opening).
 const STAGE_SCENES := {1: &"opening", 2: &"stage_2", 3: &"stage_3", 4: &"stage_4", 5: &"stage_5", 6: &"stage_6", 7: &"stage_7"}
 const SAVE_KEY := "story_seen"
