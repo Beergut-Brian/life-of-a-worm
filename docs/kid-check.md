@@ -144,6 +144,11 @@ already tracks this (the jar shelf on the dock), so it is a bigger build.
 `scripts/planet/planet_level.gd:338-347` (`remove_worm`, called from `scenes/main.gd`), the worm is
 simply freed. The fix is a cue plus a puff: one or two lines, but in `planet_level.gd`, which other
 branches are editing (see N4). Owner: Systems.
+**Fixed (worm-gap-close-34):** without touching `planet_level.gd`: `DropOutPuff`
+(`scripts/gameplay/drop_out_puff.gd`, a worm.tscn child) listens to `Players.player_left` and, for
+its own worm, opens a ring in the slot colour with specks where the head was (a sibling in the
+level, so it outlives the worm, 0.9 s) and plays `warp`, whichever of it and `remove_worm` runs
+first. `tests/test_drop_out_puff.gd` (3 cases). Space worms (`SpaceDropIn`) are not covered.
 
 ## Checked and passed (looked like a "no")
 
