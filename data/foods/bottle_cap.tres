@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"bottle_cap"
+eat_cue = "jar_clink"
 flavour = &"junk"
 growth = 1.0
 size_stage = 1
