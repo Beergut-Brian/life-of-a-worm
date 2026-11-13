@@ -77,6 +77,8 @@ var cities: Dictionary = {}           # secret id -> centre (world px)
 var live: Dictionary = {}             # species -> Array[Node2D]
 var castings_speed := 1.0
 var dressing: TopsoilDressing
+## G-06: castings in the topsoil sprout while it rains (scripts/rings/castings_sprouts.gd).
+var sprouts: CastingsSprouts
 var balloon: SkyBalloon
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
@@ -191,6 +193,11 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	dressing.name = "TopsoilDressing"
 	dressing.director = self
 	add_child(dressing)
+	sprouts = CastingsSprouts.new()
+	sprouts.name = "CastingsSprouts"
+	sprouts.director = self
+	sprouts.world = world
+	add_child(sprouts)
 	for s in SECRETS:
 		var spot := SecretSpot.new()
 		spot.name = "Secret_%s" % s.id
