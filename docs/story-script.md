@@ -233,4 +233,6 @@ Gary voices each line to `assets/story/voice/<line_id>.ogg` from the speaker's s
 (Old Reel: Chatterbox library voice; Bobber: his library voice once made). `delivery` in
 `lines.json` is the direction; `[tags]` are ElevenLabs v3-style. Until a file exists the line plays
 its fallback: the speaker's library bark (`bark:<cue>`) if it is vendored, else a short placeholder
-babble in the speaker's pitch. Subtitles: none yet (off by default per the plan).
+babble in the speaker's pitch. Subtitles are off by default: the Save setting `subtitles`
+(`Story.subtitles`) shows each line's `text`, minus its `[tags]`, under the bubbles. No menu toggles
+it yet; preview with `story_preview.tscn -- --subtitles`.

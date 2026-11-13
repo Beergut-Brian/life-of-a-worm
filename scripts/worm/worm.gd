@@ -724,11 +724,22 @@ func _add_segment_node(flavour: StringName, pop := true) -> void:
 	body.add_child(node)
 	body.move_child(node, 0)
 	_seg_nodes.append(node)
+	_mark_tail()
 	if pop:
 		node.set_meta("pop", 0.1)
 		var tw := create_tween()
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 0.1, 1.5, 0.12)
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.5, 1.0, 0.12)
+
+
+## The last segment wears the stage set's tail sprite (WormLook kind &"tail"), every other one the
+## body sprite; WormSegment re-asks WormLook for its kind at its stage whenever either changes.
+func _mark_tail() -> void:
+	for i in _seg_nodes.size():
+		var want: StringName = &"tail" if i == _seg_nodes.size() - 1 else &"body"
+		var seg := _seg_nodes[i] as WormSegment
+		if seg.kind != want:
+			seg.kind = want
 
 
 func _on_segment_added(flavour: StringName) -> void:
@@ -748,6 +759,7 @@ func _on_segment_lost() -> void:
 	_positions.pop_back()
 	_float_fx(STAR_TEX, node.position, Color(1, 1, 1), 0.6)
 	node.queue_free()
+	_mark_tail()
 	_refresh_parts(false)
 	segment_lost.emit(player)
 
