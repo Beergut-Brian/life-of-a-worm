@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rain_garden"
+requires = {"root": 5, "water": 4}
+add = {"castings_speed": 0.5, "garden_yield": 0.5}
+mul = {"drag/water": 0.7}
+part_slot = &"crown"
+part_priority = 1
+part_spin = 0.0
+part_shape = &"leaf"
+cue = "trait_green_thumb"
+color = Color(0.427, 0.482, 0.618, 1)

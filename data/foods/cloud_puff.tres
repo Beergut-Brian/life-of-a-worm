@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"cloud_puff"
-flavour = &"water"
+flavour = &"cloud"
 growth = 3.0
 size_stage = 5
 color = Color(0.96, 0.97, 1, 1)

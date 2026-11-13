@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spring_tail"
+requires = {"bug": 4, "junk": 4}
+add = {"wiggle_radius": 16.0}
+mul = {"wiggle_hop": 1.5}
+part_slot = &"tail"
+part_priority = 1
+part_spin = 0.0
+part_shape = &"cog"
+cue = "trait_floaty"
+color = Color(0.951, 0.692, 0.135, 1)
