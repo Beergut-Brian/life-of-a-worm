@@ -2,7 +2,8 @@
 ## rock beetles have a body and live near a worm in the deep rock; deep_rock_life runs in play
 ## (fossils scattered, ore nuggets and beetles from the counters); ore nuggets and fossils have their
 ## own placeholder looks; a lava blob knocks a smaller worm's head away on contact (a squash, a
-## boing, a push, never a steer) and, with live_max 0, never spawns.
+## boing, a push, never a steer); feature/worm-lava-blob-1: lava blobs spawn live in the core and its
+## rim, bounce stage 1-4 worms and are food (cowering) from stage 5.
 ## Saves: the suite runs in its own sandbox profile (SuiteSandbox), never the family's tin.
 extends GdUnitTestSuite
 
@@ -201,12 +202,18 @@ func test_the_lava_blob_scene_bounces() -> void:
 
 func test_a_lava_blob_contact_pushes_the_worm_away_from_the_blob() -> void:
 	var dir := Vector2(1, -0.4).normalized()
-	var blob := _blob_and_worm(5, dir * 0.0)
+	var blob := _blob_and_worm(4, dir * 0.0)
 	var r := blob.data.radius
 	_worm.head.global_position = blob.global_position + dir * (r + 6.0)
 	var d0 := _worm.head_position().distance_to(blob.global_position)
+	var biggest_step := 0.0
 	for i in 40:
+		var was := _worm.head_position()
 		blob.step(1.0 / 60.0)
+		biggest_step = maxf(biggest_step, was.distance_to(_worm.head_position()))
+	# a push the eye can follow: spread over frames, never a teleport, and only a short way back
+	assert_float(biggest_step).is_less(blob.data.bounce * 0.2)
+	assert_float(_worm.head_position().distance_to(blob.global_position) - d0).is_less(blob.data.bounce * 1.1)
 	var moved := _worm.head_position() - (blob.global_position + dir * (r + 6.0))
 	assert_int(blob.bounces).is_equal(1)
 	assert_float(_worm.head_position().distance_to(blob.global_position)).is_greater(d0 + blob.data.bounce * 0.8)
@@ -218,7 +225,7 @@ func test_a_lava_blob_contact_pushes_the_worm_away_from_the_blob() -> void:
 
 
 func test_the_bounce_squashes_the_blob_and_swells_first() -> void:
-	var blob := _blob_and_worm(5, Vector2(blob_r() + Creature.SWELL_RANGE * 0.5, 0))
+	var blob := _blob_and_worm(4, Vector2(blob_r() + Creature.SWELL_RANGE * 0.5, 0))
 	blob.step(1.0 / 60.0)
 	assert_int(blob.bounces).is_equal(0)
 	for i in 20:
@@ -236,17 +243,38 @@ func blob_r() -> float:
 
 
 func test_a_worm_big_enough_to_eat_the_blob_is_never_bounced() -> void:
-	var blob := _blob_and_worm(6, Vector2(blob_r() + 4.0, 0))
+	# stage 5 (the stage the core opens at) eats it, like the other core foods
+	var blob := _blob_and_worm(5, Vector2(blob_r() + 4.0, 0))
 	var at := _worm.head_position()
 	for i in 30:
 		blob.step(1.0 / 60.0)
 	assert_int(blob.bounces).is_equal(0)
 	assert_vector(_worm.head_position()).is_equal(at)
 	assert_bool(blob.can_be_eaten_by(_worm)).is_true()
+	assert_bool(_worm.can_eat(blob.data)).is_true()
+	# it cowers, never swells: food never looks bigger than the worm that can eat it
+	assert_float(blob.draw_scale()).is_equal_approx(0.85, 0.001)
+	assert_int(Audio.played.get(blob.data.windup_cue, 0)).is_equal(0)
+
+
+func test_a_stage_5_worm_eats_a_lava_blob_with_its_mouth() -> void:
+	var blob := _blob_and_worm(5, Vector2(200, 0))
+	var eaten := [0]
+	blob.taken.connect(func(_c: Creature) -> void: eaten[0] += 1)
+	var grew := [0]
+	_worm.ate.connect(func(_p: int, _w: StringName, _g: float) -> void: grew[0] += 1)
+	_worm.set_physics_process(true)
+	blob.global_position = _worm.mouth_position()
+	for i in 6:
+		await get_tree().physics_frame
+	assert_int(eaten[0]).is_equal(1)
+	assert_int(grew[0]).is_greater_equal(1)
+	# eaten, never bounced: no boing
+	assert_int(Audio.played.get(Creature.BOUNCE_CUE, 0)).is_equal(0)
 
 
 func test_the_bounce_never_steers_and_waits_between_bounces() -> void:
-	var blob := _blob_and_worm(5, Vector2(blob_r() + 4.0, 0))
+	var blob := _blob_and_worm(4, Vector2(blob_r() + 4.0, 0))
 	var heading := _worm.heading
 	blob.step(1.0 / 60.0)
 	assert_int(blob.bounces).is_equal(1)
@@ -257,18 +285,50 @@ func test_the_bounce_never_steers_and_waits_between_bounces() -> void:
 	assert_float(_worm.heading).is_equal(heading)
 
 
-func test_a_lava_blob_with_live_max_0_never_spawns() -> void:
+func test_lava_blobs_spawn_live_in_the_core_near_a_worm() -> void:
 	_planet(&"core", 5)
 	var rule: PopulationRule = _dir.ecology.rules[&"lava_blob"]
-	assert_int(rule.live_max).is_equal(0)
-	assert_float(_dir.ecology.count(&"lava_blob")).is_greater(0.0)
-	for i in 20:
-		_dir.ecology.step(5.0)
+	assert_str(rule.live).is_equal("res://scenes/creatures/lava_blob.tscn")
+	assert_int(rule.live_max).is_greater(0)
+	assert_int(_dir.wanted(rule)).is_greater(0)
+	for i in 6:
 		_dir.fit_live()
-	assert_int(_dir.wanted(rule)).is_equal(0)
-	assert_array(_dir.live_of(&"lava_blob")).is_empty()
-	for c in _dir.actors.get_children():
-		if c is Creature:
-			assert_str(String(c.data.id)).is_not_equal("lava_blob")
+	var bodies := _dir.live_of(&"lava_blob")
+	assert_int(bodies.size()).is_greater(0)
+	assert_int(bodies.size()).is_less_equal(rule.live_max)
+	var band := _dir.ring_band(&"core")
+	var seam := float(RINGS.strangestone_radius) / RADIUS
+	for b in bodies:
+		assert_bool(b is Creature).is_true()
+		assert_str(String(b.data.id)).is_equal("lava_blob")
+		# in the core (or its rim), never inside the unbreakable seam
+		assert_float(_dir.depth_of(b.position)).is_between(seam, band.y + 0.02)
+		assert_float(b.position.distance_to(_worm.head_position())).is_greater_equal(RingsDirector.SPAWN_NEAR - 1.0)
+	# eating one thins the counter
+	var before_n := _dir.ecology.count(&"lava_blob")
+	(bodies[0] as Creature).take()
+	assert_float(_dir.ecology.count(&"lava_blob")).is_less(before_n)
 	# core crystals still come live from the same life
 	assert_int(_dir.live_of(&"core_crystal").size()).is_greater(0)
+
+
+func test_lava_blobs_also_sit_on_the_core_rim_where_a_stage_4_worm_can_meet_one() -> void:
+	_planet(&"deep_rock", 4)
+	var band := _dir.ring_band(&"core")
+	# a stage-4 worm digging the bottom of the deep rock, just above the core
+	_worm.head.global_position = _dir.polar(0.0, band.y + 0.04)
+	_world.track(_worm.head)
+	_world.update_chunks(-1)
+	var rule: PopulationRule = _dir.ecology.rules[&"lava_blob"]
+	assert_float(rule.depth_max).is_greater(band.y)
+	var rim := 0
+	for attempt in 20:
+		for b in _dir.live_of(&"lava_blob"):
+			b.free()
+		for i in 3:
+			_dir.fit_live()
+		for b in _dir.live_of(&"lava_blob"):
+			if _dir.depth_of(b.position) > band.y:
+				rim += 1
+				assert_bool(b.can_bounce(_worm)).is_true()
+	assert_int(rim).is_greater(0)
