@@ -5,6 +5,7 @@
 ## bites stone (`bite_bonus/stone` > 0) cracks a shimmering seam open when its mouth reaches it: a
 ## geode bursts out in sparkles with a crack, the worm swallows it (crystal growth), and its stone
 ## part pops too. A glow-only worm just sees where the seams are. Nothing moves the worm.
+## Every shimmer colour goes through GlowCap (light, never opaque): a seam never darkens a ring.
 ## Seams come back with the planet (seeded, not saved): a found geode is there again next visit.
 class_name GeodeSeams
 extends Node2D
@@ -132,9 +133,9 @@ func _draw() -> void:
 			var p := pos + dir * (k - 2) * cs * 1.2 + dir.orthogonal() * sin(k * 1.7) * cs * 0.5
 			var tw := 0.55 + 0.45 * sin(_t * 5.0 + k * 1.3)
 			var sz := cs * (0.6 + 0.3 * tw)
-			var c := Color(GEM, a * (0.6 + 0.4 * tw))
+			var c := GlowCap.tint(GEM, a * (0.6 + 0.4 * tw))
 			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -sz), p + Vector2(sz * 0.6, 0),
 				p + Vector2(0, sz), p + Vector2(-sz * 0.6, 0)]), c)
-			draw_line(p - Vector2(sz * 1.4, 0), p + Vector2(sz * 1.4, 0), Color(1, 1, 1, a * tw * 0.8), 1.5)
-			draw_line(p - Vector2(0, sz * 1.4), p + Vector2(0, sz * 1.4), Color(1, 1, 1, a * tw * 0.8), 1.5)
-		draw_circle(pos, cs * 4.0, Color(GEM, a * (0.16 + 0.06 * sin(_t * 3.0))))
+			draw_line(p - Vector2(sz * 1.4, 0), p + Vector2(sz * 1.4, 0), GlowCap.tint(Color.WHITE, a * tw * 0.8), 1.5)
+			draw_line(p - Vector2(0, sz * 1.4), p + Vector2(0, sz * 1.4), GlowCap.tint(Color.WHITE, a * tw * 0.8), 1.5)
+		draw_circle(pos, cs * 4.0, GlowCap.tint(GEM, a * (0.16 + 0.06 * sin(_t * 3.0))))
