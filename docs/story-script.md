@@ -21,16 +21,19 @@ slow with a chuckle first, will add roughly a fifth.
 | Scene | When it plays | Light | Background clue | Length now | Target |
 | --- | --- | --- | --- | --- | --- |
 | `opening` The one that got away | new tin (stage 1) | dawn, warm flashback | Gulp and Burp plop into the dirt; the camera follows them down | ~50 s | ~60 s |
-| `stage_2` It got hungry | stage 2 | morning | a ripple on the pond | ~15 s | 15 to 30 s |
-| `stage_3` It started to change | stage 3 | noon | the tree on the far shore is pulled into the ground | ~16 s | 15 to 30 s |
+| `stage_2` It got hungry | stage 2 | morning | a ripple on the pond (something long and dark under it) | ~18 s | 15 to 30 s |
+| `stage_3` It started to change | stage 3 | noon | the tree on the far shore is pulled into the ground | ~19 s | 15 to 30 s |
 | `stage_4` It came up | stage 4 | noon, warm flashback | Reel's shed sinks behind him mid-sentence (and stays sunk) | ~17 s | 15 to 30 s |
 | `stage_5` Nobody fished that year | stage 5 | dusk, warm flashback | a bite out of the hill (stays bitten) | ~19 s | 15 to 30 s |
-| `stage_6` The big one | stage 6 (before the chomp) | dusk | the hill is gone and the horizon bends | ~15 s | 15 to 30 s |
-| `stage_7` Up it went | stage 7 (space) | night | a bright star winks out | ~16 s | 15 to 30 s |
+| `stage_6` The big one | stage 6 (before the chomp) | dusk | the hill is gone and the horizon bends | ~16 s | 15 to 30 s |
+| `stage_7` Up it went | stage 7 (space) | night | a bright star winks out | ~18 s | 15 to 30 s |
 | `ending` Still out there | after the sun | night | a bite out of the moon; a long shape drifts past the stars | ~23 s | 15 to 30 s |
 
 Clues stay once they've happened: from stage 3 on the tree is gone, from stage 4 the shed is sunk,
-and so on.
+and so on. Every clue happens on camera (worm-story-2): the camera eases onto it, holds while it
+happens with its sound, then comes back to the dock. Nobody on the dock remarks on it; Bobber
+only glances. `tests/test_story_dock_2.gd::test_the_camera_is_on_every_background_clue_when_it_happens`
+keeps it that way.
 
 ---
 
@@ -96,7 +99,8 @@ have the stick.*
 
 **REEL** *(bubble: open mouth, big worm)*: Seeds. Roots. Bugs. Got THIS big.
 
-*Behind them, a ring of ripples spreads across the pond. Nobody looks.*
+*The camera eases out over the pond: something long and dark slides under the water, rings spread
+and bubbles pop ("bloop"). Bobber glances that way. Back to the dock.*
 
 **BOBBER** *(squints; bubble: worm, sheepish face)*: Bugs? EWWW.
 
@@ -118,7 +122,8 @@ have the stick.*
 
 **REEL** *(bubble: big worm)*: Got THIS big, too.
 
-*Behind them, the tree on the far shore sinks into the ground with a crunch.*
+*The camera eases over to the far shore: the tree sinks into the ground with a crunch and a little
+shake. Back to the dock.*
 
 **BOBBER** *(squints; bubble: question mark)*: Hmmmm.
 
@@ -176,7 +181,7 @@ comes out of it, with a rumble and a chomp. Young Reel, alone, hops for joy.*
 
 **REEL** *(bubble: a planet with a bite out of it)*: And then it ate... everything.
 
-*Pause. The camera comes back in.*
+*The camera holds wide on the bent horizon; Bobber turns to look at it. Then it comes back in.*
 
 **BOBBER** *(squints; bubble: dock, question mark)*: Then where are WE sitting?
 
@@ -196,7 +201,7 @@ comes out of it, with a rumble and a chomp. Young Reel, alone, hops for joy.*
 
 **REEL** *(bubble: worm going up)*: Heh. Didn't say fly. Said UP.
 
-*High above, a bright star winks out with a tiny "tink".*
+*The camera tilts up to the bright star: it winks out with a tiny "tink". Back to the dock.*
 
 **BOBBER** *(squints; bubble: question mark)*: Hmmmm... nuh-uh.
 
