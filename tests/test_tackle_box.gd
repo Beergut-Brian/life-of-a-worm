@@ -119,7 +119,9 @@ func test_meeting_a_creature_unlocks_it() -> void:
 	var w := _p1()
 	_level.beetle.position = w.cam_position() + Vector2(TackleLog.MEET_PX * 0.5, 0)
 	await _frames(20)
-	assert_bool(_log().is_found(&"creatures", &"beetle")).is_true()
+	# The dirt apex is its own page (data/apexes/apex_beetle.tres), not the ring beetle's.
+	assert_bool(_log().is_found(&"creatures", &"apex_beetle")).is_true()
+	assert_bool(_log().is_found(&"creatures", &"beetle")).is_false()
 
 
 func test_earning_a_trait_unlocks_it() -> void:

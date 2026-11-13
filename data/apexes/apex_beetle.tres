@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+; Dirt apex: round purple beetle (stage 1 -> 2). The live apex is ApexBeetle (scripts/planet/apex_beetle.gd); this file is its tackle-box page
+; (T-01): id, size, ring and colour match the one PlanetLevel makes (tests/test_book_creatures.gd).
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"apex_beetle"
+flavour = &"bug"
+growth = 0.0
+size_stage = 2
+color = Color(0.2314, 0.1765, 0.3882, 1)
+radius = 15.0
+behaviour = 2
+ring = &"dirt"
+telegraph = 1.0
+hat = Color(0, 0, 0, 0)
+accent = Color(0.7882, 0.7216, 1.0000, 1)

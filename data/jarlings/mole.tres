@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+; The Mole (L-09): a Jarling, never food and never a threat, met when it pops out of a wall or at its
+; swap shop. Its tackle-box page (T-01). Drawn by MoleLook, not a ring creature: no ring life spawns it.
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"mole"
+flavour = &""
+growth = 0.0
+size_stage = 3
+color = Color(0.5412, 0.4157, 0.3451, 1)
+radius = 14.0
+behaviour = 0
+ring = &"dirt"
+telegraph = 1.0
+hat = Color(0, 0, 0, 0)
+accent = Color(0.9490, 0.6392, 0.6392, 1)
+jarling = true

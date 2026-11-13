@@ -4,8 +4,10 @@
 ##
 ## Sources (all duck-typed, nothing here owns them):
 ##  - foods: Worm.ate(player, what, growth) for every FoodData in data/foods/;
-##  - creatures: any node in group &"creature" with a `creature_id` (property or meta) that comes
-##    within MEET_PX of a worm; meet(id) for scripted meetings (the Mole pops out);
+##  - creatures: every entry of the book's creatures section (BookCatalog: data/creatures, pets,
+##    apexes, jarlings). Met when a node in group &"creature" with a `creature_id` (property or meta),
+##    a ring creature (group &"creatures", its `data.id`) or a ring apex (ApexBeetle, its `id`) comes
+##    within MEET_PX of a worm, or an apex is eaten; meet(id) for scripted meetings (the Mole pops out);
 ##  - traits: Worm.trait_earned (and the worm's earned list on spawn), every TraitData in data/traits/;
 ##  - secrets: any node with a `secret_found(id)` signal, connected as it enters the tree; secrets
 ##    listed in data/secrets/*.tres (id property), unknown ids are added to the page;
@@ -38,9 +40,9 @@ func _init() -> void:
 	name = "TackleLog"
 	entries[&"foods"] = _ids_in("res://data/foods/", "FoodData")
 	var creatures: Array[StringName] = KNOWN_CREATURES.duplicate()
-	for id in _ids_in("res://data/creatures/", ""):
-		if not creatures.has(id):
-			creatures.append(id)
+	for e in BookCatalog.entries(&"creatures"):   # the same list the book draws, so every sketch can be found
+		if not creatures.has(e.id):
+			creatures.append(e.id)
 	entries[&"creatures"] = creatures
 	entries[&"traits"] = _ids_in("res://data/traits/", "TraitData")
 	var secrets: Array[StringName] = _ids_in("res://data/secrets/", "")
@@ -58,6 +60,9 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 	for n in get_tree().get_nodes_in_group(&"secrets"):
 		_on_node_added(n)
+	for n in get_tree().get_nodes_in_group(&"creature") + get_tree().get_nodes_in_group(&"creatures"):
+		if n is ApexBeetle:   # the level makes its apexes before the home slice makes this log
+			_on_node_added(n)
 	_watch_story()
 
 
@@ -155,10 +160,18 @@ func _on_trait(_player: int, id: StringName) -> void:
 
 
 func _on_node_added(n: Node) -> void:
+	if n is ApexBeetle:
+		var a := n as ApexBeetle
+		if not a.eaten.is_connected(_on_apex_eaten):
+			a.eaten.connect(_on_apex_eaten.bind(a))
 	if n.has_signal(&"secret_found") and not n.is_connected(&"secret_found", note_secret):
 		n.connect(&"secret_found", note_secret)
 	if n is Story:
 		_watch_story.call_deferred()
+
+
+func _on_apex_eaten(_player: int, a: ApexBeetle) -> void:
+	meet(a.id)
 
 
 func _watch_story() -> void:
@@ -187,9 +200,14 @@ func _physics_process(delta: float) -> void:
 	var worms := Worm.all()
 	if worms.is_empty():
 		return
-	for c in get_tree().get_nodes_in_group(&"creature"):
+	for c in get_tree().get_nodes_in_group(&"creature") + get_tree().get_nodes_in_group(&"creatures"):
 		var id := creature_of(c)
-		if id == &"" or is_found(&"creatures", id) or not (c is Node2D) or not c.is_visible_in_tree():
+		if id == &"" or is_found(&"creatures", id) or not (c is Node2D):
+			continue
+		if c is ApexBeetle and (c as ApexBeetle).is_gone():
+			meet(id)   # eaten in an older visit of this tin (before its page existed): it was met then
+			continue
+		if not c.is_visible_in_tree():
 			continue
 		for w in worms:
 			if (c as Node2D).global_position.distance_to(w.head.global_position) <= MEET_PX:
@@ -198,10 +216,16 @@ func _physics_process(delta: float) -> void:
 
 
 static func creature_of(n: Node) -> StringName:
+	# An apex is its own page (data/apexes/), even where the slice tags it "beetle" (HomeSlice).
+	if n is ApexBeetle:
+		return (n as ApexBeetle).id
 	if n.has_meta(&"creature_id"):
 		return StringName(n.get_meta(&"creature_id"))
 	if &"creature_id" in n:
 		return StringName(n.get(&"creature_id"))
+	var d = n.get(&"data") if &"data" in n else null
+	if d is CreatureData:
+		return (d as CreatureData).id
 	return &""
 
 

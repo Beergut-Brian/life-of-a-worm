@@ -101,7 +101,8 @@ func test_every_listed_data_file_loads() -> void:
 	assert_int(BookCatalog.entries(&"traits").size()).is_equal(_count_class("res://data/traits/", "TraitData"))
 	assert_int(BookCatalog.entries(&"secrets").size()).is_equal(_count_class("res://data/secrets/", "SecretData"))
 	assert_int(BookCatalog.entries(&"creatures").size()) \
-		.is_equal(_count_class("res://data/creatures/", "CreatureData") + _count_class("res://data/pets/", "PetData"))
+		.is_equal(_count_class("res://data/creatures/", "CreatureData") + _count_class("res://data/pets/", "PetData")
+			+ _count_class("res://data/apexes/", "CreatureData") + _count_class("res://data/jarlings/", "CreatureData"))
 	assert_int(BookCatalog.entries(&"cutscenes").size()).is_equal(BookCatalog.files(&"cutscenes").size())
 	# worm_rules.tres sits in data/traits/ but is not a trait.
 	var trait_ids := BookCatalog.entries(&"traits").map(func(e): return e.id)
