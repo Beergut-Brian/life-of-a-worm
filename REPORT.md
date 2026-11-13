@@ -1,138 +1,44 @@
-# Regrowth lane report (feature/worm-regrow-1, 2026-11-12)
+# REPORT: worm-star-trait-1 (2026-11-12)
+
+Branch `feature/worm-star-trait-1`, not pushed. Ended: **complete**.
 
 ## Rows moved
-- **G-02** partial -> built: food regrows faster *and bigger* in castings.
-- **G-04** partial -> built: the whole world regrows on its own; a ring is never exhausted until outgrown.
+**D-10** missing → built. D-13 stays partial (note added: Stars show on the wall).
 
-## What was built (all in `scripts/world/`, `data/rings/`, tests, contracts)
-- **Food sizes per tile.** A tile that grows back in castings comes back at `RingDef.castings_size`
-  (written as 2 for every ring in `data/rings/rings.tres`). It is drawn plump (a code-drawn shiny
-  dome, `Sizes_*` TileMapLayer per live chunk, no art). Eaten, it gives the worm's normal tile growth
-  plus `(size - 1) x RingSet.size_growth` (1.0) plain tiles more, in the ring flavour, with the
-  existing cue `chomp_bite` (rate limited). Size never changes edibility, so the kid can always eat
-  it. Plain ground (dug by anything but a worm) comes back size 1. Saved as `sizes` in the planet
-  dict; older tins load with every tile plain. Frame: `handoff/shots/regrow/t001.0s.png` (left:
-  regrown big tiles, right: open castings, around: plain dirt).
-- **A ring never runs out.** `PolarWorld` now counts eaten-and-waiting cells per ring. Past
-  `RingSet.scarce_share` (0.5) of a ring eaten, its regrow times shrink, down to `scarce_factor`
-  (0.2x) when bare, so the emptier a ring is the faster it fills. The crust (regrow 0 once outgrown)
-  is the only ring that can empty, by design.
-- **Jar view.** The planet shot (ChompDirector) already disables the world node; a test now proves
-  the clock and regrowth stand still there and resume on "not yet". `PolarWorld.frozen` is an
-  explicit switch for any other view that shows the planet without playing it.
-
-## Regrow numbers used (planet seconds, `data/rings/rings.tres`)
-| Ring | Plain | In castings (x0.25) | Castings size |
+## The Star traits (`data/traits/*_star.tres`)
+| Star | Planet | Felt in space | Seen |
 | --- | --- | --- | --- |
-| core | 900 | 225 | 2 |
-| deep rock | 600 | 150 | 2 |
-| dirt | 240 (now written in the file, was the script default) | 60 | 2 |
-| topsoil | 180 | 45 | 2 |
-| surface | 120 | 30 | 2 |
+| frost_star | ice | top speed +110 | snowflake |
+| vine_star | jungle | mouth +26 px (ring) | leaf |
+| anchor_star | junk | half knock-back | hex nut |
+| sugar_star | candy | small food within 280 px drifts in (dotted ring) | pinwheel sweet |
+| tick_star | clockwork | sharper turns (accel x2.2) | cog |
 
-Green thumb halves the castings times again (unchanged, `test_gardens_rules.gd` still green).
-`size_growth` 1.0, `scarce_share` 0.5, `scarce_factor` 0.2.
-
-## 30-minute resident runs (real radius 300, stage speed and bite from Worm, tunnelling 100% of the time)
-```
-dirt s1:      ate 8474 tiles, most eaten at once 2%,  least left 130736, least in reach 191
-topsoil s2:   ate 8336 tiles, most eaten at once 3%,  least left 82943,  least in reach 185
-deep_rock s4: ate 17586 tiles, most eaten at once 4%, least left 51268,  least in reach 267
-surface s4:   ate 4554 tiles, most eaten at once 14%, least left 5779,   least in reach 130
-core s5:      ate 15463 tiles, most eaten at once 54%, least left 1862,  least in reach 96
-```
-The core is the one ring where a worm can really eat most of it in half an hour; the floor is what
-keeps it fed.
-
-## Not done / for other lanes
-- Scattered ring *pickups* (`RingFood` in `*_life.tres`) are driven by `scripts/rings/rings_director.gd`,
-  not my folder; untouched. `deep_rock_life.tres` is still not in `RingsDirector.LIVES`, so deep-rock
-  pickups (ore nuggets, fossils) are never scattered (already noted on W-03). Tiles there regrow fine.
-- Big tiles are not in `data/BALANCE.md`'s simulated runs (it models tunnelling new ground only);
-  farming castings now pays twice. The Content lane may want to fold it in or lower `size_growth`.
-- Values are untuned by play; the big-tile look is a placeholder until the Worm art round.
-# REPORT: Session flow lane (feature/worm-session-1)
-
-Base: `origin/dev` 7504102. Not pushed, not tagged. (`origin/dev` has since moved to 7044fdf, PR #35
-kid-fixes; not merged here.)
-
-## Rows moved (PLAN-STATUS)
-
-| ID | From | To |
-| --- | --- | --- |
-| P-09 solo playtest mode | partial | built |
-| P-06 pause menu with the big back-to-launcher icon | partial | built |
-| C-08 Start = pause | partial | built |
-| P-07 no auto-steer, fit to a cap, edge arrow, held-B warp | partial | built |
-| C-03 worms on opposite sides: zoom out until both fit | partial | built (closed by P-07) |
-| C-14 smaller worm's held B warps to a far partner | partial | built (was "untested") |
-
-## What was already there, and the gaps I found
-
-Most of P-09 and P-06 existed from the template and the grey-box lane: `--solo`, the Select + Start
-hold (real seconds), session-only solo (a saved `solo_playtest` setting is ignored at boot), Select
-handing the pad to the other worm in play, the "Back to Open Jar" bar with its Stay/Leave question,
-and "Restart" already renamed "Main menu" in `scenes/main.gd`. I closed these gaps:
-
-1. **No big icon on the pause menu.** Kaden's rule asks for a big icon back to the launcher, and
-   there was only a text bar. Added `Card/DoorIcon` (the template's unused `IconButton`, `Icon.DOOR`,
-   drawn in code, no new art), under the door bar. It lights and wobbles with the bar; A asks, Leave
-   calls `Game.quit()` (exit 0).
-2. **Pause hint strip was cut off** ("Move  A S..."): it placed its text while the card was still
-   sliding in and never redrew. It now redraws when the slide ends.
-3. **Pause over the tackle box or a rewatched cutscene.** Both run with `PROCESS_MODE_ALWAYS` on
-   canvas layers 60 and 90, above the pause menu (layer 1). Start opened the menu *under* the box,
-   both read the pad at once, and Resume unpaused the tree with the box still open (the worms ran
-   under it). Now, while paused, `main.gd` holds every always-processing node under the level and
-   hides its canvas layers; `Game.resume()` restores whatever pause was there before (the box keeps
-   the game held). Main menu and quit from there both work.
-4. **P-07 past the cap.** The camera used to keep centring between the worms when they no longer
-   fit the widest zoom, so both could end up off screen. `FarCamera` (`scripts/planet/far_camera.gd`)
-   now frames both until they don't fit `min_fit_index`, then follows one worm: in solo the one the
-   pad drives (the camera follows the active player), in co-op the bigger one (the smaller is the
-   one whose held B goes to its partner, C-14), a tie keeps the current one (P1 first). The far
-   worm gets the HUD's edge arrow in its colour. Both are framed again once they fit with 15% spare.
-   Nobody is ever moved; held B moves only the worm that held it (tested).
-5. **Solo icon covered the HUD.** The two-heads icon sat top-left on top of Gulp's stage icon. It
-   is now top-right (the template's `solo_marker.gd`).
+Each planet shows its Star (gold star plus part) before it is eaten. Eating the planet earns it,
+once per run, via SpaceDrift's existing `star_earned`. `StarAward` (in `space_stage.tscn`) plays the
+sting and two rings, leans the camera in for 1.8 s and flies the part into orbit. The Star is then
+written onto the planet worm and into the tin. It shows on the trait wall with a gold star corner
+and toggles like any trait. It never comes from flavours, it is never a curse, and foods never carry it.
+Parts are code-drawn (`StarParts`) and have no text.
 
 ## Tests
+`tests/test_star_traits.gd`, 7 cases, with contacts resolved directly (no pile). After a clean
+import I ran the full suite twice: **461 cases, 0 errors, 0 failures** both times. Both runs print
+"20 ObjectDB instances were leaked at exit" (stings still playing at exit).
 
-`tests/test_worm_session.gd` (10 cases, own sandbox profile and settings file): solo flag from args;
-solo from the 2 s hold (early release does nothing, icon shows, Burp hatches, hold again turns it
-off); a saved solo never restores at boot; Select in solo hands the pad and, past the cap, the
-camera; Start pauses and the menu has the door icon lit with its bar; door after a Stay still quits
-and the tin is saved; pause over the tackle box holds it, resume gives it back, door still quits;
-Main menu from over the box unpauses; camera fits both then follows one, the far worm is off screen,
-held B warps it to the partner without moving the partner; the camera follows the bigger worm.
+## Frames (`handoff/shots/star-trait/`)
+1. `1-before`: the worm next to the ripe jungle planet, with the gold Star and leaf on the planet's rim.
+2. `2-reveal`: the camera leans in, a big gold star with the leaf above the head, and rings.
+3. `3-after`: the leaf on a small gold star orbiting the head, with the reach ring at the mouth.
+4. `4-wall`: the trait wall with the vine and frost tiles marked with gold stars, and their parts on the worm.
 
-Full suite (`handoff/test-output.txt`), after `rm -rf .godot` and `--import`: run 1, 441 cases,
-0 failures; run 2, 12 failures in `test_greybox_planet::test_each_tin_round_trips_on_its_own` and
-`test_jars_slots` while 8 lanes ran gdUnit on the shared `user://` (the known tin flake); run 3 on
-the final code, 441 cases, 0 failures. Zero new failures.
+## Outside my files
+- `trait_data.gd` (`part_shape`, `star`, `star_planet`), `trait_wall.gd` (marker), `worm_rules.tres`.
+- `data/planets/*.tres` (star trait → file, `star_chance` 0), `make_space_data.gd` to match.
+- `space_stage.tscn` (+ `StarAward` node). No `scripts/space/` or `scripts/chomp/` edits.
+- `test_traits_rules` skips Stars; `test_space_planets` accepts `space_turn`/`space_pull`.
 
-## Frames (`handoff/shots/`, looked at)
-
-- `pause/t002.0s.png`: pause menu, door icon under the door bar, hint strip whole.
-- `pause_door_solo/t002.0s.png`: door bar focused with its icon lit; solo on (icon top-right).
-- `solo_far/t006.0s.png`: solo, worms 240 tiles apart: camera on Gulp, Burp's red edge arrow on
-  the right, stage icons top-left uncovered, solo icon top-right.
-- The menu preview pauses on the dock (the `--ui=pause*` hook), so the frames show the dock blurred
-  behind, not the planet.
-
-## Not checked
-
-- Real pads: the hold and Start were driven through `Players.hold_step` and synthetic actions,
-  not a physical controller. Worth a 30 s check on the TV: hold Select + Start on the planet, and
-  press Start with the tackle box open.
-- The co-op anchor rule (camera stays on the bigger worm) is my call from GAME.md's "the far worm
-  gets an edge arrow ... and holding B warps it to its partner". If Kaden would rather the camera
-  stay with P1, or with whoever moved last, it is one function (`FarCamera.pick_anchor`).
-- A cutscene that plays without pausing the tree (stage-up beats) is also held while paused now;
-  checked by code reading only, no test drives a live stage-up cutscene under the pause.
-
-## Follow-ups for other lanes
-
-- Story lane (`scripts/story/`): `Story` runs with `PROCESS_MODE_ALWAYS`; the session lane now holds
-  it from `main.gd` while paused. If Story ever lives outside the level node, it would need to watch
-  `Game.state` itself.
+## Follow-ups
+- **The cues are borrowed** from the slice traits (slick, green_thumb, magnet, floaty, drill_head) because assets/ was off-limits. The Audio lane needs to add five `trait_<id>` files, then change `cue` in each .tres.
+- The `space_*` stats do nothing on the planet worm. Decide this with S-12.
+- This replaces the unmerged `feature/worm-star-traits-1` (it reused its `StarParts`). Merge only one of them.

@@ -12,6 +12,11 @@
 [ext_resource type="Resource" path="res://data/traits/floaty.tres" id="t7"]
 [ext_resource type="Resource" path="res://data/traits/skater.tres" id="t8"]
 [ext_resource type="Resource" path="res://data/traits/garden_cart.tres" id="t9"]
+[ext_resource type="Resource" path="res://data/traits/frost_star.tres" id="t10"]
+[ext_resource type="Resource" path="res://data/traits/vine_star.tres" id="t11"]
+[ext_resource type="Resource" path="res://data/traits/anchor_star.tres" id="t12"]
+[ext_resource type="Resource" path="res://data/traits/sugar_star.tres" id="t13"]
+[ext_resource type="Resource" path="res://data/traits/tick_star.tres" id="t14"]
 [ext_resource type="Resource" path="res://data/stages.tres" id="st"]
 
 [resource]
@@ -23,4 +28,4 @@ partner_share = 0.25
 catch_up_boost = 3.0
 base_stats = {"speed": 80.0, "burst_speed": 2.2, "burst_time": 0.25, "burst_cooldown": 0.3, "turn_rate": 10.0, "light_radius": 0.0, "pull_radius": 0.0, "pull_speed": 0.0, "sheen": 0.0, "wiggle_radius": 56.0, "wiggle_hop": 16.0, "mouth_radius": 8.0, "segment_spacing": 9.0, "bite_bonus/stone": 0.0, "drag/water": 1.0, "glide": 0.0, "skate": 0.0, "carry_slots": 1.0, "castings_speed": 0.0, "garden_yield": 0.0}
 flavour_colors = {&"root": Color(0.6275, 0.4392, 0.2353, 1), &"bug": Color(1, 0.6235, 0.1098, 1), &"stone": Color(0.5529, 0.6, 0.6824, 1), &"crystal": Color(0.4353, 0.9412, 1, 1), &"junk": Color(0.902, 0.7608, 0.1608, 1), &"water": Color(0.2275, 0.5255, 1, 1), &"cloud": Color(0.8706, 0.9255, 1, 1)}
-traits = Array[ExtResource("2")]([ExtResource("t0"), ExtResource("t1"), ExtResource("t2"), ExtResource("t3"), ExtResource("t4"), ExtResource("t5"), ExtResource("t6"), ExtResource("t7"), ExtResource("t8"), ExtResource("t9")])
+traits = Array[ExtResource("2")]([ExtResource("t0"), ExtResource("t1"), ExtResource("t2"), ExtResource("t3"), ExtResource("t4"), ExtResource("t5"), ExtResource("t6"), ExtResource("t7"), ExtResource("t8"), ExtResource("t9"), ExtResource("t10"), ExtResource("t11"), ExtResource("t12"), ExtResource("t13"), ExtResource("t14")])

@@ -1161,3 +1161,145 @@ func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2
 # Anchor: solo -> Players.solo_focus; co-op -> the bigger worm; a tie keeps the current anchor
 # (P1 first). Rejoins at 85% of the widest view. camera.centre_override still wins (secrets).
 ```
+
+### Audio hooks (worm-audio-hooks-1)
+
+- **Breakthrough (U-09).** Unchanged: `CrustBurst._burst()` calls `Audio.play(CrustBurst.CUE)`
+  (`"breakthrough"`, `assets/audio/sfx/breakthrough.ogg`) once per worm per tin, before
+  `CrustBurst.breakthrough` / `Worm.breakthrough` are emitted.
+- **Space drift (U-11).** `SpaceStage.drift_bed: AudioStreamPlayer` (child `DriftBed`) is
+  `Audio.loop_player(SpaceStage.DRIFT_CUE)` (`"space_drift"`) at `SpaceStage.DRIFT_DB` with
+  `autoplay`: it plays whenever the stage is in the tree and stops in `_exit_tree`. Nothing else
+  starts `space_drift`.
+- **Ring ambience (U-14).** `RingAmbience` (`scripts/audio/ring_ambience.gd`, node `RingAmbience`
+  in `scenes/levels/planet.tscn`) is a plain `Node` child of a level that has `world: PolarWorld`
+  (and optionally `chomp` with `busy()`). Every frame it reads the head of the lowest-numbered
+  `Worm` under that level and plays the cue `"amb_" + RingDef.id` at `RingAmbience.LEVEL_DB`
+  (SFX bus), crossfading over `RingAmbience.FADE` s on a ring change. Above
+  `SkyLife.inner` x planet radius the id is `RingAmbience.SKY_ID` (`&"sky"`). An id with no
+  `assets/audio/sfx/amb_<id>.ogg` plays nothing (no placeholder, no warning). While
+  `level.chomp.busy()` every bed fades out.
+  - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
+    `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
+  - A new ring needs only `amb_<its id>.ogg`; no code change.
+
+### Story: Old Reel's dock scenes (story-1; documented by worm-gap-close-1 for W-28)
+
+Already on `dev`; this section only writes down the API other lanes already call (TackleLog, the
+book, PlanetLevel's stage hook).
+
+```gdscript
+# Story (scripts/story/story.gd, scenes/story/story.tscn). Not an autoload: the game adds one node
+# for the session; find it with Story.find(tree) (group &"story"). Scenes are data/cutscenes/<id>.json.
+signal started(id: StringName)
+signal finished(id: StringName, skipped: bool)
+signal cutscene_finished(id: StringName)          # GAME.md contract name: a scene ended, watched or skipped
+signal handoff(id: StringName, what: String)      # "follow_worm_underground" after the opening
+signal input_locked(on: bool)                     # lock / unlock every player's input
+const SCENES: Array[StringName]                   # opening, stage_2 .. stage_7, ending (book order)
+const STAGE_SCENES := {1: &"opening", 2: &"stage_2", ..., 7: &"stage_7"}
+const SAVE_KEY := "story_seen"                    # per tin: Array[String] of scene ids watched, in order
+static func find(tree: SceneTree) -> Story
+static func scene_for_stage(stage: int) -> StringName   # &"" when none
+func play(id: StringName) -> bool                 # queues if one is playing; false if no such scene
+func is_playing() -> bool ; func current() -> StringName ; func skip() -> void
+func has_seen(id: StringName) -> bool
+func watch(source: Object) -> void                # anything with stage_changed(player, from, to)
+func on_stage_changed(player: int, from: int, to: int) -> void   # once per tin, only going up
+var seen: Array[StringName] ; var persist := true ; var speed := 1.0
+```
+
+TackleLog connects `cutscene_finished` to fill its "cutscenes" page, and `sync_seen()` reads
+`story_seen` from the tin when no Story node is up. `tests/test_tin_keys.gd` checks each tin keeps its
+own `story_seen` (and its own `rings`, `home_slice.tackle` and `jars`).
+
+### Deep rock (worm-deep-rock-1)
+
+PLAN-STATUS W-03 (built) and W-02 (bounce built, spawning held). Appended only; nothing above changes.
+
+```gdscript
+# CreatureData (scripts/creatures/creature_data.gd)
+enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE, BOUNCE }   # BOUNCE appended (index 6)
+@export var bounce := 0.0        # BOUNCE: px a smaller worm's head is pushed away on contact
+
+# Creature (scripts/creatures/creature.gd), BOUNCE only
+const BOUNCE_DECAY := 8.0        # knock: v = push * DECAY, decays exp(-DECAY t), total ~= push
+const BOUNCE_TIME := 0.45        # s the knock lasts (the worm keeps steering on top of it)
+const SQUASH_TIME := 0.35        # s the blob draws squashed flat toward the worm
+const BOUNCE_COOL := 0.8         # s per player before it can bounce that worm again
+const SWELL_RANGE := 48.0        # px past touching: a smaller worm this close makes it swell (+12%)
+const BOUNCE_CUE := "boing"      # every bounce; data.windup_cue plays as it swells
+var bounces: int                 # bounces given (tests, frames)
+func can_bounce(w) -> bool       # smaller worms only (CreatureSense.worm_size < size_stage)
+func bounce(w) -> Vector2        # push straight away from the blob; returns the push
+# Contact = head within radius + BITE (14 px). Never a bite, never a steer. A worm of its size or
+# bigger eats it (the food protocol, unchanged).
+
+# RingFood.Look (scripts/rings/ring_food.gd): NUGGET (10), FOSSIL (11) appended, placeholders.
+static func RingPickup.look_shape(look, r) -> PackedVector2Array
+#   NUGGET: the lumpy 8-point outline; FOSSIL: the spiral polyline (rim -> centre); else empty.
+```
+
+```
+scenes/creatures/rock_beetle.tscn   Creature + data/creatures/rock_beetle.tres
+scenes/creatures/lava_blob.tscn     Creature + data/creatures/lava_blob.tres (behaviour BOUNCE, bounce 80)
+data/rings/deep_rock_life.tres      rock_beetle: live = rock_beetle.tscn, live_scale 0.5, live_max 3
+data/rings/core_life.tres           lava_blob:   live = lava_blob.tscn, live_scale 0, live_max 0 (never spawns)
+data/foods/ore_nugget.tres          look NUGGET     data/foods/fossil.tres   look FOSSIL
+RingsDirector.LIVES                 + deep_rock_life.tres (appended last: older tins' statics after
+                                    the deep-rock fossils shift and start uneaten, as with the core)
+```
+### Centipede (worm-centipede-1)
+
+`feature/worm-centipede-1` (PLAN-STATUS W-04, the centipede part). Additions to `Centipede`
+(`scripts/creatures/centipede.gd`); the worm-creatures-2 API above is unchanged.
+
+```gdscript
+signal gave_up_beat(at: Vector2)   # the first give-up only (once per centipede)
+const BEAT_TIME := 0.8             # camera lean_in +1 for this long, no shake; released on free
+const WINDUP_PASSES := 2.0         # humps run head to tail during one wind-up
+var beats: int                     # camera beats played (0 or 1)
+func windup_wave() -> float        # hump position, 0 head .. 1 tail; -1 outside WINDUP
+func draw_scale() -> float         # super, but 0.85x when the nearest worm can eat it (K-01 at stage 3)
+```
+
+Camera: `level.camera` via the "rings" group, else the viewport's `PolarCamera` (as the lawnmower).
+No new cues, no new forced movement (a bite is still `Gulp`). Data and `dirt_life.tres` unchanged.
+### Star trait (worm-star-trait-1)
+
+`feature/worm-star-trait-1` (PLAN-STATUS D-10). One rare Star `TraitData` per space planet type, in
+`data/traits/<id>.tres`, listed in `WormRules.traits`, referenced by `PlanetData.star_trait`
+(`star_chance` is 0: foods never carry it; the planet itself does).
+
+```gdscript
+# TraitData additions
+@export var part_shape: StringName   # no part_textures: StarParts draws it (snowflake, leaf, nut, pinwheel, cog)
+@export var star := false            # a Star: never earned from flavours (empty requires), never offered
+@export var star_planet: StringName  # the PlanetData id that gives it
+
+# StarTraits (scripts/worm/star_traits.gd), static
+static func all(rules = null) -> Array[TraitData]
+static func is_star(id: StringName) -> bool
+static func for_planet(planet_id: StringName) -> TraitData
+static func record(player: int, id: StringName) -> bool   # onto the live planet worm and the tin's "worms"; silent
+
+# StarAward (scripts/worm/star_award.gd): child "StarAward" of scenes/levels/space_stage.tscn
+signal revealed(player: int, id: StringName)   # once per earn (SpaceDrift.star_earned)
+var reveals: Dictionary                         # trait id -> reveals shown
+func beat_showing() -> bool                     # the camera lean-in is running (REVEAL_TIME 1.8 s)
+```
+
+| Star | Planet | Stat (one, felt in space) | Seen | Cue (borrowed) |
+| --- | --- | --- | --- | --- |
+| frost_star | ice | `space_speed` +110 px/s | snowflake, `above` | `trait_slick` |
+| vine_star | jungle | `space_reach` +26 px mouth (a ring shows it) | leaf, `tail` | `trait_green_thumb` |
+| anchor_star | junk | `space_steady` 0.5 (half knock-back) | hex nut, `back` | `trait_magnet` |
+| sugar_star | candy | `space_pull` 280 px: small food drifts in (dotted ring) | pinwheel sweet, `crown` | `trait_floaty` |
+| tick_star | clockwork | `space_turn` 1.2: steering accel x2.2 | cog, `under` | `trait_drill_head` |
+
+Earn path: StarAward sets `SpacePlanet.star_trait` on each arriving planet whose Star isn't taken;
+`SpaceDrift.on_eaten` (unchanged) adds it and emits `star_earned` (+ `secret_found`); StarAward then
+plays `TraitData.cue`, two `WormRing`s, leans the camera in on that worm and flies the part into its
+orbit, applies `space_turn`, and calls `StarTraits.record`. `space_speed/reach/steady` stay with
+`SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner. No `scripts/space/`
+or `scripts/chomp/` edits.

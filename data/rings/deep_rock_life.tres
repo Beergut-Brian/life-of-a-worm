@@ -37,9 +37,9 @@ efficiency = 0.4
 immigration = 0.004
 eats = Dictionary[StringName, float]({&"ore_nugget": 0.03})
 half_sat = 10.0
-live_scale = 0.0
-live_max = 0
-live = ""
+live_scale = 0.5
+live_max = 3
+live = "res://scenes/creatures/rock_beetle.tscn"
 depth_min = 0.0
 depth_max = 0.0
 
