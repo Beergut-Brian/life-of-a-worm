@@ -138,7 +138,7 @@ func test_a_glowworm_carried_home_alive_becomes_a_pet() -> void:
 	assert_int(Audio.played.get("pet_meet", 0)).is_equal(1)
 	assert_float(pet.meet_t).is_greater_equal(0.0)
 	assert_array(_level.burrow.met).contains([&"glowworm"])
-	assert_float(pet.position.distance_to(_level.burrow.home)).is_less(Burrow.ROOM_TILES * 16.0)
+	assert_float(pet.position.distance_to(_level.burrow.home)).is_less(Burrow.room_tiles_for(1) * 16.0)
 
 
 func test_the_lamp_lights_only_in_the_dark() -> void:

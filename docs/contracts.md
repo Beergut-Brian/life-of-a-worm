@@ -1211,6 +1211,41 @@ func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2
   - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
     `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
   - A new ring needs only `amb_<its id>.ogg`; no code change.
+### Burrow growth and sleep chooser (worm-burrow-1)
+
+PLAN-STATUS B-06, D-13. `scripts/burrow/` only; nothing in `scripts/worm/` changed.
+
+```gdscript
+# BurrowGrowth (Resource, data/burrow/growth.tres; BurrowGrowth.get_default())
+@export var room_tiles, chamber_tiles, picture_px: PackedFloat32Array   # index = stage - 1
+@export var house_stage := 5; house_tiles := Vector2(10, 6); house_rooms := 3; house_floors := 2
+func room_for(stage) -> float; chamber_for(stage) -> float; picture_for(stage) -> float
+func has_house(stage) -> bool; house_spots() -> int
+
+# Burrow additions (ROOM_TILES / ROOM_GROWTH / CHAMBER_* constants are gone: use the data)
+var growth: BurrowGrowth
+var offered: Dictionary                       # player -> trait ids auto-equipped once (saved "offered")
+static func room_tiles_for(stage) -> float    # from data now
+func chamber_tiles() -> float; func has_house() -> bool
+func house_base() -> Vector2; func house_spot(k) -> Vector2; func house_spot_cells() -> Array[Vector2i]
+func free_house_spot(near: Vector2) -> Vector2i   # Vector2i(-99999, -99999) if none
+func install_wall(w: Worm)                    # gives the worm a BurrowWall (HomeSlice does it on spawn)
+func auto_equip(w: Worm) -> StringName        # newest earned trait into a FREE slot, once; &"" if nothing to do
+
+# BurrowWall extends TraitWall (the sleep chooser): var burrow, var touched;
+func pictures() -> Array[StringName]          # the worm's earned traits, in order
+# Shutting it with touched == false calls burrow.auto_equip(worm).
+```
+
+No swap (fix run, 2026-11-12): auto_equip only fills a free slot. With every slot full it equips
+nothing and unequips nothing; the newest trait keeps waiting on the wall (reveal ring and sting are
+the Worm lane's, unchanged), and the next stage that adds a slot equips it (`WormGrowth._check_stage`,
+unchanged). A trait counts as `offered` only once it actually went on. The first run swapped out the
+oldest active trait; that broke the 2026-11-11 rule in GAME.md ("The wall never auto-unequips
+anything"), so it is gone.
+
+Hook wanted from the Worm lane: `Worm._wall` is set from outside by `Burrow.install_wall` (there is
+no public setter). A `wall_factory: Callable` or a public `wall` var on `Worm` would make that clean.
 
 ### Story: Old Reel's dock scenes (story-1; documented by worm-gap-close-1 for W-28)
 
