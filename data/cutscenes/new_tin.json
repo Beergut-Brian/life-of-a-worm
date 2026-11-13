@@ -1,0 +1,24 @@
+{
+	"id": "new_tin",
+	"scene": "dock",
+	"title": "Another tin",
+	"when": "after the sun (S-12, old-reel-tin-1)",
+	"time_of_day": "night",
+	"clue": "a new bait tin glints on the rail where none stood before",
+	"steps": [
+		{"do": "call", "fn": "time", "args": {"of": "night", "secs": 0}},
+		{"do": "camera", "to": "dock", "zoom": 4.2, "time": 0.05, "wait": 0.5},
+		{"do": "line", "who": "Bobber", "line": "nt_bobber_then_what", "pics": ["worm_huge", "sun", "question"]},
+		{"do": "call", "fn": "pose", "args": {"who": "Reel", "pose": "tip_hat"}},
+		{"do": "line", "who": "Reel", "line": "nt_reel_new_tin", "pics": ["bait_tin", "planet"]},
+		{"do": "hold", "who": "Reel", "pic": "bait_tin"},
+		{"do": "sound", "cue": "story_twinkle"},
+		{"do": "camera", "to": "tin", "zoom": 4.8, "time": 1.2, "wait": 0.4},
+		{"do": "line", "who": "Reel", "line": "nt_reel_keep_one", "pics": ["worm", "star", "bait_tin"]},
+		{"do": "item", "who": "Reel", "pic": "bait_tin", "from": "Reel", "to": "Bobber", "time": 0.8},
+		{"do": "call", "fn": "pose", "args": {"who": "Reel", "pose": "idle"}},
+		{"do": "camera", "to": "dock", "zoom": 4.2, "time": 1.0},
+		{"do": "line", "who": "Bobber", "line": "nt_bobber_again", "pics": ["face_happy", "heart"]},
+		{"do": "wait", "time": 1.0}
+	]
+}
