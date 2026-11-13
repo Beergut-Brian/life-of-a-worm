@@ -1131,6 +1131,82 @@ func request_beat(w: Worm) -> void   # camera: level.camera via the "rings" grou
 ```
 
 Cues: all existing files (`boot_rumble`, `threat_near`, `space_bump`); none added.
+### Session flow (worm-session-1)
+
+`feature/worm-session-1` (PLAN-STATUS P-06, P-07, P-09, C-03, C-08, C-14).
+
+```gdscript
+# Game (scripts/autoload/Game.gd): pause() remembers whether the tree was already paused (an open
+# tackle box, a rewatched cutscene); resume() puts that back instead of unpausing under it.
+# start_round(), restart() and to_lobby() always leave the tree unpaused.
+
+# main.gd: while Game.state == PAUSED, every node under the level with PROCESS_MODE_ALWAYS is set to
+# PAUSABLE and any CanvasLayer under it is hidden; both are restored on the next state change.
+# A lane adding an always-processing overlay under the level gets this for free; one that must keep
+# running under the pause menu does not belong under the level.
+
+# PauseMenu: $Card/DoorIcon (scenes/ui/icon_button.gd, Icon.DOOR) is lit while focus == DOOR.
+
+# FarCamera (scripts/planet/far_camera.gd), owned by PlanetLevel as `far_camera`:
+var split: bool        # true while the worms don't fit the widest zoom (camera.min_fit_index)
+var anchor: int        # the player the camera follows while split, else -1
+static func fits(camera: PolarCamera, worms: Array, slack := 1.0) -> bool
+func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2D]
+# PlanetLevel._refresh_camera_targets() runs every physics frame and sets camera.targets from it.
+# Anchor: solo -> Players.solo_focus; co-op -> the bigger worm; a tie keeps the current anchor
+# (P1 first). Rejoins at 85% of the widest view. camera.centre_override still wins (secrets).
+```
+
+### Audio hooks (worm-audio-hooks-1)
+
+- **Breakthrough (U-09).** Unchanged: `CrustBurst._burst()` calls `Audio.play(CrustBurst.CUE)`
+  (`"breakthrough"`, `assets/audio/sfx/breakthrough.ogg`) once per worm per tin, before
+  `CrustBurst.breakthrough` / `Worm.breakthrough` are emitted.
+- **Space drift (U-11).** `SpaceStage.drift_bed: AudioStreamPlayer` (child `DriftBed`) is
+  `Audio.loop_player(SpaceStage.DRIFT_CUE)` (`"space_drift"`) at `SpaceStage.DRIFT_DB` with
+  `autoplay`: it plays whenever the stage is in the tree and stops in `_exit_tree`. Nothing else
+  starts `space_drift`.
+- **Ring ambience (U-14).** `RingAmbience` (`scripts/audio/ring_ambience.gd`, node `RingAmbience`
+  in `scenes/levels/planet.tscn`) is a plain `Node` child of a level that has `world: PolarWorld`
+  (and optionally `chomp` with `busy()`). Every frame it reads the head of the lowest-numbered
+  `Worm` under that level and plays the cue `"amb_" + RingDef.id` at `RingAmbience.LEVEL_DB`
+  (SFX bus), crossfading over `RingAmbience.FADE` s on a ring change. Above
+  `SkyLife.inner` x planet radius the id is `RingAmbience.SKY_ID` (`&"sky"`). An id with no
+  `assets/audio/sfx/amb_<id>.ogg` plays nothing (no placeholder, no warning). While
+  `level.chomp.busy()` every bed fades out.
+  - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
+    `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
+  - A new ring needs only `amb_<its id>.ogg`; no code change.
+
+### Story: Old Reel's dock scenes (story-1; documented by worm-gap-close-1 for W-28)
+
+Already on `dev`; this section only writes down the API other lanes already call (TackleLog, the
+book, PlanetLevel's stage hook).
+
+```gdscript
+# Story (scripts/story/story.gd, scenes/story/story.tscn). Not an autoload: the game adds one node
+# for the session; find it with Story.find(tree) (group &"story"). Scenes are data/cutscenes/<id>.json.
+signal started(id: StringName)
+signal finished(id: StringName, skipped: bool)
+signal cutscene_finished(id: StringName)          # GAME.md contract name: a scene ended, watched or skipped
+signal handoff(id: StringName, what: String)      # "follow_worm_underground" after the opening
+signal input_locked(on: bool)                     # lock / unlock every player's input
+const SCENES: Array[StringName]                   # opening, stage_2 .. stage_7, ending (book order)
+const STAGE_SCENES := {1: &"opening", 2: &"stage_2", ..., 7: &"stage_7"}
+const SAVE_KEY := "story_seen"                    # per tin: Array[String] of scene ids watched, in order
+static func find(tree: SceneTree) -> Story
+static func scene_for_stage(stage: int) -> StringName   # &"" when none
+func play(id: StringName) -> bool                 # queues if one is playing; false if no such scene
+func is_playing() -> bool ; func current() -> StringName ; func skip() -> void
+func has_seen(id: StringName) -> bool
+func watch(source: Object) -> void                # anything with stage_changed(player, from, to)
+func on_stage_changed(player: int, from: int, to: int) -> void   # once per tin, only going up
+var seen: Array[StringName] ; var persist := true ; var speed := 1.0
+```
+
+TackleLog connects `cutscene_finished` to fill its "cutscenes" page, and `sync_seen()` reads
+`story_seen` from the tin when no Story node is up. `tests/test_tin_keys.gd` checks each tin keeps its
+own `story_seen` (and its own `rings`, `home_slice.tackle` and `jars`).
 
 ### Deep rock (worm-deep-rock-1)
 
