@@ -1,5 +1,7 @@
 [gd_scene load_steps=6 format=3]
 
+[ext_resource type="Script" path="res://scripts/gameplay/burst_nudge.gd" id="burst_nudge"]
+[ext_resource type="Script" path="res://scripts/gameplay/partner_stars.gd" id="partner_stars"]
 [ext_resource type="Script" path="res://scripts/gameplay/eaten_beat.gd" id="eaten_beat"]
 [ext_resource type="Script" path="res://scripts/traits/trait_hello.gd" id="trait_hello"]
 [ext_resource type="Script" path="res://scripts/traits/trait_knacks.gd" id="knacks"]
@@ -73,6 +75,12 @@ script = ExtResource("food_voice")
 
 [node name="Knacks" type="Node" parent="."]
 script = ExtResource("knacks")
+
+[node name="BurstNudge" type="Node2D" parent="."]
+script = ExtResource("burst_nudge")
+
+[node name="PartnerStars" type="Node" parent="."]
+script = ExtResource("partner_stars")
 
 [node name="EatenBeat" type="Node" parent="."]
 script = ExtResource("eaten_beat")

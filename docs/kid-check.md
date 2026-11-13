@@ -27,15 +27,15 @@ were written as tests on local `feature/worm-gap-close-6` but are not on dev:
 
 | # | System | Main files | Act | Seen | Chomp | Kind | Passes? |
 |---|---|---|---|---|---|---|---|
-| 1 | Movement and burst | `scripts/worm/worm.gd`, `pull_drag.gd`, `worm_rules.gd` | no (N1) | yes | yes | yes | note |
+| 1 | Movement and burst | `scripts/worm/worm.gd`, `pull_drag.gd`, `worm_rules.gd` | yes (N1 fixed) | yes | yes | yes | fixed |
 | 2 | Digging | `scripts/world/polar_world.gd`, `world_destruct.gd`, `loose_fall.gd`, `surface_prop.gd`, `disk_edge.gd`, `scripts/gameplay/crust_burst.gd` | yes | yes | yes | yes | yes |
 | 3 | Eating and growth | `scripts/creatures/gulp.gd`, `scripts/worm/worm_growth.gd`, `food_voice.gd`, `scripts/rings/ring_pickup.gd`, `scripts/worm/juice.gd` | yes | yes | yes | yes (decided) | yes |
 | 4 | Stages and apexes | `scripts/worm/stage_table.gd`, `scripts/planet/apex_beetle.gd`, `apex_call.gd`, `scripts/gameplay/stage_beat.gd`, `stage_why.gd` | yes | yes | yes | yes (decided) | yes |
 | 5 | Traits and the trait wall | `scripts/worm/trait_wall.gd`, `star_traits.gd`, `scripts/traits/*.gd`, `scripts/gameplay/trait_beat.gd`, `trait_why.gd`, `scripts/burrow/burrow.gd` | no (N2) | yes | yes | yes | note |
 | 6 | Castings and gardens | `scripts/worm/castings_hook.gd`, `scripts/world/castings_trail.gd`, `scripts/rings/castings_sprouts.gd`, `topsoil_dressing.gd` | yes | yes | yes | yes | yes |
-| 7 | Co-op: shared growth and catch-up | `scripts/worm/worm.gd`, `worm_growth.gd`, `scripts/planet/planet_level.gd` | yes | no (N3) | yes | yes | note |
+| 7 | Co-op: shared growth and catch-up | `scripts/worm/worm.gd`, `worm_growth.gd`, `scripts/planet/planet_level.gd` | yes | yes (N3 fixed) | yes | yes | fixed |
 | 8 | Creatures and threats | `scripts/creatures/*.gd`, `scripts/gameplay/eaten_beat.gd` | yes | yes | yes | yes (decided) | yes |
-| 9 | Living rings and regrowth | `scripts/rings/ring_ecology.gd`, `population_rule.gd`, `rings_director.gd` | yes | no (N4) | yes | yes | note |
+| 9 | Living rings and regrowth | `scripts/rings/ring_ecology.gd`, `population_rule.gd`, `rings_director.gd` | yes | yes (N4 fixed) | yes | yes | fixed |
 | 10 | Secrets and cameo spots | `scripts/rings/secret_spot.gd`, `secret_halls.gd`, `secret_look.gd`, `cameo_stands.gd` | yes | yes | yes | yes | yes |
 | 11 | Sky: balloon and flocks | `scripts/rings/sky_balloon.gd`, `sky_flock.gd` | yes | yes | yes | yes | yes |
 | 12 | Pets | `scripts/pets/*.gd`, `scripts/burrow/burrow.gd` | yes | no (N5) | yes | yes | note |
@@ -66,6 +66,12 @@ also checks a carried creature; it is red without the fix.
 no visual. This breaks "every input plays a sound". The fix needs an `else` branch with its own
 quiet cue and a small puff, and the cue needs an Audio-lane file, so it is more than one line.
 Owner: Systems (worm).
+**Fixed (worm-gap-close-30):** `BurstNudge` (`scripts/gameplay/burst_nudge.gd`, a child of
+`scenes/players/worm.tscn`, so worm.gd is untouched): a press during the recharge puffs three dust
+specks behind the head, plays the burst cue small and high on its own quiet player (no new sound
+file), and shows a ring round the head that fills as the burst comes back. At most one every
+0.12 s; never while the trait wall has the buttons. `tests/test_kid_feedback.gd` (5 cases);
+`handoff/frames/c06-burst-nudge-ring*.png`.
 
 **N2 (note): sleeping can open the trait wall and freeze the worm.** Holding still for 2 s in any
 open hollow puts the worm to sleep (`scripts/planet/planet_level.gd:391-392`). If a trait is
@@ -82,6 +88,10 @@ grows the other (`scripts/worm/worm.gd:231-233`,
 (`worm.gd:388-390`), but tiles do not, so the partner's segments can pop for no visible reason.
 The fix calls `receive_share()` there with a throttle so a tunnel does not throw a star per tile.
 That is several lines in `worm.gd`. Owner: Systems (worm).
+**Fixed (worm-gap-close-30):** `PartnerStars` (`scripts/gameplay/partner_stars.gd`, a worm.tscn
+child) floats the same share star off this worm's head while another worm digs, at most one every
+0.6 s, so a tunnel is a steady twinkle. Digging by anything that is not a worm shows nothing.
+`tests/test_kid_feedback.gd` (2 cases); `handoff/frames/c18-partner-star*.png`.
 
 **N4 (note): ground regrows in play with no sparkle or sound.** `RegrowSparkles` and the
 `world_regrow` cue are wired only in the disk test level (`scripts/world/disk_level.gd:67-71`,
@@ -89,6 +99,12 @@ That is several lines in `worm.gd`. Owner: Systems (worm).
 thumb leaves show, `scripts/rings/rings_director.gd:445`). This is harmless, because the kid just
 eats through it. The fix is a few lines in `planet_level.gd`, which other in-flight branches are
 editing (gap-close-3/4/8), so it is left for the planet owner.
+**Fixed (worm-gap-close-30):** without touching `planet_level.gd`: `CastingsHook` (a worm.tscn child)
+now also makes one `RegrowWatch` per world (`scripts/world/regrow_watch.gd`), which twinkles
+(`RegrowSparkles`) where ground grows back or a garden cell fills and, near a worm, plays
+`world_regrow` / `world_sprout` once per 0.4 s (a regrowth pass is one soft sound).
+`tests/test_kid_feedback.gd` (3 cases); `handoff/frames/g04-regrow-sparkles*.png` (staged: 15 cells
+grown round the worm).
 
 **N5 (note): a second pet of a kind vanishes quietly.** If home already has that kind of pet, a
 carried one is taken (`scripts/burrow/burrow.gd:203-210`, then `:218` `food.call("take")`). Only
