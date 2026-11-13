@@ -2,8 +2,9 @@
 ## (by itself when a new trait is waiting, or with Y). Same buttons as the placeholder TraitWall it
 ## replaces (left / right picks, A equips / unequips, B or Y closes), drawn as framed pictures
 ## hanging from a string on a dirt wall, with a peg for every slot. No text.
-## If the wall shuts and the player chose nothing, the burrow equips the newest trait by itself
-## (Burrow.auto_equip). Placeholder look, drawn in code; the Worm art round replaces it.
+## If the wall shuts and the player chose nothing, the burrow equips the newest trait by itself, into
+## a free slot only; it never takes a trait off (Burrow.auto_equip). Placeholder look, drawn in code;
+## the Worm art round replaces it.
 class_name BurrowWall
 extends TraitWall
 

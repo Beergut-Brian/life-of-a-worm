@@ -1078,12 +1078,19 @@ func chamber_tiles() -> float; func has_house() -> bool
 func house_base() -> Vector2; func house_spot(k) -> Vector2; func house_spot_cells() -> Array[Vector2i]
 func free_house_spot(near: Vector2) -> Vector2i   # Vector2i(-99999, -99999) if none
 func install_wall(w: Worm)                    # gives the worm a BurrowWall (HomeSlice does it on spawn)
-func auto_equip(w: Worm) -> StringName        # newest earned trait, once; &"" if nothing to do
+func auto_equip(w: Worm) -> StringName        # newest earned trait into a FREE slot, once; &"" if nothing to do
 
 # BurrowWall extends TraitWall (the sleep chooser): var burrow, var touched;
 func pictures() -> Array[StringName]          # the worm's earned traits, in order
 # Shutting it with touched == false calls burrow.auto_equip(worm).
 ```
+
+No swap (fix run, 2026-11-12): auto_equip only fills a free slot. With every slot full it equips
+nothing and unequips nothing; the newest trait keeps waiting on the wall (reveal ring and sting are
+the Worm lane's, unchanged), and the next stage that adds a slot equips it (`WormGrowth._check_stage`,
+unchanged). A trait counts as `offered` only once it actually went on. The first run swapped out the
+oldest active trait; that broke the 2026-11-11 rule in GAME.md ("The wall never auto-unequips
+anything"), so it is gone.
 
 Hook wanted from the Worm lane: `Worm._wall` is set from outside by `Burrow.install_wall` (there is
 no public setter). A `wall_factory: Callable` or a public `wall` var on `Worm` would make that clean.

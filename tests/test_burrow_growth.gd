@@ -1,7 +1,8 @@
 ## B-06 and D-13 (worm-burrow-1): the burrow grows with the worm from data (data/burrow/growth.tres)
 ## and by the house stage is a cavern with a buried house whose rooms take trophies as furniture;
 ## sleeping opens the burrow's wall of pictures (BurrowWall), which lists every earned trait, and a
-## player who shuts it without choosing gets the newest trait equipped, once. Own Save profile.
+## player who shuts it without choosing gets the newest trait equipped into a free slot, once; it
+## never swaps an active trait out. Own Save profile.
 class_name TestBurrowGrowth
 extends GdUnitTestSuite
 
@@ -182,33 +183,80 @@ func test_the_sleep_chooser_lists_the_earned_traits() -> void:
 	assert_bool(wall.visible).is_true()
 
 
-func test_the_newest_trait_equips_itself_when_the_player_never_chooses() -> void:
-	_open()
-	var w := _p1()
-	_two_traits(w)
-	await _fall_asleep(w)
+## Shut the wall to get out of it (B), choosing nothing.
+func _shut_without_choosing(w: Worm) -> void:
 	assert_bool(w.wall_open).is_true()
-	# The kid just presses B to get out of it: nothing chosen.
 	_intent = { "wiggle": true }
 	await _frames(1)
 	_intent = {}
 	await _frames(1)
 	assert_bool(w.wall_open).is_false()
-	assert_array(w.model.active).contains_exactly([&"stone_head"])
-	assert_int(Audio.played.get("trait_swap", 0)).is_greater_equal(1)
-	# Once only: put Wriggle back by choice, sleep again, close: it stays the player's choice.
-	w.model.toggle(&"stone_head")
-	w.model.toggle(&"wriggle")
+
+
+## Every slot full (stage 2, one slot, Wriggle on): shutting the wall equips nothing and takes nothing
+## off. Stone head keeps waiting (GAME.md 2026-11-11: the wall never auto-unequips anything).
+func test_the_newest_trait_waits_when_every_slot_is_full() -> void:
+	_open()
+	var w := _p1()
+	_two_traits(w)
+	await _fall_asleep(w)
+	Audio.played.clear()   # equipping Wriggle on the way here played its own cue
+	await _shut_without_choosing(w)
+	assert_array(w.model.active).contains_exactly([&"wriggle"])
+	assert_array(w.model.earned).contains_exactly([&"wriggle", &"stone_head"])
+	assert_int(Audio.played.get("trait_swap", 0)).is_equal(0)
+	assert_array(_level.burrow.offered.get(Players.P1, [])).not_contains([&"stone_head"])
+	# Again: still nothing swapped.
 	w.set_wall_open(true)
 	await _frames(1)
 	w.set_wall_open(false)
 	assert_array(w.model.active).contains_exactly([&"wriggle"])
+
+
+## A free slot: shutting the wall without choosing puts the newest trait in it, once per trait, and
+## the tin remembers that it was offered.
+func test_the_newest_trait_fills_a_free_slot_when_the_player_never_chooses() -> void:
+	_open()
+	var w := _p1()
+	_two_traits(w)
+	w.model.toggle(&"wriggle")   # the slot is free now, Stone head waiting
+	assert_array(w.model.active).is_empty()
+	await _fall_asleep(w)
+	Audio.played.clear()
+	await _shut_without_choosing(w)
+	assert_array(w.model.active).contains_exactly([&"stone_head"])
+	assert_int(Audio.played.get("trait_swap", 0)).is_greater_equal(1)
+	# Once only: take it off by choice, sleep again, close: it stays the player's choice.
+	w.model.toggle(&"stone_head")
+	w.set_wall_open(true)
+	await _frames(1)
+	w.set_wall_open(false)
+	assert_array(w.model.active).is_empty()
 	# And it is remembered in the tin.
 	var b := _level.burrow
 	var d := b.to_dict()
 	b.offered.clear()
 	b.from_dict(d)
 	assert_array(b.offered.get(Players.P1, [])).contains([&"stone_head"])
+
+
+## A stage that adds a slot equips the newest waiting trait into it, and nothing comes off.
+func test_a_stage_that_adds_a_slot_equips_the_newest_waiting_trait() -> void:
+	_open()
+	var w := _p1()
+	_two_traits(w)
+	await _fall_asleep(w)
+	await _shut_without_choosing(w)
+	assert_array(w.model.active).contains_exactly([&"wriggle"])
+	var slots := w.model.slots()
+	w.model.apex_eaten.append(2)
+	var n := 0
+	while w.model.stage < 3 and n < 100:
+		w.model.add_segment(&"")
+		n += 1
+	assert_int(w.model.stage).is_equal(3)
+	assert_int(w.model.slots()).is_greater(slots)
+	assert_array(w.model.active).contains_exactly_in_any_order([&"wriggle", &"stone_head"])
 
 
 func test_a_player_who_chooses_keeps_the_choice() -> void:

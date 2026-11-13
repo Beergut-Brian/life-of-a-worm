@@ -14,7 +14,8 @@
 ## The bed is the sleep spot: falling asleep saves the tin, and Y while asleep opens the trait wall
 ## (it opens by itself when a newly earned trait is waiting). The wall hangs above the bed: one
 ## picture per earned trait (BurrowWall is the close-up chooser). A player who never makes a choice
-## there gets the newest trait equipped when the wall shuts (auto_equip), once per trait.
+## there gets the newest trait equipped when the wall shuts (auto_equip), once per trait, only
+## into a free slot (it never takes another trait off).
 ## The room grows with the worm's stage (data/burrow/growth.tres, BurrowGrowth); from the house stage
 ## the chamber is a cavern with a buried house in it, and trophies brought home become its furniture.
 ## Nothing in a burrow ever regrows (the world's keep zone). Placeholder art, drawn here.
@@ -527,8 +528,11 @@ func install_wall(w: Worm) -> void:
 	w.add_child(bw)
 
 
-## The wall shut and the player chose nothing: the newest earned trait equips itself (swapping out
-## the oldest active one when every slot is full). Once per trait per player. Returns its id or &"".
+## The wall shut and the player chose nothing: the newest earned trait equips itself, but only into
+## a free slot. It never swaps out or unequips an active trait (GAME.md 2026-11-11: "The wall never
+## auto-unequips anything"); with every slot full it keeps waiting on the wall with its reveal ring,
+## and the next stage that adds a slot equips it (WormGrowth._check_stage). Once per trait per
+## player: it only counts as offered once it actually went on. Returns its id or &"".
 func auto_equip(w: Worm) -> StringName:
 	var m := w.model
 	if m.slots() <= 0 or m.earned.is_empty():
@@ -537,12 +541,12 @@ func auto_equip(w: Worm) -> StringName:
 	var done: Array = offered.get(w.player, [])
 	if m.is_active(newest) or newest in done:
 		return &""
-	done.append(newest)
-	offered[w.player] = done
 	if m.active.size() >= m.slots():
-		m.toggle(m.active[0])
+		return &""   # every slot full: it waits, nothing comes off
 	if not m.toggle(newest):
 		return &""
+	done.append(newest)
+	offered[w.player] = done
 	Audio.play("trait_swap")
 	_flash[w.player] = 0.8
 	queue_redraw()
