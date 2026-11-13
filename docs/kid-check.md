@@ -110,6 +110,11 @@ grown round the worm).
 carried one is taken (`scripts/burrow/burrow.gd:203-210`, then `:218` `food.call("take")`). Only
 the resident pet's hello shows. Nothing shows the newcomer "back to the wild", as the comment
 says. The fix needs a small run-off animation (Gameplay plus Art), so it is more than one line.
+**Fixed (worm-gap-close-34):** the newcomer is shown going: `Burrow.bring` adds a `PetFarewell`
+(`scripts/pets/pet_farewell.gd`, code-drawn with `PetLook`, no new art) at the mouth, which rises
+out of the room away from the core with a heart over it, plays `pet_away` (the ladybird's leaving
+cue) and fades out in 1.6 s; the resident still says hello. It is not a pet (not counted, not
+saved). `Burrow.pet_waved_off` reports it. `tests/test_pet_farewell.gd` (4 cases).
 
 **N6 (note): a damaged or unwritable tin is silent.** At `scripts/autoload/Save.gd:130`
 (`_data = parsed if parsed is Dictionary else {}`), a corrupt file reads as empty. The dock then
