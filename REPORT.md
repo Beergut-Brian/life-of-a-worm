@@ -51,86 +51,88 @@ keeps it fed.
 - Big tiles are not in `data/BALANCE.md`'s simulated runs (it models tunnelling new ground only);
   farming castings now pays twice. The Content lane may want to fold it in or lower `size_growth`.
 - Values are untuned by play; the big-tile look is a placeholder until the Worm art round.
-# Lawnmower lane report (feature/worm-lawnmower-1)
+# REPORT: Session flow lane (feature/worm-session-1)
 
-## Rows moved
+Base: `origin/dev` 7504102. Not pushed, not tagged. (`origin/dev` has since moved to 7044fdf, PR #35
+kid-fixes; not merged here.)
 
-- **L-12** Lawnmower (5): `missing` → `built`.
+## Rows moved (PLAN-STATUS)
 
-## What I built
+| ID | From | To |
+| --- | --- | --- |
+| P-09 solo playtest mode | partial | built |
+| P-06 pause menu with the big back-to-launcher icon | partial | built |
+| C-08 Start = pause | partial | built |
+| P-07 no auto-steer, fit to a cap, edge arrow, held-B warp | partial | built |
+| C-03 worms on opposite sides: zoom out until both fit | partial | built (closed by P-07) |
+| C-14 smaller worm's held B warps to a far partner | partial | built (was "untested") |
 
-- `data/creatures/lawnmower.tres` (`LawnmowerData`, new `scripts/creatures/lawnmower_data.gd`): size
-  stage 5, radius 24 px, speed 28 px/s, bump 90 px, drive 240 px either side, telegraph 1.2 s,
-  engine cue `boot_rumble`, warning bark `threat_near`, bump cue `space_bump`, one live at a time.
-- `scripts/creatures/lawnmower.gd` (`Lawnmower extends Creature`) + `scenes/creatures/lawnmower.tscn`:
-  - **Drives** back and forth on the ground line, turning round at the ends of its stretch. It
-    never turns toward a worm. Its line is the highest ground under both wheels, so it straddles
-    a narrow hole and does not sink into the strip it mowed.
-  - **Very loud:** the engine loop plays the whole time it drives: +6 dB beside a worm, fading to
-    silent by 900 px. A worm it could bump that is ahead of it on the grass gets the warning bark
-    and a honk (wide headlight eyes and sound lines).
-  - **Eats grass only:** it digs the top `grass` tile under it, which regrows at the ring's rate.
-    It never takes a food, a creature or a worm. It is never in the `food` group, and `take()`
-    does nothing.
-  - **Bumps** a worm of its size or smaller, and only after the 1.2 s telegraph. The worm goes up
-    off the grass and away, 90 px over about 0.4 s. The push is added to the head on top of the
-    stick: the worm is never steered and keeps all its segments.
-  - **The cause beat:** the shadow ahead darkens while it warns and flashes on the bump, with a
-    boing star, `space_bump`, and a camera beat (shake 0.35 when screen shake is on, `lean_in` +1
-    for 0.6 s, released after).
-  - The same worm cannot be bumped again for 1.6 s. A bigger worm makes it honk and turn round.
-- **Hooked in through the surface ring's own spawn list:** `surface_life.tres` already counts a
-  `lawnmower` species with no body (live_max 0). `data/rings/` is read-only for this lane, so
-  `RingsDirector.setup` calls `LAWNMOWER.give_body(ecology)`, which swaps in a copy of that rule
-  with the mower scene, live_max 1 and a spawn band just under the grass. The ring data and
-  `test_surface_ring` are unchanged. Nothing else spawns it.
-- `tests/test_lawnmower.gd`, 10 cases:
-  - it stays on the surface line and turns round;
-  - it never turns toward a worm;
-  - it is never food and never eats a worm (stages 1, 4, 5, 7);
-  - it mows grass and nothing else (an apple and a grub in its way are untouched);
-  - the bump knocks the worm up and off after the telegraph, with the beat, cue, shake and lean;
-  - a bigger worm is never bumped;
-  - no juggling;
-  - every cue resolves to a real `.ogg`, and the engine loop is the real file, not the grey beep;
-  - the surface counter spawns exactly one mower, on the grass.
-- `docs/contracts.md`: appended `### Lawnmower (worm-lawnmower-1)`.
+## What was already there, and the gaps I found
+
+Most of P-09 and P-06 existed from the template and the grey-box lane: `--solo`, the Select + Start
+hold (real seconds), session-only solo (a saved `solo_playtest` setting is ignored at boot), Select
+handing the pad to the other worm in play, the "Back to Open Jar" bar with its Stay/Leave question,
+and "Restart" already renamed "Main menu" in `scenes/main.gd`. I closed these gaps:
+
+1. **No big icon on the pause menu.** Kaden's rule asks for a big icon back to the launcher, and
+   there was only a text bar. Added `Card/DoorIcon` (the template's unused `IconButton`, `Icon.DOOR`,
+   drawn in code, no new art), under the door bar. It lights and wobbles with the bar; A asks, Leave
+   calls `Game.quit()` (exit 0).
+2. **Pause hint strip was cut off** ("Move  A S..."): it placed its text while the card was still
+   sliding in and never redrew. It now redraws when the slide ends.
+3. **Pause over the tackle box or a rewatched cutscene.** Both run with `PROCESS_MODE_ALWAYS` on
+   canvas layers 60 and 90, above the pause menu (layer 1). Start opened the menu *under* the box,
+   both read the pad at once, and Resume unpaused the tree with the box still open (the worms ran
+   under it). Now, while paused, `main.gd` holds every always-processing node under the level and
+   hides its canvas layers; `Game.resume()` restores whatever pause was there before (the box keeps
+   the game held). Main menu and quit from there both work.
+4. **P-07 past the cap.** The camera used to keep centring between the worms when they no longer
+   fit the widest zoom, so both could end up off screen. `FarCamera` (`scripts/planet/far_camera.gd`)
+   now frames both until they don't fit `min_fit_index`, then follows one worm: in solo the one the
+   pad drives (the camera follows the active player), in co-op the bigger one (the smaller is the
+   one whose held B goes to its partner, C-14), a tie keeps the current one (P1 first). The far
+   worm gets the HUD's edge arrow in its colour. Both are framed again once they fit with 15% spare.
+   Nobody is ever moved; held B moves only the worm that held it (tested).
+5. **Solo icon covered the HUD.** The two-heads icon sat top-left on top of Gulp's stage icon. It
+   is now top-right (the template's `solo_marker.gd`).
 
 ## Tests
 
-I deleted `.godot`, ran a clean import, then ran the full gdUnit4 suite twice with `--continue`.
-Both runs gave the same line:
-`Overall Summary: 441 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |`
-The count includes the 10 new lawnmower cases. Up to 10 other lanes' gdUnit runs were on the box at the same time.
+`tests/test_worm_session.gd` (10 cases, own sandbox profile and settings file): solo flag from args;
+solo from the 2 s hold (early release does nothing, icon shows, Burp hatches, hold again turns it
+off); a saved solo never restores at boot; Select in solo hands the pad and, past the cap, the
+camera; Start pauses and the menu has the door icon lit with its bar; door after a Stay still quits
+and the tin is saved; pause over the tackle box holds it, resume gives it back, door still quits;
+Main menu from over the box unpauses; camera fits both then follows one, the far worm is off screen,
+held B warps it to the partner without moving the partner; the camera follows the bigger worm.
 
-## Frames
+Full suite (`handoff/test-output.txt`), after `rm -rf .godot` and `--import`: run 1, 441 cases,
+0 failures; run 2, 12 failures in `test_greybox_planet::test_each_tin_round_trips_on_its_own` and
+`test_jars_slots` while 8 lanes ran gdUnit on the shared `user://` (the known tin flake); run 3 on
+the final code, 441 cases, 0 failures. Zero new failures.
 
-`handoff/shots/lawnmower/` comes from a scratch scene (`.scratch/mower_shot.tscn`): the real planet,
-a stage-4 worm on the grass, the mower driving at it, and the camera held close for the frames.
-`contact_bump.png` puts the four frames side by side:
-- 0.8 s: honking (wide eyes, sound lines);
-- 1.6 s: the bump (boing star, worm launching);
-- 2.0 s and 2.4 s: the worm up off the grass while the mower carries on.
+## Frames (`handoff/shots/`, looked at)
 
-The full frames are `t000.8s.png` to `t002.9s.png`. I held the camera myself for the frames, so the
-camera beat itself (shake and lean) is not visible in them. The test checks it.
+- `pause/t002.0s.png`: pause menu, door icon under the door bar, hint strip whole.
+- `pause_door_solo/t002.0s.png`: door bar focused with its icon lit; solo on (icon top-right).
+- `solo_far/t006.0s.png`: solo, worms 240 tiles apart: camera on Gulp, Burp's red edge arrow on
+  the right, stage icons top-left uncovered, solo icon top-right.
+- The menu preview pauses on the dock (the `--ui=pause*` hook), so the frames show the dock blurred
+  behind, not the planet.
 
-## What I could not check
+## Not checked
 
-- **The sound on a real speaker.** The engine loop's loudness, how `boot_rumble` sounds looped, and
-  whether +6 dB is "very loud" without drowning the chomps. The headless box has no audio out.
-- How the camera beat feels in real play. Tests only check that it is requested and released.
-- Mowed tiles are real holes in the grass (the tiles are dug and regrow in 120 s). On a saved tin,
-  a strip mowed in an earlier session is a one-tile-deep lane until it regrows, and a mower that
-  spawns over it rides in it. It reads as "its mowed lane" in frames, but Kaden may want mowing to
-  be shallower.
+- Real pads: the hold and Start were driven through `Players.hold_step` and synthetic actions,
+  not a physical controller. Worth a 30 s check on the TV: hold Select + Start on the planet, and
+  press Start with the tackle box open.
+- The co-op anchor rule (camera stays on the bigger worm) is my call from GAME.md's "the far worm
+  gets an edge arrow ... and holding B warps it to its partner". If Kaden would rather the camera
+  stay with P1, or with whoever moved last, it is one function (`FarCamera.pick_anchor`).
+- A cutscene that plays without pausing the tree (stage-up beats) is also held while paused now;
+  checked by code reading only, no test drives a live stage-up cutscene under the pause.
 
-## Notes for other lanes / Hermes
+## Follow-ups for other lanes
 
-- The W-06 row still says "**Missing:** the lawnmower threat (body and behaviour, creatures lane)";
-  L-12 now covers it.
-- `surface_life.tres` could carry the mower's `live` and `live_max` directly (owner: the rings and
-  surface lane). `give_body` already leaves a rule alone when its `live` is set.
-- Like the boot, the mower's data passes `test_every_creature_except_a_jarling_becomes_food_eventually`
-  (size stage 5 < 7), but its body is never edible, per GAME.md ("eats grass only; bumps you, does not
-  eat you").
+- Story lane (`scripts/story/`): `Story` runs with `PROCESS_MODE_ALWAYS`; the session lane now holds
+  it from `main.gd` while paused. If Story ever lives outside the level node, it would need to watch
+  `Game.state` itself.

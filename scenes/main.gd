@@ -21,6 +21,11 @@ static var template_only := false
 var level: PlanetLevel
 var dock: Dock
 var tin := -1
+## While paused: level nodes that run through pauses (the tackle box, a cutscene) are held still and
+## their overlays hidden, so the pause menu is on top and the only thing reading the pad.
+## node -> process_mode / visible, as they were.
+var _held_modes := {}
+var _hidden_layers := {}
 
 
 func _ready() -> void:
@@ -41,6 +46,7 @@ func _ready() -> void:
 	Players.player_left.connect(_on_player_left)
 	Game.round_started.connect(_on_round_started)
 	Game.back_to_lobby.connect(close_level)
+	Game.state_changed.connect(_on_game_state)
 	if Game.demo:
 		(func() -> void:
 			Players.join_virtual(Players.P1)
@@ -152,3 +158,42 @@ func _on_player_joined(player: int, _device: int) -> void:
 func _on_player_left(player: int) -> void:
 	if level != null:
 		level.remove_worm(player)
+
+
+func _on_game_state(_from: int, to: int) -> void:
+	if to == Game.State.PAUSED:
+		hold_level_for_pause()
+	else:
+		release_level_after_pause()
+
+
+## Freeze everything under the level that would keep running (or drawing above the pause menu).
+func hold_level_for_pause() -> void:
+	release_level_after_pause()
+	if level == null:
+		return
+	var stack: Array = [[level, false]]
+	while not stack.is_empty():
+		var top: Array = stack.pop_back()
+		var n: Node = top[0]
+		var held: bool = top[1]
+		if n.process_mode == Node.PROCESS_MODE_ALWAYS:
+			_held_modes[n] = n.process_mode
+			n.process_mode = Node.PROCESS_MODE_PAUSABLE
+			held = true
+		if held and n is CanvasLayer and n.visible:
+			_hidden_layers[n] = true
+			n.visible = false
+		for c in n.get_children():
+			stack.append([c, held])
+
+
+func release_level_after_pause() -> void:
+	for n in _held_modes:
+		if is_instance_valid(n):
+			n.process_mode = _held_modes[n]
+	for n in _hidden_layers:
+		if is_instance_valid(n):
+			n.visible = true
+	_held_modes.clear()
+	_hidden_layers.clear()
