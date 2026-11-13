@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"honeydew"
+eat_cue = "bird_gulp"
 flavour = &"bug"
 growth = 3.0
 size_stage = 1

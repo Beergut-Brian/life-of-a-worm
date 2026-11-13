@@ -5,6 +5,12 @@ extends Resource
 @export var rings: Array[RingDef] = []
 ## regrow_time is multiplied by this where a worm left castings (0.25 = four times as fast).
 @export_range(0.01, 1.0) var castings_factor: float = 0.25
+## Extra growth per food size above 1, in plain tiles (1.0: a size-2 tile is worth two plain ones).
+@export var size_growth: float = 1.0
+## A ring is never exhausted: once more than this share of its cells is eaten and waiting, its
+## regrow times shrink, down to scarce_factor x when it is all eaten.
+@export_range(0.0, 1.0) var scarce_share: float = 0.5
+@export_range(0.01, 1.0) var scarce_factor: float = 0.2
 ## Planet seconds between a garden filling one more cell.
 @export var garden_interval: float = 4.0
 ## A patch spreads through castings up to this many tiles from its seed.

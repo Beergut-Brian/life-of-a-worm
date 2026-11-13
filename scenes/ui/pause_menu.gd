@@ -3,6 +3,8 @@
 ## slanted bars: Resume, Restart (back to the lobby), Settings, Back to Open Jar (asks first).
 ## Either pad moves the cursor, A presses, B resumes or backs out of Settings / the question.
 ## Start is Game's (it resumes from anywhere). Shown while Game.state == PAUSED.
+## The door bar has a big round door icon beside it (Kaden: every pause menu has a big icon back to
+## the launcher); it lights with the bar and A on either asks, then Game.quit().
 extends Control
 
 enum Choice { RESUME, RESTART, SETTINGS, DOOR }
@@ -23,6 +25,8 @@ var _tw: Tween
 @onready var _by: Control = $Card/PausedBy
 @onready var _settings: SettingsPanel = $Settings
 @onready var _confirm: ConfirmDialog = $Confirm
+@onready var _door_icon: Control = $Card/DoorIcon
+@onready var _hint: Control = $Card/Hint
 
 
 func _ready() -> void:
@@ -87,6 +91,7 @@ func press(choice: Choice = focus) -> void:
 		Choice.SETTINGS:
 			_settings.open()
 		Choice.DOOR:
+			_door_icon.press()
 			_confirm.open()
 
 
@@ -112,6 +117,7 @@ func _set_focus(to: Choice, sound := true) -> void:
 	focus = to
 	for i in _buttons.size():
 		_buttons[i].focused = i == focus
+	_door_icon.focused = focus == Choice.DOOR
 
 
 func _on_confirm_chosen(leave: bool) -> void:
@@ -136,6 +142,8 @@ func _on_state_changed(_from: int, to: int) -> void:
 	_tw.tween_property(_wedge, "edge", 1010.0, 0.3).from(-300.0).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_tw.tween_property(_card, "position:x", 0.0, 0.3).from(-500.0).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	MenuItem.slam_all(_buttons, 0.1, 0.05)
+	# The hint strip places its text from its on-screen edge: redraw it once the card has landed.
+	_tw.finished.connect(_hint.queue_redraw)
 
 
 ## UiStyle.use_skin() calls this on every open menu.

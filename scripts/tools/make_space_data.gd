@@ -6,27 +6,26 @@ extends SceneTree
 const PLANET := preload("res://scripts/space/planet_data.gd")
 const LIFE := preload("res://scripts/space/space_life.gd")
 const FOOD := preload("res://scripts/worm/food_data.gd")
-const TRAIT := preload("res://scripts/worm/trait_data.gd")
 const RULE := preload("res://scripts/rings/population_rule.gd")
 
 # id, colour, accent, radius px, meal, drift px/s, foods [[id, stage, radius, colour, growth]],
-# star [id, colour, add]
+# star [id, colour, add] (only the id is used: the Star trait is data/traits/<id>.tres, D-10)
 const PLANETS := [
 	["ice", "bfe6f5", "6fb3d9", 170.0, 8, 30.0,
 		[["snowball", 5, 30.0, "f4fbff", 2.0], ["ice_cube", 5, 36.0, "9fdcf2", 2.0], ["frost_moon", 6, 52.0, "d8eef8", 3.0]],
-		["frost_star", "7fe3ff", {"space_speed": 60.0}]],
+		["frost_star", "7fe3ff", {"space_speed": 110.0}]],
 	["jungle", "4fae5a", "2f7a3a", 240.0, 8, 26.0,
 		[["coconut", 5, 34.0, "8a5a34", 2.0], ["vine_ball", 5, 32.0, "7cc84a", 2.0], ["fern_moon", 6, 54.0, "3f9a4a", 3.0]],
-		["vine_star", "5fe36a", {"space_reach": 18.0}]],
+		["vine_star", "5fe36a", {"space_reach": 26.0}]],
 	["junk", "8d8f96", "5c5e66", 280.0, 8, 22.0,
 		[["tin_can", 5, 32.0, "c3c6cc", 2.0], ["old_bolt", 5, 28.0, "a6875a", 2.0], ["scrap_moon", 6, 56.0, "7a7c84", 3.0]],
-		["anchor_star", "b9bcc6", {"space_steady": 0.4}]],
+		["anchor_star", "b9bcc6", {"space_steady": 0.5}]],
 	["candy", "f39ac3", "d35f9a", 200.0, 8, 28.0,
 		[["gumdrop", 5, 30.0, "ff6f91", 2.0], ["lollipop", 5, 34.0, "ffd94a", 2.0], ["cake_moon", 6, 54.0, "fbe3c8", 3.0]],
-		["sugar_star", "ff8fd0", {"space_speed": 30.0, "space_reach": 8.0}]],
+		["sugar_star", "ff8fd0", {"space_pull": 280.0}]],
 	["clockwork", "d7a645", "8f6a22", 320.0, 8, 20.0,
 		[["cog", 5, 32.0, "c99a3a", 2.0], ["spring_coil", 5, 30.0, "b8b8c0", 2.0], ["clock_moon", 6, 56.0, "f0d68a", 3.0]],
-		["tick_star", "ffcf5a", {"space_speed": 20.0, "space_steady": 0.25}]],
+		["tick_star", "ffcf5a", {"space_turn": 1.2}]],
 ]
 
 
@@ -71,13 +70,9 @@ func _init() -> void:
 		d.drift = spec[5]
 		for f in spec[6]:
 			d.foods.append(_food(f))
-		var t = TRAIT.new()
-		t.id = StringName(spec[7][0])
-		t.color = Color(spec[7][1])
-		t.add = spec[7][2]
-		t.part_slot = &"space"
-		d.star_trait = t
-		d.star_chance = 0.15
+		# worm-star-trait-1: the Star is its own file, earned by eating the planet itself
+		d.star_trait = load("res://data/traits/%s.tres" % spec[7][0])
+		d.star_chance = 0.0
 		var path := "res://data/planets/%s.tres" % spec[0]
 		ResourceSaver.save(d, path)
 		planets.append(path)

@@ -1,6 +1,6 @@
 ## The grey-box game scene (scenes/levels/planet.tscn): one bait tin's planet. The real worm
 ## (scripts/worm/) tunnels through the real polar world (scripts/world/), eating tiles, food
-## pickups and grubs; the dirt ring's apex beetle; the burrow; the shared rotating camera that zooms
+## pickups and grubs; the ring apexes (the dirt beetle, the topsoil stag beetle); the burrow; the shared rotating camera that zooms
 ## to fit; the HUD; autosave. scenes/main.gd hosts it under Arena and spawns the worms.
 ## Reads and writes the open tin through Save (BaitTins picks the slot before this is added).
 class_name PlanetLevel
@@ -15,6 +15,8 @@ const SKY := Color("0d1430")
 const BACK_WALL := Color("1b1712")
 const RADIUS := 300
 const START_DEPTH := 0.76
+## Tiles above the spawn the topsoil apex lives (spawn 228 tiles out, topsoil 246 to 296).
+const TOPSOIL_APEX_UP := 28.0
 const AUTOSAVE := 30.0
 ## Planet seconds before an eaten pickup grows back where it was.
 const FOOD_REGROW := 90.0
@@ -27,8 +29,14 @@ const WORM_NAMES := ["Gulp", "Burp"]
 
 var world: PolarWorld
 var camera: PolarCamera
+## P-07: frames both worms up to the widest zoom, then follows one (the other gets an edge arrow).
+var far_camera := FarCamera.new()
 var burrow: Burrow
+## The dirt ring's apex (stage 1 -> 2); also apexes[0].
 var beetle: ApexBeetle
+## One apex per ring that has one in this slice, in ring-stage order: the dirt beetle (opens stage 2)
+## and the topsoil stag beetle (opens stage 3). Eaten once per tin, the bite counts for every worm.
+var apexes: Array[ApexBeetle] = []
 ## The stage-up beat (scripts/gameplay/stage_beat.gd; zoom caps per stage come from data/stages.tres).
 var stage_beat: StageBeat
 ## The crust burst (scripts/gameplay/crust_burst.gd; the crust ring and its stage come from data/stages.tres).
@@ -99,19 +107,14 @@ func _ready() -> void:
 	actors.name = "Actors"
 	actors.z_index = 3
 	add_child(actors)
-	beetle = ApexBeetle.new()
-	beetle.name = "ApexBeetle"
-	beetle.world = world
-	beetle.home = local_point(-20, 2)
-	beetle.position = beetle.home
-	actors.add_child(beetle)
-	beetle.eaten.connect(_on_apex_eaten)
-	beetle.ate_worm.connect(_on_worm_eaten)
+	beetle = _add_apex("ApexBeetle", 1, 2, 15.0, &"dirt", local_point(-20, 2))
+	_add_apex("TopsoilApex", 2, 3, 15.0, &"topsoil", local_point(-6, TOPSOIL_APEX_UP))
 	if saved.is_empty():
 		_new_planet()
 	else:
 		burrow.from_dict(Save.get_value("burrow", {}))
-		beetle.from_dict(Save.get_value("apex", {}))
+		for a in apexes:
+			a.from_dict(Save.get_value(apex_key(a.ring_stage), {}))
 		_load_foods(Save.get_value("foods", []))
 		played = float(Save.get_value("played", 0.0))
 		var wd: Dictionary = Save.get_value("worms", {})
@@ -160,6 +163,31 @@ func _ready() -> void:
 		_demo.name = "Demo"
 		_demo.level = self
 		add_child(_demo)
+
+
+## Builds one ring apex: ring_stage is the ring it gates (eating it opens size_stage).
+func _add_apex(node_name: String, ring_stage: int, size_stage: int, r: float, look: StringName, at: Vector2) -> ApexBeetle:
+	var a := ApexBeetle.new()
+	a.name = node_name
+	a.ring_stage = ring_stage
+	a.size_stage = size_stage
+	a.radius = r
+	a.look = look
+	if ring_stage > 1:
+		a.id = StringName("apex_%s" % look)
+	a.world = world
+	a.home = at
+	a.position = at
+	actors.add_child(a)
+	a.eaten.connect(_on_apex_eaten.bind(a))
+	a.ate_worm.connect(_on_worm_eaten)
+	apexes.append(a)
+	return a
+
+
+## Save key of a ring's apex: "apex" for the dirt one (older tins), "apex_<ring stage>" above it.
+static func apex_key(ring_stage: int) -> String:
+	return "apex" if ring_stage == 1 else "apex_%d" % ring_stage
 
 
 ## A point in the start area's frame: x tiles to the right of the spawn, y tiles up (away from the core).
@@ -258,6 +286,7 @@ func spawn_worm(player: int, at = null, start_stage := 0) -> Worm:
 	actors.add_child(w)
 	w.set_world(world)
 	world.track_eater(w.head)
+	_share_eaten_apexes(model)
 	w.warp_requested.connect(_on_warp_requested)
 	w.stage_changed.connect(_on_stage_changed)
 	var g := ReadyGlyph.new()
@@ -311,12 +340,13 @@ func remove_worm(player: int) -> void:
 	_refresh_camera_targets()
 
 
+## Both worms while they fit the widest zoom; past it, only the anchor worm (FarCamera, P-07).
 func _refresh_camera_targets() -> void:
 	var t: Array[Node2D] = []
 	for w in Worm.all():
 		if w.get_parent() == actors and not w.is_queued_for_deletion():
 			t.append(w)
-	camera.targets = t
+	camera.targets = far_camera.step(camera, t, Players.solo_focus if Players.solo else -1)
 
 
 func max_stage() -> int:
@@ -365,6 +395,7 @@ func _physics_process(delta: float) -> void:
 			_glyphs[w.player].token = tok
 	hud.set_context(any_carry, burrow.has_home, any_burrow)
 	crust.steer_camera(stage_beat.zoom_cap())
+	_refresh_camera_targets()
 	_tunnel_step(digging > 0, delta)
 	_bonk_t = maxf(0.0, _bonk_t - delta)
 	for e in _foods:
@@ -426,14 +457,26 @@ func _on_warp_requested(player: int) -> void:
 	w.warp_to(to)
 
 
-func _on_apex_eaten(player: int) -> void:
+func _on_apex_eaten(player: int, apex: ApexBeetle = beetle) -> void:
 	var w := Worm.of(player)
 	if w == null:
 		return
 	Audio.play("now_i_eat_you")
 	w.feed(APEX_FOOD)
-	w.model.eat_apex(beetle.ring_stage)
+	w.model.eat_apex(apex.ring_stage)
+	# Shared world (C-17): the apex is gone for both, so the bite opens the stage for the partner too
+	# (it still needs its own segments). Without this a partner could never stage up again.
+	for o in Worm.all():
+		if o != w and o.get_parent() == actors and o.model:
+			o.model.eat_apex(apex.ring_stage)
 	save_now()
+
+
+## A worm joining or coming back to the tin gets every apex already eaten here (it is gone for good).
+func _share_eaten_apexes(model: WormGrowth) -> void:
+	for a in apexes:
+		if a.is_gone() and not a.ring_stage in model.apex_eaten:
+			model.apex_eaten.append(a.ring_stage)
 
 
 func _on_worm_eaten(_player: int) -> void:
@@ -468,7 +511,8 @@ func save_now() -> void:
 	Save.set_value("worms", worms)
 	Save.set_value("stage", 7 if ChompDirector.eaten() else max_stage())
 	Save.set_value("burrow", burrow.to_dict())
-	Save.set_value("apex", beetle.to_dict())
+	for a in apexes:
+		Save.set_value(apex_key(a.ring_stage), a.to_dict())
 	Save.set_value("foods", _foods_to_save())
 	Save.set_value("played", played)
 	if crust:

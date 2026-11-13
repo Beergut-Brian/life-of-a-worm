@@ -3,7 +3,9 @@
 class_name RingFood
 extends FoodData
 
-enum Look { BLOB, SEED, ROOT, MUSHROOM, CRUMB, HONEYDEW, EGG, PEBBLE, CRYSTAL, GEODE }
+## NUGGET (ore nugget) and FOSSIL (a curled shell) are placeholders drawn in code (deep-rock-1),
+## held until the Worm art round picks a direction.
+enum Look { BLOB, SEED, ROOT, MUSHROOM, CRUMB, HONEYDEW, EGG, PEBBLE, CRYSTAL, GEODE, NUGGET, FOSSIL }
 
 ## The ring it lives in (RingDef.id): where it is scattered and spawned.
 @export var ring: StringName

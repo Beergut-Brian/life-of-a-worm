@@ -46,9 +46,9 @@ func _ready() -> void:
 	shop.position = level.local_point(SHOP_AT.x, SHOP_AT.y)
 	shop.z_index = 2
 	level.add_child(shop)
-	if level.beetle:
-		level.beetle.add_to_group(&"creature")
-		level.beetle.set_meta(&"creature_id", &"beetle")
+	for a in level.apexes:
+		a.add_to_group(&"creature")
+		a.set_meta(&"creature_id", &"beetle")
 	level.burrow.bonus_changed.connect(apply_bonus)
 	level.worm_spawned.connect(_on_worm)
 	for w in Worm.all():

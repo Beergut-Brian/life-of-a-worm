@@ -21,6 +21,9 @@ var quit_exits := true
 ## Select (the restart action) restarts the round in the template. Worm turns it off: a persistent
 ## planet has nothing to restart (GAME.md "Select"); Select alone then does nothing in play.
 var select_restarts := true
+## Whether something else (a tackle box, a rewatched cutscene) had the tree paused when the pause
+## menu opened: resume() puts that back instead of unpausing under it.
+var _tree_was_paused := false
 
 
 func _ready() -> void:
@@ -45,6 +48,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func start_round() -> void:
+	_tree_was_paused = false
 	round_index += 1
 	get_tree().paused = false
 	_set_state(State.PLAYING)
@@ -60,18 +64,21 @@ func end_round(result: Dictionary = {}) -> void:
 
 
 func pause() -> void:
+	_tree_was_paused = get_tree().paused
 	get_tree().paused = true
 	Audio.play("pause")
 	_set_state(State.PAUSED)
 
 
 func resume() -> void:
-	get_tree().paused = false
+	get_tree().paused = _tree_was_paused
+	_tree_was_paused = false
 	Audio.play("pause")
 	_set_state(State.PLAYING)
 
 
 func restart() -> void:
+	_tree_was_paused = false
 	get_tree().paused = false
 	Audio.play("ui_confirm")
 	start_round()
@@ -79,6 +86,7 @@ func restart() -> void:
 
 ## Back to the start screen: the game clears its level on back_to_lobby.
 func to_lobby() -> void:
+	_tree_was_paused = false
 	get_tree().paused = false
 	Save.flush()
 	round_index = 0

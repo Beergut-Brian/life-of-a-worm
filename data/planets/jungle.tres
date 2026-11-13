@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_8vu45"]
 [ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_1pw2i"]
 [ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="3_xxifs"]
+[ext_resource type="Resource" path="res://data/traits/vine_star.tres" id="4_star"]
 
 [sub_resource type="Resource" id="Resource_7vena"]
 script = ExtResource("1_8vu45")
@@ -31,15 +32,6 @@ size_stage = 6
 color = Color(0.24705882, 0.6039216, 0.2901961, 1)
 radius = 54.0
 
-[sub_resource type="Resource" id="Resource_vhfdt"]
-script = ExtResource("3_xxifs")
-id = &"vine_star"
-add = {
-"space_reach": 18.0
-}
-part_slot = &"space"
-color = Color(0.37254903, 0.8901961, 0.41568628, 1)
-
 [resource]
 script = ExtResource("2_1pw2i")
 id = &"jungle"
@@ -48,4 +40,5 @@ accent = Color(0.18431373, 0.47843137, 0.22745098, 1)
 radius = 240.0
 foods = Array[ExtResource("1_8vu45")]([SubResource("Resource_7vena"), SubResource("Resource_fv24j"), SubResource("Resource_va5vq")])
 drift = 26.0
-star_trait = SubResource("Resource_vhfdt")
+star_trait = ExtResource("4_star")
+star_chance = 0.0

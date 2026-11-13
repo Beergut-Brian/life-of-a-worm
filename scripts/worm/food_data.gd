@@ -13,3 +13,5 @@ extends Resource
 @export var color := Color.WHITE
 ## Pickup radius in pixels (16 px = one stage-1 segment).
 @export var radius := 5.0
+## Its own sound when a worm swallows it, on top of the chomp (`FoodVoice`). "" = just the chomp.
+@export var eat_cue := ""

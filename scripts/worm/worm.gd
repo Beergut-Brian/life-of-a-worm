@@ -223,7 +223,7 @@ func _on_tile_eaten(cell: Vector2i, _block: StringName, p: int) -> void:
 ## One tile swallowed: a little growth in the ring's flavour, a share to the partner.
 func bite_tile(flavour: StringName) -> void:
 	var g := model.stats.value("tile_growth", TILE_GROWTH)
-	model.add_growth(g, flavour)
+	model.add_growth(g * catch_up(), flavour)
 	tiles_this_frame += 1
 	tiles_total += 1
 	for w in Worm.all():
@@ -358,7 +358,7 @@ func mouth_position() -> Vector2:
 ## Swallow a food: full growth and its flavour to me, a share (plain) to every partner.
 func feed(food: FoodData) -> void:
 	var g := food.growth
-	model.add_growth(g, food.flavour)
+	model.add_growth(g * catch_up(), food.flavour)
 	ate.emit(player, food.id, g)
 	var rel := clampi(food.size_stage - model.stage + 3, 1, CHOMP_CUES)
 	Audio.play("chomp_%d" % rel)
@@ -369,6 +369,16 @@ func feed(food: FoodData) -> void:
 	for w in Worm.all():
 		if w != self:
 			w.receive_share(g * rules.partner_share)
+
+
+## K-05: how much my own bites count right now: rules.catch_up_boost while I have fewer segments
+## than a partner (the smaller worm catches up), else 1. Shared growth, never forced movement.
+func catch_up() -> float:
+	var mine := model.segments.size()
+	for w in Worm.all():
+		if w != self and w.model != null and w.model.segments.size() > mine:
+			return rules.catch_up_boost
+	return 1.0
 
 
 ## The partner's share of a bite: growth with no flavour.

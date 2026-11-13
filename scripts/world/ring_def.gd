@@ -16,5 +16,9 @@ extends Resource
 @export var edible_from: int = 1
 ## Planet seconds from being eaten to growing back outside castings. 0 = never regrows.
 @export var regrow_time: float = 240.0
+## Food size a tile reaches when it grows back in castings (1 = the same as plain ground). Each size
+## above 1 is worth RingSet.size_growth more plain tiles' growth and is drawn plump. Edibility does
+## not change with it: a big tile is still edible from edible_from, so a worm can always eat it.
+@export_range(1, 3) var castings_size: int = 2
 ## Flavour the tiles give (Diet and traits); a StringName the foods/traits lanes own.
 @export var flavour: StringName
