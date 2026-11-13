@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"boulder"
+eat_cue = "rock_beetle_clack"
 flavour = &"stone"
 growth = 3.0
 size_stage = 3

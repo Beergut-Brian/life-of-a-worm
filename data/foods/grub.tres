@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"grub"
+eat_cue = "grub_squeak"
 flavour = &"bug"
 growth = 1.0
 size_stage = 1
