@@ -61,7 +61,8 @@ func test_it_is_data_in_the_surface_ring_and_comes_last() -> void:
 	assert_str(String(s.page)).is_equal("secret_hollow_stump")
 	assert_str(String(s.food)).is_equal(String(FOOD))
 	assert_str(s.cue).is_not_empty()
-	assert_bool(RingsDirector.LATE_SECRETS.back() == ID).override_failure_message("added last, after the cloud nest").is_true()
+	assert_int(RingsDirector.LATE_SECRETS.find(ID)).override_failure_message("added after the cloud nest") \
+			.is_greater(RingsDirector.LATE_SECRETS.find(&"cloud_nest"))
 	assert_bool(SecretHalls.draws(ID)).is_true()
 	assert_bool(SecretLook.has(ID)).override_failure_message("draws as a gold star").is_true()
 	# now every ring has its hidden place
@@ -171,10 +172,14 @@ func test_it_has_its_tackle_box_page() -> void:
 func test_an_older_tin_keeps_its_statics_and_gets_the_stump() -> void:
 	var statics: Array = _dir.to_dict().statics
 	var n := RingsDirector.secret(ID).food_count
-	for e in statics.slice(statics.size() - n):
+	# hidden places added after the stump put their foods after its acorns
+	var after := 0
+	for id in RingsDirector.LATE_SECRETS.slice(RingsDirector.LATE_SECRETS.find(ID) + 1):
+		after += RingsDirector.secret(id).food_count
+	for e in statics.slice(statics.size() - after - n, statics.size() - after):
 		assert_str(String(e[0])).is_equal(String(FOOD))
 	# a tin saved before the stump: every earlier slot keeps its eaten state
-	var old := statics.slice(0, statics.size() - n)
+	var old := statics.slice(0, statics.size() - after - n)
 	var eaten := old.size() - 1
 	old[eaten] = [old[eaten][0], 12.0]
 	var again := RingsDirector.new()
@@ -185,7 +190,7 @@ func test_an_older_tin_keeps_its_statics_and_gets_the_stump() -> void:
 	var now: Array = again.to_dict().statics
 	assert_int(now.size()).is_equal(statics.size())
 	assert_float(float(now[eaten][1])).is_equal(12.0)
-	for i in n:
+	for i in n + after:
 		assert_float(float(now[now.size() - 1 - i][1])).is_less(0.0)
 	assert_bool(again.get_node("Secret_%s" % ID) is SecretHalls).is_true()
 	assert_bool((again.to_dict().carved as Array).has(String(ID))).is_true()

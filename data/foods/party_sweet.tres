@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"party_sweet"
+eat_cue = "creature_munch"
+flavour = &"junk"
+growth = 3.0
+size_stage = 5
+color = Color(1, 0.4784, 0.851, 1)
+radius = 10.0
+ring = &"sky"
+regrow_time = 300.0
+plants = &""
+look = 5
+accent = Color(1, 0.8235, 0.2471, 1)

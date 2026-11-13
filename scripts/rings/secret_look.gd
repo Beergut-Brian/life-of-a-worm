@@ -18,7 +18,7 @@ const GOLD := Color("ffd23f")
 
 ## The pictures this file can draw (secret ids).
 const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall", &"geode_cathedral",
-		&"picnic_basket", &"cloud_nest", &"hollow_stump"]
+		&"picnic_basket", &"cloud_nest", &"hollow_stump", &"stuck_balloon"]
 const GEMS: Array[Color] = [Color("c46cff"), Color("5fe8ff"), Color("ff7ad9"), Color("ffd23f")]
 
 
@@ -52,6 +52,8 @@ static func draw(ci: CanvasItem, id: StringName, c: Vector2, s: float, a := 1.0,
 			_cloud_nest(ci, c, u, a, t)
 		&"hollow_stump":
 			_hollow_stump(ci, c, u, a, t)
+		&"stuck_balloon":
+			_stuck_balloon(ci, c, u, a, t)
 		_:
 			_star(ci, c, 8.0 * u, Color(GOLD, a), Color(INK, a))
 
@@ -307,3 +309,24 @@ static func _hollow_stump(ci: CanvasItem, c: Vector2, u: float, a: float, t: flo
 	ci.draw_line(o + Vector2(3, -7) * u, o + Vector2(3 + sway, -11) * u, Color(Color("6fcf5a"), a), 1.0 * u)
 	ci.draw_circle(o + Vector2(4.4 + sway, -11) * u, 1.3 * u, Color(Color("6fcf5a"), a))
 	ci.draw_circle(o + Vector2(1.6 + sway, -11.5) * u, 1.1 * u, Color(Color("6fcf5a"), a))
+
+
+## The balloon stuck in the sky: a red balloon on its string, a small cloud beside it and three
+## party sweets tied under it on ribbons.
+static func _stuck_balloon(ci: CanvasItem, c: Vector2, u: float, a: float, t: float) -> void:
+	var o := c + Vector2(0, -3.0 + sin(t * 1.6) * 0.6) * u
+	for p in [Vector2(-9, 5), Vector2(-6, 6), Vector2(-11, 7)]:
+		ci.draw_circle(c + p * u, 3.4 * u, Color(Color("f4f7ff"), a))
+	var knot := o + Vector2(0, 6.5) * u
+	ci.draw_line(knot, c + Vector2(1, 11) * u, Color(INK, a), 0.9 * u)
+	var sweets := [Vector2(-4, 10), Vector2(3, 11), Vector2(7, 8)]
+	var cols: Array[Color] = [Color("ff7ad9"), Color("ffd23f"), Color("5fe8ff")]
+	for k in sweets.size():
+		ci.draw_line(knot, c + sweets[k] * u, Color(cols[k], a), 0.8 * u)
+	ci.draw_circle(o, 7.2 * u, Color(INK, a))
+	ci.draw_circle(o, 6.4 * u, Color(Color("e8483a"), a))
+	ci.draw_circle(o + Vector2(-2.4, -2.6) * u, 1.3 * u, Color(1, 1, 1, 0.8 * a))
+	for k in sweets.size():
+		var p: Vector2 = c + sweets[k] * u
+		ci.draw_circle(p, 2.0 * u, Color(INK, a))
+		ci.draw_circle(p, 1.4 * u, Color(cols[k], a))
