@@ -9,20 +9,23 @@
 ##   traits     data/traits/*.tres       TraitData (worm_rules.tres is not one and is skipped)
 ##   secrets    data/secrets/*.tres      SecretData
 ##   cutscenes  data/cutscenes/*.json    {"id": ...}, in Story.SCENES order
+##   planets    data/planets/*.tres      PlanetData (S-18: one page per space planet type); found
+##              when its whole planet is eaten in space (the tin's SpaceDrift "space" -> "done")
 class_name BookCatalog
 extends RefCounted
 
-const SECTIONS: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes"]
+const SECTIONS: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes", &"planets"]
 const DIRS := {
 	&"foods": ["res://data/foods/"],
 	&"creatures": ["res://data/creatures/", "res://data/pets/"],
 	&"traits": ["res://data/traits/"],
 	&"secrets": ["res://data/secrets/"],
 	&"cutscenes": ["res://data/cutscenes/"],
+	&"planets": ["res://data/planets/"],
 }
 ## Script class an entry must be (or extend); "" = any resource with an `id`.
 const CLASSES := { &"foods": "FoodData", &"creatures": "", &"traits": "TraitData",
-	&"secrets": "SecretData", &"cutscenes": "" }
+	&"secrets": "SecretData", &"cutscenes": "", &"planets": "PlanetData" }
 ## Where the tackle log sits in the tin (scripts/burrow/home_slice.gd, contracts "Home slice").
 const TIN_KEY := "home_slice"
 const LOG_KEY := "tackle"
@@ -122,6 +125,24 @@ static func found_set(tree: SceneTree = null) -> Dictionary:
 	for id in seen:
 		if not (out[&"cutscenes"] as Array).has(StringName(id)):
 			(out[&"cutscenes"] as Array).append(StringName(id))
+	for id in eaten_planets():
+		if not (out[&"planets"] as Array).has(id):
+			(out[&"planets"] as Array).append(id)
+	return out
+
+
+## Planet types eaten whole in space in the open tin (SpaceDrift saves them under "space" -> "done").
+static func eaten_planets() -> Array[StringName]:
+	var out: Array[StringName] = []
+	var sp = Save.get_value(SpaceDrift.SAVE_KEY, {})
+	if not sp is Dictionary:
+		return out
+	var done = sp.get("done", [])
+	if not done is Array:
+		return out
+	for id in done:
+		if not out.has(StringName(id)):
+			out.append(StringName(id))
 	return out
 
 
