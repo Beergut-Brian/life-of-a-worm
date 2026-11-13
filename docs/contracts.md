@@ -1059,6 +1059,43 @@ the cue again, no ring. At work = the cue, a small ring, the part pops (throttle
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
 
+### Regrowth (worm-regrow-1)
+
+Food sizes and a ring that never runs out, both on `PolarWorld` (the World above), both data in
+`data/rings/rings.tres`. Tiles still regrow at `RingDef.regrow_time` (x `castings_factor` in
+castings, / `castings_speed` with Green thumb), only in live chunks, on the planet clock.
+
+```gdscript
+# RingDef
+@export var castings_size := 2          # food size a tile reaches when it grows back in castings
+# RingSet
+@export var size_growth := 1.0          # extra growth per size above 1, in plain tiles
+@export var scarce_share := 0.5         # past this share eaten, a ring's regrow times shrink...
+@export var scarce_factor := 0.2        # ...down to this x when it is all eaten
+
+# PolarWorld
+signal big_tile_eaten(cell: Vector2i, player: int, size: int)   # after tile_eaten, size > 1 only
+var frozen := false                      # true: advance() does nothing (clock, regrowth, gardens)
+func food_size(cell) -> int              # 1 plain; castings_size for a tile grown back in castings
+func regrow_size(cell) -> int            # the size this cell's tile will come back at
+func ring_eaten(ri) -> int               # cells of ring ri eaten or dug and not back yet
+func ring_eaten_share(ri) -> float       # 0..1 of the ring's cells
+func food_left(ri) -> int                # the ring's cells minus those
+func scarcity_factor(ri) -> float        # 1 while well fed, toward scarce_factor as it empties
+func big_tile_count() -> int
+```
+
+- A big tile is still edible from its ring's `edible_from`: size never makes food inedible.
+- Eating a big tile: the worm gets its usual `bite_tile` growth from `tile_eaten`, then the world
+  adds `(size - 1) x size_growth x tile_growth` in the ring's flavour to that player's worm and plays
+  `chomp_bite` (at most every 0.3 s). The tile comes back as plain air + castings, so it can grow
+  back big again.
+- Plain dug ground (not eaten by a worm) grows back size 1. Garden cells keep their own rules.
+- Look: a code-drawn plump dome with shine dots, a `Sizes_<x>_<y>` TileMapLayer per live chunk at
+  z 1. Saved in the planet dict as `"sizes": [x, y, size, ...]`; tins without it load all size 1.
+- The jar view: ChompDirector's planet shot disables the level's nodes, the world included, so the
+  clock stands still; `frozen` is the explicit switch for anything else that shows the planet
+  without playing it.
 ### Lawnmower (worm-lawnmower-1)
 
 `feature/worm-lawnmower-1` (PLAN-STATUS L-12). The surface's mower: a creature that drives the
