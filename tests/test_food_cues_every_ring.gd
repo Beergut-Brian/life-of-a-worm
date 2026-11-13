@@ -2,14 +2,12 @@
 ## (flavour, growth, size stage, ring, regrow time; 0 for prop debris) with its own swallow sound on top of the chomp.
 ## Deep-rock, core, surface and sky foods borrow existing cues by material (stones clack, crystals and
 ## metal clink, wood munches, balloons boing) until the Audio lane makes per-food files.
-## cloud_puff.tres waits on feature/worm-gap-close-9 (it changes that file), so it is exempt here.
+## cloud_puff (the sky's everyday cloud) boops like the milk drop (worm-gap-close-24); no food is exempt.
 class_name TestFoodCuesEveryRing
 extends GdUnitTestSuite
 
 const WORM := preload("res://scenes/players/worm.tscn")
 const RINGS := [&"dirt", &"topsoil", &"deep_rock", &"core", &"surface", &"sky"]
-## Food files another in-flight branch edits; its cue lands with or after that branch.
-const WAITING := [&"cloud_puff"]
 
 
 func before() -> void:
@@ -47,8 +45,6 @@ func test_every_food_file_is_a_full_ring_food_with_a_sound_file() -> void:
 		# 0 = debris from a broken prop (brick, plank, turf...): a house never grows back.
 		assert_float(r.regrow_time).override_failure_message("%s: regrow" % d.id).is_greater_equal(0.0)
 		by_ring[r.ring] = int(by_ring.get(r.ring, 0)) + 1
-		if d.id in WAITING:
-			continue
 		assert_str(d.eat_cue).override_failure_message("%s has no swallow sound" % d.id).is_not_empty()
 		assert_bool(ResourceLoader.exists("res://assets/audio/sfx/%s.ogg" % d.eat_cue)) \
 				.override_failure_message("%s: no file for %s" % [d.id, d.eat_cue]).is_true()
@@ -71,3 +67,18 @@ func test_a_deep_rock_and_a_sky_food_play_their_sound_on_a_swallow() -> void:
 		w.feed(d)
 		assert_int(int(Audio.played.get(d.eat_cue, 0)) - before).is_equal(1)
 	assert_array(voice.played).is_equal(["jar_clink", "boing"])
+
+
+func test_a_cloud_puff_boops_on_a_swallow() -> void:
+	var w: Worm = WORM.instantiate()
+	w.model = WormGrowth.new()
+	w.model.start_at_stage(5)
+	w.autopilot = func(_w: Worm) -> Dictionary: return {}
+	add_child(w)
+	auto_free(w)
+	var d := load("res://data/foods/cloud_puff.tres") as FoodData
+	assert_str(d.eat_cue).is_equal("boop")
+	var before := int(Audio.played.get("boop", 0))
+	w.feed(d)
+	assert_int(int(Audio.played.get("boop", 0)) - before).is_equal(1)
+	assert_array((w.get_node("FoodVoice") as FoodVoice).played).is_equal(["boop"])

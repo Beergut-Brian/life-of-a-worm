@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"cloud_puff"
+eat_cue = "boop"
 flavour = &"cloud"
 growth = 3.0
 size_stage = 5
