@@ -1,5 +1,6 @@
 [gd_scene load_steps=6 format=3]
 
+[ext_resource type="Script" path="res://scripts/traits/trait_knacks.gd" id="knacks"]
 [ext_resource type="Script" path="res://scripts/worm/worm.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/worm/food_voice.gd" id="food_voice"]
 [ext_resource type="Script" path="res://scripts/worm/pull_drag.gd" id="pull_drag"]
@@ -67,6 +68,9 @@ z_index = 20
 
 [node name="FoodVoice" type="Node" parent="."]
 script = ExtResource("food_voice")
+
+[node name="Knacks" type="Node" parent="."]
+script = ExtResource("knacks")
 
 [node name="PullDrag" type="Node2D" parent="."]
 script = ExtResource("pull_drag")
