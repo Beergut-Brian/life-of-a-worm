@@ -2,8 +2,9 @@
 ## tin (OldReelTin.KEY), in a real bait tin only:
 ##   t = 0       the sun's own beat plays (flash, glow, the five-planets = sun bubble); the offer is
 ##               made at once (new seed, planet type, rail spot), so quitting now loses nothing;
-##   t = DELAY   Old Reel's "another tin" dock scene (Story, data/cutscenes/new_tin.json): letterbox,
-##               input locked, skippable, his voiced line with a picture bubble;
+##   t = DELAY   the ending, "Still out there" (Story, data/cutscenes/ending.json, Y-07; once per
+##               tin, skippable), then Old Reel's "another tin" dock scene (data/cutscenes/new_tin.json):
+##               letterbox, input locked, skippable, his voiced line with a picture bubble;
 ##   then        the heirloom choice (HeirloomPick): an earned trait into the new tin, onto the rail.
 ## While the scene or the choice is up the worms hold still (their stick is ignored), nothing moves
 ## them. A tin reloaded with the offer made but no trait picked opens the choice again (no scene).
@@ -12,8 +13,12 @@ extends Node2D
 
 signal offered(info: Dictionary)
 signal picked(id: StringName)
+## The choice is over (the new tin is on the rail): NextTinTrip takes the players to the dock.
+signal done()
 
 const SCENE := &"new_tin"
+## Y-07: the run's ending plays first, unless this tin has seen it already.
+const ENDING := &"ending"
 const DELAY := 5.5          # s: after the sun bubble (SpaceStage.SUN_WHY_TIME) has been seen
 const RESUME_DELAY := 1.5
 
@@ -70,6 +75,8 @@ func play_scene() -> void:
 		story = Story.new()
 		stage.add_child(story)
 	state = &"story"
+	if not story.has_seen(ENDING):
+		story.play(ENDING)   # the offer's scene queues behind it (Story.play)
 	if not story.play(SCENE):
 		open_pick()
 		return
@@ -94,9 +101,14 @@ func open_pick() -> void:
 		pick.band = pd.accent
 		pick.planet_color = pd.color
 	pick.chosen.connect(_on_chosen)
-	pick.finished.connect(func() -> void: state = &"done")
+	pick.finished.connect(_on_pick_finished)
 	state = &"pick"
 	add_child(pick)
+
+
+func _on_pick_finished() -> void:
+	state = &"done"
+	done.emit()
 
 
 func _on_chosen(id: StringName) -> void:
