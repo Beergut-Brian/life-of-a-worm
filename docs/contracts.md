@@ -1156,3 +1156,24 @@ func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2
 # Anchor: solo -> Players.solo_focus; co-op -> the bigger worm; a tie keeps the current anchor
 # (P1 first). Rejoins at 85% of the widest view. camera.centre_override still wins (secrets).
 ```
+
+### Audio hooks (worm-audio-hooks-1)
+
+- **Breakthrough (U-09).** Unchanged: `CrustBurst._burst()` calls `Audio.play(CrustBurst.CUE)`
+  (`"breakthrough"`, `assets/audio/sfx/breakthrough.ogg`) once per worm per tin, before
+  `CrustBurst.breakthrough` / `Worm.breakthrough` are emitted.
+- **Space drift (U-11).** `SpaceStage.drift_bed: AudioStreamPlayer` (child `DriftBed`) is
+  `Audio.loop_player(SpaceStage.DRIFT_CUE)` (`"space_drift"`) at `SpaceStage.DRIFT_DB` with
+  `autoplay`: it plays whenever the stage is in the tree and stops in `_exit_tree`. Nothing else
+  starts `space_drift`.
+- **Ring ambience (U-14).** `RingAmbience` (`scripts/audio/ring_ambience.gd`, node `RingAmbience`
+  in `scenes/levels/planet.tscn`) is a plain `Node` child of a level that has `world: PolarWorld`
+  (and optionally `chomp` with `busy()`). Every frame it reads the head of the lowest-numbered
+  `Worm` under that level and plays the cue `"amb_" + RingDef.id` at `RingAmbience.LEVEL_DB`
+  (SFX bus), crossfading over `RingAmbience.FADE` s on a ring change. Above
+  `SkyLife.inner` x planet radius the id is `RingAmbience.SKY_ID` (`&"sky"`). An id with no
+  `assets/audio/sfx/amb_<id>.ogg` plays nothing (no placeholder, no warning). While
+  `level.chomp.busy()` every bed fades out.
+  - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
+    `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
+  - A new ring needs only `amb_<its id>.ogg`; no code change.
