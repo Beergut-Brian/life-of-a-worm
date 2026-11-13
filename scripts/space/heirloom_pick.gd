@@ -137,7 +137,7 @@ func tin_place() -> Array:
 func _draw_all() -> void:
 	var v := _size()
 	var a := 1.0 if phase != &"out" else 1.0 - _pt / 0.5
-	_root.draw_rect(Rect2(Vector2.ZERO, v), Color(0.02, 0.03, 0.1, 0.6 * a))
+	_root.draw_rect(Rect2(Vector2.ZERO, v), Color(0.02, 0.03, 0.1, 0.78 * a))
 	# the dock rail the tin goes onto
 	var ry := v.y * 0.9 + 62.0
 	_root.draw_rect(Rect2(0, ry, v.x, 26), Color(Color("6e4527"), a))
@@ -190,7 +190,7 @@ func _draw_tin(c: Vector2, s: float, open: float, a: float) -> void:
 	if open > 0.0:   # the dark inside
 		_root.draw_rect(Rect2(body.position + Vector2(10 * s, -10 * s), Vector2(w - 20 * s, 18 * s)), Color(Color("2a2f3a"), a))
 	var hinge := body.position + Vector2(w, 0)
-	var ang := -open * 1.9
+	var ang := open * 1.9
 	_root.draw_set_transform(hinge, ang)
 	_root.draw_rect(Rect2(Vector2(-w - 10 * s, -30 * s), Vector2(w + 20 * s, 30 * s)).grow(5.0 * s), ink)
 	_root.draw_rect(Rect2(Vector2(-w - 10 * s, -30 * s), Vector2(w + 20 * s, 30 * s)), Color(Color("c3ccd3"), a))
