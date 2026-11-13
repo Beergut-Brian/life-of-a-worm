@@ -34,6 +34,7 @@ static func enter(name: String, roster_path := ROSTER) -> void:
 	_real = { "profile": Save.profile, "settings": Save.settings_path, "picks": Roster.picks_path,
 			"data": Roster.data_path, "args": Roster.args_override }
 	suite = name
+	OpeningHook.enabled = false   # a new tin opened from main.tscn would start the opening (Y-01)
 	Save.use_profile(profile_for(name))
 	Save.wipe()
 	Save.settings_path = settings_for(name)
@@ -61,6 +62,7 @@ static func leave() -> void:
 	Roster.args_override = _real.args
 	_real = {}
 	suite = ""
+	OpeningHook.enabled = true
 	Roster.reload()
 
 
