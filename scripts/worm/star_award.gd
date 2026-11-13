@@ -45,6 +45,7 @@ func _ready() -> void:
 func _hook() -> void:
 	stage.drift.arrived.connect(_on_arrived)
 	stage.drift.star_earned.connect(_on_star_earned)
+	PlanetPagePop.watch(stage)     # S-18: a planet eaten whole pops its book page
 	_on_arrived(stage.drift.big)
 	for w in stage.worms:          # stars restored from the tin
 		for t in w.stars:
