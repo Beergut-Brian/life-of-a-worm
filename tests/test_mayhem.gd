@@ -210,7 +210,8 @@ func test_the_chunks_still_fall_to_the_core() -> void:
 func test_nobody_is_inside_the_house() -> void:
 	var s := _stage()
 	var house := _prop(s, &"house")
-	var before := _all(get_tree().root, {})
+	# Scope to this test's own nodes: the root also holds other suites' layers, which can be freed mid-test on a slow runner.
+	var before := _all(self, {})
 	var parts := _all(house, {})
 	var names := {}
 	var effects := {}   # the shared Juice rings and dust from earlier bites fade out on their own
@@ -225,7 +226,7 @@ func test_nobody_is_inside_the_house() -> void:
 	_eat(house)
 	# Long enough for the house to pop away and free itself.
 	await await_millis(500)
-	var after := _all(get_tree().root, {})
+	var after := _all(self, {})
 	# Everything new is the burst, or one of the house's own chunk foods (and their falls).
 	for id in after:
 		if before.has(id):
