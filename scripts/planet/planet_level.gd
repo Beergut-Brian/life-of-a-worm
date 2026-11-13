@@ -27,6 +27,8 @@ const WORM_NAMES := ["Gulp", "Burp"]
 
 var world: PolarWorld
 var camera: PolarCamera
+## P-07: frames both worms up to the widest zoom, then follows one (the other gets an edge arrow).
+var far_camera := FarCamera.new()
 var burrow: Burrow
 var beetle: ApexBeetle
 ## The stage-up beat (scripts/gameplay/stage_beat.gd; zoom caps per stage come from data/stages.tres).
@@ -311,12 +313,13 @@ func remove_worm(player: int) -> void:
 	_refresh_camera_targets()
 
 
+## Both worms while they fit the widest zoom; past it, only the anchor worm (FarCamera, P-07).
 func _refresh_camera_targets() -> void:
 	var t: Array[Node2D] = []
 	for w in Worm.all():
 		if w.get_parent() == actors and not w.is_queued_for_deletion():
 			t.append(w)
-	camera.targets = t
+	camera.targets = far_camera.step(camera, t, Players.solo_focus if Players.solo else -1)
 
 
 func max_stage() -> int:
@@ -365,6 +368,7 @@ func _physics_process(delta: float) -> void:
 			_glyphs[w.player].token = tok
 	hud.set_context(any_carry, burrow.has_home, any_burrow)
 	crust.steer_camera(stage_beat.zoom_cap())
+	_refresh_camera_targets()
 	_tunnel_step(digging > 0, delta)
 	_bonk_t = maxf(0.0, _bonk_t - delta)
 	for e in _foods:

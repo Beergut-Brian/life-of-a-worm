@@ -1,4 +1,5 @@
-## The solo-mode marker: two little heads (green and red), top-left, no text.
+## The solo-mode marker: two little heads (green and red), top-right, no text (Worm's HUD keeps the
+## top-left for the worms' stage icons).
 ## Pops in when solo toggles on, fades out when it goes off. Drawn in code, owned by Players.
 extends CanvasLayer
 
@@ -13,9 +14,12 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_icon = Control.new()
 	_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_icon.size = SIZE
+	_icon.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_icon.offset_left = -SIZE.x - MARGIN
+	_icon.offset_right = -MARGIN
+	_icon.offset_top = MARGIN
+	_icon.offset_bottom = MARGIN + SIZE.y
 	_icon.pivot_offset = SIZE * 0.5
-	_icon.position = Vector2.ONE * MARGIN
 	_icon.draw.connect(_draw_icon)
 	_icon.visible = false
 	add_child(_icon)

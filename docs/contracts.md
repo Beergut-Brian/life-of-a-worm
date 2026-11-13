@@ -1092,3 +1092,101 @@ functions, no autoload, no art, no cues). Strength numbers are constants at the 
   `scripts/fx/juice.gd`, so the stage beat, crust burst, props and loose fall still use the stub;
   pointing it here is a one-line change in `worm_hooks.gd` plus `JUICE_STUB` → `WormJuice` in
   `test_stages_beat`, `test_surface_ring`, `test_world_destruct` (left to the producer).
+
+### Regrowth (worm-regrow-1)
+
+Food sizes and a ring that never runs out, both on `PolarWorld` (the World above), both data in
+`data/rings/rings.tres`. Tiles still regrow at `RingDef.regrow_time` (x `castings_factor` in
+castings, / `castings_speed` with Green thumb), only in live chunks, on the planet clock.
+
+```gdscript
+# RingDef
+@export var castings_size := 2          # food size a tile reaches when it grows back in castings
+# RingSet
+@export var size_growth := 1.0          # extra growth per size above 1, in plain tiles
+@export var scarce_share := 0.5         # past this share eaten, a ring's regrow times shrink...
+@export var scarce_factor := 0.2        # ...down to this x when it is all eaten
+
+# PolarWorld
+signal big_tile_eaten(cell: Vector2i, player: int, size: int)   # after tile_eaten, size > 1 only
+var frozen := false                      # true: advance() does nothing (clock, regrowth, gardens)
+func food_size(cell) -> int              # 1 plain; castings_size for a tile grown back in castings
+func regrow_size(cell) -> int            # the size this cell's tile will come back at
+func ring_eaten(ri) -> int               # cells of ring ri eaten or dug and not back yet
+func ring_eaten_share(ri) -> float       # 0..1 of the ring's cells
+func food_left(ri) -> int                # the ring's cells minus those
+func scarcity_factor(ri) -> float        # 1 while well fed, toward scarce_factor as it empties
+func big_tile_count() -> int
+```
+
+- A big tile is still edible from its ring's `edible_from`: size never makes food inedible.
+- Eating a big tile: the worm gets its usual `bite_tile` growth from `tile_eaten`, then the world
+  adds `(size - 1) x size_growth x tile_growth` in the ring's flavour to that player's worm and plays
+  `chomp_bite` (at most every 0.3 s). The tile comes back as plain air + castings, so it can grow
+  back big again.
+- Plain dug ground (not eaten by a worm) grows back size 1. Garden cells keep their own rules.
+- Look: a code-drawn plump dome with shine dots, a `Sizes_<x>_<y>` TileMapLayer per live chunk at
+  z 1. Saved in the planet dict as `"sizes": [x, y, size, ...]`; tins without it load all size 1.
+- The jar view: ChompDirector's planet shot disables the level's nodes, the world included, so the
+  clock stands still; `frozen` is the explicit switch for anything else that shows the planet
+  without playing it.
+### Lawnmower (worm-lawnmower-1)
+
+`feature/worm-lawnmower-1` (PLAN-STATUS L-12). The surface's mower: a creature that drives the
+ground line, very loud, mows grass, and bumps a worm off the grass. Never food, never eats, never
+steers a worm (the bump is a push added to the head; the stick still drives).
+
+```gdscript
+# LawnmowerData extends CreatureData (scripts/creatures/lawnmower_data.gd; data/creatures/lawnmower.tres)
+# CreatureData fields used: id &"lawnmower", size_stage 5, radius 24, ring &"surface", speed 28,
+#   telegraph 1.2 (warning before a bump), notice 170 (px ahead it warns), bark "threat_near"
+@export var bump := 90.0              # px knock: up off the grass and away along its way, ~0.4 s
+@export var cue := "boot_rumble"      # engine loop (Audio.loop_player), the whole time it drives
+@export var bump_cue := "space_bump"  # every bump
+@export var loud_db := 6.0 ; @export var hear := 900.0   # engine dB beside a worm, silent by `hear` px
+@export var drive := 240.0            # px of surface either side of its spawn, then it turns round
+@export var bump_cooldown := 1.6      # s before the same worm can be bumped again
+@export_file("*.tscn") var scene      # res://scenes/creatures/lawnmower.tscn
+@export var live_max := 1 ; @export var spawn_depth := Vector2(0.97, 0.999)
+func give_body(ecology: RingEcology) -> PopulationRule   # swaps the ecology's "lawnmower" rule for a copy
+                                                         # with live = scene, live_max, live_scale 1
+# RingsDirector: const LAWNMOWER: LawnmowerData; setup() calls LAWNMOWER.give_body(ecology) once, so
+# the surface ring's own counter (surface_life.tres, unchanged: live_max 0) spawns the body via fit_live.
+
+# Lawnmower extends Creature (scripts/creatures/lawnmower.gd)
+signal bumped(player: int, push: Vector2)
+signal beat_requested(player: int, at: Vector2)   # the cause beat: shadow flash + camera shake / lean_in
+signal mowed(cell: Vector2i)                      # one grass tile mowed (world.dig; regrows as usual)
+var angle, home_angle, drive_dir, mowed_count, bumps, beats
+func is_available() -> bool          # false: never food (not in group "food"); take() does nothing
+func ground_r(a: float) -> float     # its line: highest ground under both wheels, mowed cells count as ground
+func bump(w: Worm) -> Vector2        # the push it applied; worm stage > 5 is never bumped (it turns round)
+func request_beat(w: Worm) -> void   # camera: level.camera via the "rings" group, else the viewport's PolarCamera
+```
+
+Cues: all existing files (`boot_rumble`, `threat_near`, `space_bump`); none added.
+### Session flow (worm-session-1)
+
+`feature/worm-session-1` (PLAN-STATUS P-06, P-07, P-09, C-03, C-08, C-14).
+
+```gdscript
+# Game (scripts/autoload/Game.gd): pause() remembers whether the tree was already paused (an open
+# tackle box, a rewatched cutscene); resume() puts that back instead of unpausing under it.
+# start_round(), restart() and to_lobby() always leave the tree unpaused.
+
+# main.gd: while Game.state == PAUSED, every node under the level with PROCESS_MODE_ALWAYS is set to
+# PAUSABLE and any CanvasLayer under it is hidden; both are restored on the next state change.
+# A lane adding an always-processing overlay under the level gets this for free; one that must keep
+# running under the pause menu does not belong under the level.
+
+# PauseMenu: $Card/DoorIcon (scenes/ui/icon_button.gd, Icon.DOOR) is lit while focus == DOOR.
+
+# FarCamera (scripts/planet/far_camera.gd), owned by PlanetLevel as `far_camera`:
+var split: bool        # true while the worms don't fit the widest zoom (camera.min_fit_index)
+var anchor: int        # the player the camera follows while split, else -1
+static func fits(camera: PolarCamera, worms: Array, slack := 1.0) -> bool
+func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2D]
+# PlanetLevel._refresh_camera_targets() runs every physics frame and sets camera.targets from it.
+# Anchor: solo -> Players.solo_focus; co-op -> the bigger worm; a tie keeps the current anchor
+# (P1 first). Rejoins at 85% of the widest view. camera.centre_override still wins (secrets).
+```
