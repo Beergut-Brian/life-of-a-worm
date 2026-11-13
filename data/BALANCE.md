@@ -22,6 +22,7 @@ balance chapters: adult shortest stage 0.03 h (Kaden 2 h+), to the chomp 0.35 h 
 | A 5-year-old sees progress in any ten minutes | Kaden, 2026-11-10; kid check | `test_a_kid_sees_progress_in_any_ten_minutes`: longest wait for a segment or stage <= 600 s, seeds 1 to 3 | met (39 s) |
 | Ordinary eating adds a segment at least every 2 minutes | GAME.md 2026-11-10 | same test: mean segment interval <= 120 s, kid profile | met (15 s) |
 | Every stage is reached, in order, none a blink | GAME.md "Core loop" | `test_every_stage_is_reached_in_order`: each stage >= 1 min apart for an adult | met |
+| The smaller worm catches up within a minute via shared growth (K-05) | GAME.md kid checks | `tests/test_kid_checks.gd::test_k05_the_smaller_worm_catches_up_within_a_minute_through_shared_growth`: a drop-in hatchling (partner's stage minus one, 4 segments behind at stage 3) reaches the partner's segment count within 60 s, both at the kid profile | met (level at 60 s: big +4, small +8 segments; `catch_up_boost` 3.0) |
 | 2 to 4 h a stage, 15 to 25 h to the chomp | GAME.md 2026-11-10 | `test_chapter_lengths_against_kaden_are_reported` prints it, does not assert it | **not met: see "Gary's pick needed"** |
 
 ## Profiles (in the test file; keep them in sync with this table)
@@ -56,6 +57,8 @@ slots, ring it opens, feature, where it is played):
 | --- | --- | --- |
 | tile growth per tile | 0.05 | `Worm.TILE_GROWTH` (base when no trait sets `tile_growth`) |
 | growth per segment | 2.0 | `data/traits/worm_rules.tres` |
+| partner share | 0.25 | `data/traits/worm_rules.tres` (`partner_share`: every bite also grows the other worm by this share of the plain bite, no flavour) |
+| catch-up boost | 3.0 | `data/traits/worm_rules.tres` (`catch_up_boost`: while a worm has fewer segments than its partner, its own bites grow it this many times as much; K-05) |
 
 The crust (stage 5, `crust_ring = surface`): the surface is food only from stage 5 and its eaten
 tiles never grow back (`StageTable.apply_crust`), so the disk shrinks; the first bite through is the

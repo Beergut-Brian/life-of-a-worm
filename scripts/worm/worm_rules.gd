@@ -27,6 +27,10 @@ const PATH := "res://data/traits/worm_rules.tres"
 @export var slots_per_stage: PackedInt32Array = [0, 0, 1, 2, 3, 4, 5, 5]
 ## Every bite also grows the partner by this share of its growth.
 @export_range(0.0, 1.0) var partner_share := 0.25
+## K-05, the smaller worm catches up within a minute: while a worm has fewer segments than its
+## partner, its own bites (tiles and foods) grow it this many times as much. The partner's share is
+## still worked out from the plain bite, so the leader never gains from it. data/BALANCE.md.
+@export_range(1.0, 5.0) var catch_up_boost := 3.0
 ## Stat name -> base value before traits.
 @export var base_stats: Dictionary = {}
 ## Flavour -> stripe colour.
