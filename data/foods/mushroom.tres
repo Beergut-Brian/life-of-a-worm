@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"mushroom"
+eat_cue = "boing"
 flavour = &"root"
 growth = 1.2
 size_stage = 1

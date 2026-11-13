@@ -13,5 +13,5 @@ radius = 14.0
 ring = &"deep_rock"
 regrow_time = 600.0
 plants = &"stone"
-look = 7
+look = 10
 accent = Color(0.9686, 0.8706, 0.5490, 1)

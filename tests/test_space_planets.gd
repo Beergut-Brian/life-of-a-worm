@@ -179,7 +179,8 @@ func test_a_star_trait_shows_on_the_worm_once() -> void:
 	assert_bool(w.has_star(d.star_trait.id)).is_true()
 	assert_array(got).is_equal([[w.player, d.star_trait.id]])
 	assert_bool(s.drift.star_taken(d.star_trait.id)).is_true()
-	var changed: bool = w.max_speed != speed or w.knock_scale != 1.0 or d.star_trait.add.has("space_reach")
+	var changed: bool = w.max_speed != speed or w.knock_scale != 1.0 or d.star_trait.add.has("space_reach") \
+			or d.star_trait.add.has("space_turn") or d.star_trait.add.has("space_pull")   # StarAward drives these
 	assert_bool(changed).is_true()
 	# no second one of this planet's star this run
 	for i in 40:
