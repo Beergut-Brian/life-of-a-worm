@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+; Topsoil apex: bronze stag beetle with a horn (2 -> 3). The live apex is ApexBeetle (scripts/planet/apex_beetle.gd); this file is its tackle-box page
+; (T-01): id, size, ring and colour match the one PlanetLevel makes (tests/test_book_creatures.gd).
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"apex_topsoil"
+flavour = &"bug"
+growth = 0.0
+size_stage = 3
+color = Color(0.6039, 0.2902, 0.0706, 1)
+radius = 15.0
+behaviour = 2
+ring = &"topsoil"
+telegraph = 1.0
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0000, 0.9137, 0.6275, 1)

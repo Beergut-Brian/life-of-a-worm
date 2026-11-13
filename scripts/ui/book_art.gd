@@ -91,6 +91,12 @@ static func creature(ci: CanvasItem, c: Vector2, d: Resource, found: bool, t: fl
 		blob(ci, c, 44.0, GREY if not found else col, i, found)
 		return
 	var cd := d as CreatureData
+	if cd.jarling:   # a neighbour (the Mole): its own look, grey until met
+		if found and cd.id == &"mole":
+			MoleLook.draw(ci, c + Vector2(0, 40), 4.0, MoleLook.Face.HAPPY, t)
+		else:
+			blob(ci, c, 44.0, GREY if not found else col, i, found)
+		return
 	var r := clampf(26.0 + cd.radius * 1.6, 34.0, 62.0)
 	var body := cd.color if found else GREY
 	match cd.behaviour:
