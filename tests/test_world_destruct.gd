@@ -3,7 +3,9 @@
 ## core with the disk's gravity and rest on the first solid tile; a surface prop (the crate,
 ## data/props/crate.tres) bonks a small worm, cracks under a big one's bites, knocks out chunk
 ## foods that fall and can be eaten, breaks with a cue and a camera nudge, and stays broken in the
-## tin. Every physics case is staged (a dug shaft, one body at a time), never a pile.
+## tin. Every physics case is staged (a dug shaft, one body at a time), never a pile (P-26): the
+## crate's chunks are checked for their launch, then each falls alone from a fixed height; landings
+## are counted through LooseFall.landed, not by polling state each frame.
 extends GdUnitTestSuite
 
 const RINGS := preload("res://data/rings/rings.tres")
@@ -109,6 +111,9 @@ func test_a_pebble_rests_then_falls_toward_the_core_when_the_tile_under_it_is_ea
 	var plug := Vector2i(3, -110)
 	var f := _pebble(w, Vector2i(3, -116))
 	var lf: LooseFall = f.get_node("Fall")
+	var landed := []   # landings counted through the signal, one entry per touchdown
+	var cues0 := int(Audio.played.get(LooseFall.LAND_CUE, 0))
+	lf.landed.connect(func(_b: Node2D, speed: float) -> void: landed.append(speed))
 	# First step: the disk's own gravity, toward the core.
 	var p0 := f.position
 	lf.step(DT)
@@ -119,6 +124,7 @@ func test_a_pebble_rests_then_falls_toward_the_core_when_the_tile_under_it_is_ea
 	var on_plug := f.position.length()
 	assert_float(on_plug).is_greater(w.shape.center_of(plug).length())
 	assert_float(on_plug).is_less(p0.length())
+	assert_int(landed.size()).is_equal(1)   # onto the plug
 	# It stays put while the plug is there.
 	for i in 30:
 		lf.step(DT)
@@ -131,8 +137,9 @@ func test_a_pebble_rests_then_falls_toward_the_core_when_the_tile_under_it_is_ea
 	assert_bool(lf.resting).is_true()
 	var floor_top := w.shape.center_of(Vector2i(3, -99)).length() + 8.0
 	assert_float(f.position.length()).is_between(floor_top, floor_top + PEBBLE.radius + 6.0)
-	assert_int(lf.landings).is_greater_equal(1)
-	assert_int(int(Audio.played.get(LooseFall.LAND_CUE, 0))).is_greater_equal(1)
+	assert_int(landed.size()).is_equal(2)   # and onto the floor: one landing each, never a rattle
+	assert_int(lf.landings).is_equal(landed.size())
+	assert_int(int(Audio.played.get(LooseFall.LAND_CUE, 0)) - cues0).is_equal(2)   # one cue a landing
 
 
 func test_a_carried_or_eaten_pebble_never_falls() -> void:
@@ -232,17 +239,36 @@ func test_a_big_worm_bites_the_crate_into_chunks_that_fall_and_are_eaten() -> vo
 	assert_int(int(Audio.played.get(SurfaceProp.BREAK_CUE, 0)) - breaks0).is_equal(1)
 	assert_int(d.to_dict().props["crate_0"]).is_equal(0)
 	assert_bool(d.props.has("crate_0")).is_false()
-	# The chunks are food, flying out then falling to the surface.
-	var ground := WorldDestruct.surface_distance(w, UP + CRATE.angles[0])
+	# The chunks are food and fly out: each one launched up and away from the crate by the break.
+	var crate_up := Vector2.from_angle(UP + CRATE.angles[0])
 	for f in c.chunks_out:
 		assert_bool(f.is_in_group(&"food")).is_true()
 		assert_bool(f.data == CRATE.chunk).is_true()
 		var lf: LooseFall = f.get_node("Fall")
 		lf.set_physics_process(false)
+		assert_bool(lf.resting).is_false()
+		assert_float(lf.velocity.dot(crate_up)).override_failure_message("%s not launched up" % f.name).is_greater(0.0)
+	# P-26: then they fall to the surface. Staged one chunk at a time at its own clear spot beside the
+	# crate (not the spray, whose landing spots would decide the outcome): two tiles above the ground,
+	# at rest, so each one falls straight down and lands loud once (counted through `landed`).
+	for i in c.chunks_out.size():
+		var f: RingPickup = c.chunks_out[i]
+		var lf: LooseFall = f.get_node("Fall")
+		var angle := UP + CRATE.angles[0] + 0.04 * (i + 1)   # 100 px+ apart, clear of both crates
+		var ground := WorldDestruct.surface_distance(w, angle)
+		f.global_position = w.to_global(Vector2.from_angle(angle) * (ground + 2.0 * w.shape.cell_size))
+		lf.velocity = Vector2.ZERO
+		lf.resting = false
+		var landed := []
+		lf.landed.connect(func(_b: Node2D, speed: float) -> void: landed.append(speed))
+		assert_bool(lf.step(DT)).override_failure_message("%s does not fall" % f.name).is_true()
 		_settle(lf)
 		assert_bool(lf.resting).is_true()
 		assert_bool(lf.supported_at(w.to_local(f.global_position))).is_true()
-		assert_float(f.position.length()).is_between(ground - 34.0, ground + 24.0)
+		assert_float(w.to_local(f.global_position).length()).is_between(ground, ground + CRATE.chunk.radius + LooseFall.STEP_PX + 1.0)
+		assert_float(w.to_local(f.global_position).normalized().dot(Vector2.from_angle(angle))).is_greater(0.99999)
+		assert_int(landed.size()).override_failure_message("%s landings %s" % [f.name, landed]).is_equal(1)
+		assert_float(landed[0]).is_greater_equal(LooseFall.LAND_SPEED)
 	# A worm big enough to break it can eat them (the worm's food rule), and eating takes one.
 	var edible := StageTable.default_table().at(big).edible_size
 	assert_int(CRATE.chunk.size_stage).is_less_equal(edible)
@@ -293,10 +319,21 @@ func test_a_prop_falls_when_the_ground_under_it_is_eaten() -> void:
 	for k in range(-1, 2):
 		for depth in range(0, 5):
 			w.eat_tile(w.shape.cell_at(c.position + side * (k * 16.0) - up * (depth * 16.0 + 8.0)), 0)
+	# P-26: one prop alone over its own pit; its landing is counted through LooseFall.landed.
+	var landed := []
+	c.fall.landed.connect(func(_b: Node2D, speed: float) -> void: landed.append(speed))
 	assert_bool(c.fall.step(DT)).is_true()
 	_settle(c.fall)
+	assert_bool(c.fall.supported_at(c.position)).is_true()   # touches down on the floor, not above it
+	for i in 30:   # resting stays resting: no second touchdown, no creep
+		assert_bool(c.fall.step(DT)).is_false()
 	assert_bool(c.fall.resting).is_true()
-	assert_float(c.position.length()).is_less(top - 60.0)
+	assert_bool(c.fall.supported_at(c.position)).is_true()
+	# on the pit floor, five tiles down (cell rows are not aligned to the prop, so within a tile)
+	assert_float(c.position.length()).is_between(top - 6.0 * 16.0, top - 4.0 * 16.0)
+	assert_float(c.position.normalized().dot(up)).is_greater(0.9999)   # straight down, no roll
+	assert_int(landed.size()).override_failure_message("landings %s" % [landed]).is_equal(1)
+	assert_float(landed[0]).is_greater_equal(LooseFall.LAND_SPEED)
 
 
 func test_broken_and_bitten_props_are_kept_in_the_tin() -> void:

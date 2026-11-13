@@ -9,7 +9,7 @@
 class_name StoryDock
 extends Node2D
 
-const ORDER: Array[StringName] = [&"opening", &"stage_2", &"stage_3", &"stage_4", &"stage_5", &"stage_6", &"stage_7", &"ending"]
+const ORDER: Array[StringName] = [&"opening", &"stage_2", &"stage_3", &"stage_4", &"stage_5", &"stage_6", &"stage_7", &"ending", &"new_tin"]
 const TINTS := {
 	"dawn": Color(1.0, 0.86, 0.82),
 	"noon": Color(1, 1, 1),

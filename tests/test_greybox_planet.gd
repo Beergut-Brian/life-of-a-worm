@@ -122,7 +122,12 @@ func test_hold_b_warps_home() -> void:
 	w.warp_to(_level.local_point(30, 0))
 	Audio.played.clear()
 	w.autopilot = func(_w: Worm) -> Dictionary: return { "hold_b": true }
-	await _frames(int(Worm.WARP_HOLD * 60.0) + 10)
+	# Wait for the warp to land (bounded), not for a fixed frame count: a slower CI runner
+	# needs more physics frames for the same hold.
+	var waited := 0
+	while w.cam_position().distance_to(_level.spawn_point) >= 4.0 and waited < 900:
+		await get_tree().physics_frame
+		waited += 1
 	assert_float(w.cam_position().distance_to(_level.spawn_point)).is_less(4.0)
 	assert_int(Audio.played.get("warp", 0)).is_equal(1)
 

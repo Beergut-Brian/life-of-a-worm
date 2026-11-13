@@ -68,6 +68,27 @@ func _frames(n: int) -> void:
 		await get_tree().physics_frame
 
 
+## Awaits physics frames until `done` is true, at most `limit` of them. Returns how many frames it
+## took, or -1 if it never came true (assert on it: a timeout then fails by name, not as a later
+## position assert). Camera and split tests wait on the state they mean with this, never a fixed
+## frame count: on a slow CPU several physics ticks run per process frame, so a fixed count lands
+## at a different point of the camera's ease and the worms' own physics.
+func _until(done: Callable, limit: int) -> int:
+	for i in limit:
+		if done.call():
+			return i
+		await get_tree().physics_frame
+	return limit if done.call() else -1
+
+
+## The camera has caught up with its targets: centred within a pixel, the fit zoom reached and
+## "up" turned to their mean up (PolarCamera.step eases all three, in process frames).
+func _camera_settled(cam: PolarCamera) -> bool:
+	var c := cam._centre()
+	return cam.position.distance_to(c) <= 1.0 and cam.zoom_index == cam.fit_index() \
+		and absf(angle_difference(cam.rotation, PolarCamera.up_rotation(c))) <= 0.01
+
+
 ## main.tscn -> lobby -> P1 starts alone -> the dock -> tin 1: the planet with Gulp.
 func _play_planet() -> PlanetLevel:
 	_main = load("res://scenes/main.tscn").instantiate()
@@ -147,16 +168,18 @@ func test_solo_select_hands_the_pad_and_the_camera_to_the_other_worm() -> void:
 	Players.set_solo(true)
 	var far := level.local_point(240, 0)
 	Worm.of(P2).warp_to(far - Worm.of(P2).position)
-	await _frames(3)
-	assert_bool(level.far_camera.split).is_true()
+	# The split is due on the next physics frame (FarCamera.step); wait on it, not a frame count.
+	assert_int(await _until(func() -> bool: return level.far_camera.split, 30)).is_not_equal(-1)
+	assert_bool(FarCamera.fits(level.camera, Worm.all())).is_false()
 	assert_int(level.far_camera.anchor).is_equal(P1)          # follows the pad's worm
 	var sel := InputEventAction.new()
 	sel.action = "restart"
 	sel.pressed = true
 	level._unhandled_input(sel)
 	assert_int(Players.solo_focus).is_equal(P2)
-	await _frames(2)
-	assert_int(level.far_camera.anchor).is_equal(P2)
+	# The next FarCamera.step reads the new focus; wait on the handover, not a frame count.
+	assert_int(await _until(func() -> bool: return level.far_camera.anchor == P2, 30)).is_not_equal(-1)
+	assert_bool(level.far_camera.split).is_true()
 	assert_array(level.camera.targets).is_equal([Worm.of(P2)])
 
 
@@ -239,34 +262,47 @@ func test_main_menu_from_over_the_tackle_box_unpauses() -> void:
 
 func test_camera_fits_both_then_follows_one_and_arrows_the_far_worm() -> void:
 	var level := _two_worms()
-	await _frames(3)
-	assert_bool(level.far_camera.split).is_false()
-	assert_int(level.camera.targets.size()).is_equal(2)
+	var cam := level.camera
 	var a := Worm.of(P1)
 	var b := Worm.of(P2)
-	b.warp_to(level.local_point(240, 0) - b.position)      # far past the widest zoom
-	var a_at := a.cam_position()
-	await _frames(90)
-	assert_bool(level.far_camera.split).is_true()
-	assert_array(level.camera.targets).is_equal([a])          # a tie: P1 keeps the camera
-	assert_bool(level.camera.sees(a.cam_position(), 30.0)).is_true()
-	assert_bool(level.camera.sees(b.cam_position(), 30.0)).is_false()   # HUD draws its arrow
-	# Held B: the far worm warps to its partner; the partner does not move. Only the warp itself is
-	# measured: over 90 frames a worm still slides under its own physics, which is not a forced move.
-	var a_before_warp := a.cam_position()
-	level._on_warp_requested(P2)
-	assert_float(b.cam_position().distance_to(a.cam_position())).is_less(40.0)
-	assert_float(a.cam_position().distance_to(a_before_warp)).is_less(1.0)
-	await _frames(3)
+	# Both worms framed: the first physics frame's FarCamera.step hands the camera both of them.
+	assert_int(await _until(func() -> bool: return cam.targets.size() == 2, 30)).is_not_equal(-1)
 	assert_bool(level.far_camera.split).is_false()
-	assert_int(level.camera.targets.size()).is_equal(2)
+	assert_bool(FarCamera.fits(cam, [a, b])).is_true()
+	b.warp_to(level.local_point(240, 0) - b.position)      # 237 tiles (3,792 px) past the widest zoom
+	# Wait for what the test means: the split on and the camera settled on the anchor. Bound: the
+	# split is due on the next physics frame; the ease (follow 6/s from at most half the worms' 48 px
+	# spread, ln(24)/6 = 0.53 s, ~32 frames; no zoom step, fit_hold 0.4 s each) is well inside 300.
+	assert_int(await _until(func() -> bool: return level.far_camera.split, 30)).is_not_equal(-1)
+	assert_int(await _until(_camera_settled.bind(cam), 300)).is_not_equal(-1)
+	# The split is measured against where the worms are now, not how far either slid meanwhile.
+	assert_bool(level.far_camera.split).is_true()
+	assert_bool(FarCamera.fits(cam, [a, b])).is_false()
+	assert_array(cam.targets).is_equal([a])          # a tie: P1 keeps the camera
+	assert_bool(cam.sees(a.cam_position(), 30.0)).is_true()
+	# PlanetHud draws a worm's edge arrow exactly when not cam.sees(pos, 30.0) (_draw_hud).
+	assert_bool(cam.sees(b.cam_position(), 30.0)).is_false()
+	# Held B: the far worm warps to its partner; the partner does not move. Both are measured against
+	# the partner where it stands at the warp, so its own earlier physics never enters the numbers.
+	# PlanetLevel._on_warp_requested lands the warper's head 16 px beside the partner's head, along
+	# the ground (partner.normalized().orthogonal() * 16); b's node sits at the origin, so exact.
+	var a_before_warp := a.cam_position()
+	var landing := a_before_warp + a_before_warp.normalized().orthogonal() * 16.0
+	level._on_warp_requested(P2)
+	assert_vector(b.cam_position()).is_equal_approx(landing, Vector2.ONE * 0.01)
+	assert_vector(a.cam_position()).is_equal(a_before_warp)
+	# Split clears once both fit with REJOIN to spare: 16 px apart, due on the next physics frame.
+	assert_int(await _until(func() -> bool: return not level.far_camera.split, 30)).is_not_equal(-1)
+	assert_bool(FarCamera.fits(cam, [a, b], FarCamera.REJOIN)).is_true()
+	assert_int(cam.targets.size()).is_equal(2)
 
 
 func test_far_camera_follows_the_bigger_worm() -> void:
 	var level := _two_worms(2)
 	var b := Worm.of(P2)
 	Worm.of(P1).warp_to(level.local_point(240, 0) - Worm.of(P1).position)
-	await _frames(3)
-	assert_bool(level.far_camera.split).is_true()
+	# The split is due on the next physics frame (FarCamera.step); wait on it, not a frame count.
+	assert_int(await _until(func() -> bool: return level.far_camera.split, 30)).is_not_equal(-1)
+	assert_bool(FarCamera.fits(level.camera, Worm.all())).is_false()
 	assert_int(level.far_camera.anchor).is_equal(P2)
 	assert_array(level.camera.targets).is_equal([b])

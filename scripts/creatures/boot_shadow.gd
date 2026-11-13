@@ -1,6 +1,10 @@
-## The gardener's boot (stage 4), seen only as a shadow for now: a big boot-shaped shadow slides
-## over the surface above a worm, a slow rumble, it hangs there, and lifts away. It never stomps in
-## the slice (a stage-4 threat later); the gardener is never seen. Not food, never eats.
+## The gardener's boot (stage 4): a big boot-shaped shadow slides over the surface above a worm, a
+## slow rumble, it grows as it comes down, and halfway through its hang it STOMPS: the sole shows
+## solid for a moment with dust puffs and a bonk. A worm smaller than the boot whose head is just
+## under the sole (the top STOMP_DEPTH px of the ground) is squashed the one eaten way (Gulp: one
+## segment shorter, dizzy, sparkles), never a stage or a trait. The warning is the shadow and the
+## rumble, STOMP_AT s before the stomp. A boot the worm has outgrown stomps small and harmless.
+## The gardener is never seen. Not food.
 class_name BootShadow
 extends Creature
 
@@ -10,6 +14,17 @@ const HOLD := 2.0
 ## small, so even at full strength (sole 1.3 r) it is under a stage-4 worm's head: a boot you have
 ## outgrown no longer looms. Bigger-than-me reads from size, never a colour or a number.
 const OUTGROWN := 0.25
+## Seconds after it arrives that it stomps (mid-hang): the shadow and rumble warn first (L-14).
+const STOMP_AT := FADE + HOLD * 0.5
+## Seconds the solid sole and dust show after the stomp.
+const STOMP_SHOW := 0.5
+## px under the surface the stomp reaches (about three tiles): only a worm near the top is squashed.
+const STOMP_DEPTH := 48.0
+const STOMP_CUE := "bonk"   # existing file; a comic thump, never a pain sound
+
+signal stomped(player: int)
+
+var did_stomp := false
 
 var spot := Vector2.ZERO
 var _up := Vector2.UP
@@ -49,11 +64,40 @@ func step(delta: float) -> void:
 	_life += delta
 	position = spot + _up.orthogonal() * (_life - FADE - HOLD * 0.5) * 6.0
 	rotation = _up.angle() + PI / 2.0
+	if not did_stomp and _life >= STOMP_AT:
+		stomp()
 	if _life >= FADE * 2.0 + HOLD:
 		_gone = true
 		taken.emit(self)
 		queue_free()
 	queue_redraw()
+
+
+## The stomp: thump, show the sole, squash every worm smaller than the boot that is under it.
+func stomp() -> void:
+	did_stomp = true
+	Audio.play(STOMP_CUE)
+	if not is_inside_tree():
+		return
+	for w in _worms():
+		if threatens(w) and is_under(w.head_position()):
+			if Gulp.eat(data.id if data else &"boot", w, w.head_position(), global_position):
+				stomped.emit(w.player)
+
+
+## Is a point (global px) under the sole: along the sole and within STOMP_DEPTH below the surface?
+func is_under(p: Vector2) -> bool:
+	var r := data.radius if data else 40.0
+	var d := p - global_position
+	var along := d.dot(_up.orthogonal())
+	var down := -d.dot(_up)
+	return absf(along) <= r * 1.3 and down >= -r * 0.5 and down <= STOMP_DEPTH
+
+
+## Seconds since the stomp while the sole still shows, else -1.
+func stomp_age() -> float:
+	var a := _life - STOMP_AT
+	return a if did_stomp and a <= STOMP_SHOW else -1.0
 
 
 ## True when the worm nearest the boot is big enough that the boot is no threat to it.
@@ -88,3 +132,15 @@ func _draw() -> void:
 		var a := TAU * i / 16.0
 		heel.append(Vector2(cos(a) * r * 0.45, sin(a) * r * 0.28) * s + Vector2(-r * 0.95, 0) * s)
 	draw_colored_polygon(heel, col)
+	var age := stomp_age()
+	if age >= 0.0:   # the boot itself, for a moment: solid sole, ink outline, dust both sides
+		var k2 := 1.0 - age / STOMP_SHOW
+		var boot := Color(data.color if data else Color(0.23, 0.16, 0.1), k2)
+		draw_colored_polygon(sole, boot)
+		draw_colored_polygon(heel, boot)
+		sole.append(sole[0])
+		draw_polyline(sole, Color(INK, k2), 2.0)
+		for side in [-1.0, 1.0]:
+			for i in 3:
+				var c := Vector2(side * r * (1.4 + 0.25 * i + age), -r * 0.1 * i) * s
+				draw_circle(c, r * (0.22 - 0.05 * i) * s * (1.0 + age), Color(0.85, 0.75, 0.6, 0.8 * k2))

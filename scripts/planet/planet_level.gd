@@ -1,6 +1,6 @@
 ## The grey-box game scene (scenes/levels/planet.tscn): one bait tin's planet. The real worm
 ## (scripts/worm/) tunnels through the real polar world (scripts/world/), eating tiles, food
-## pickups and grubs; the ring apexes (the dirt beetle, the topsoil stag beetle); the burrow; the shared rotating camera that zooms
+## pickups and grubs; the ring apexes (dirt beetle, topsoil stag beetle, then ApexBeetle.DEEP); the burrow; the shared rotating camera that zooms
 ## to fit; the HUD; autosave. scenes/main.gd hosts it under Arena and spawns the worms.
 ## Reads and writes the open tin through Save (BaitTins picks the slot before this is added).
 class_name PlanetLevel
@@ -34,9 +34,12 @@ var far_camera := FarCamera.new()
 var burrow: Burrow
 ## The dirt ring's apex (stage 1 -> 2); also apexes[0].
 var beetle: ApexBeetle
-## One apex per ring that has one in this slice, in ring-stage order: the dirt beetle (opens stage 2)
-## and the topsoil stag beetle (opens stage 3). Eaten once per tin, the bite counts for every worm.
+## One apex per ring, in ring-stage order: the dirt beetle (opens stage 2), the topsoil stag beetle
+## (3), then ApexBeetle.DEEP: cricket (4), pill bug (5), ember newt (6). Eaten once per tin, the bite
+## counts for every worm.
 var apexes: Array[ApexBeetle] = []
+## The "go eat your apex" picture (P-16): scripts/planet/apex_call.gd.
+var apex_call: ApexCall
 ## The stage-up beat (scripts/gameplay/stage_beat.gd; zoom caps per stage come from data/stages.tres).
 var stage_beat: StageBeat
 ## The crust burst (scripts/gameplay/crust_burst.gd; the crust ring and its stage come from data/stages.tres).
@@ -109,6 +112,12 @@ func _ready() -> void:
 	add_child(actors)
 	beetle = _add_apex("ApexBeetle", 1, 2, 15.0, &"dirt", local_point(-20, 2))
 	_add_apex("TopsoilApex", 2, 3, 15.0, &"topsoil", local_point(-6, TOPSOIL_APEX_UP))
+	for d in ApexBeetle.DEEP:   # cricket (3 -> 4), pill bug (4 -> 5), ember newt (5 -> 6)
+		_add_apex(d.name, d.ring, d.size, d.r, d.look, local_point(d.at.x, d.at.y))
+	apex_call = ApexCall.new()   # long enough but the apex not eaten: a picture points the way
+	apex_call.name = "ApexCall"
+	apex_call.level = self
+	add_child(apex_call)
 	if saved.is_empty():
 		_new_planet()
 	else:

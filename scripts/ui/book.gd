@@ -1,5 +1,5 @@
 ## The collection book (T-01), opened from the pause menu (Y on the book icon next to Back to Open
-## Jar). An open sketchbook: the left page is the five section tabs, each with a row of slots that
+## Jar). An open sketchbook: the left page is the section tabs (six: foods, creatures, traits, secrets, cutscenes, planets), each with a row of slots that
 ## fill as things are found (the count as a picture, no numbers); the right page is the open
 ## section's grid, one sketch per data entry, grey silhouette until found, then the picture.
 ##
@@ -269,17 +269,19 @@ func _draw_spread() -> void:
 func _draw_tab(ci: Control, i: int) -> void:
 	var s: StringName = BookCatalog.SECTIONS[i]
 	var here := i == section
-	var row := Rect2(190, 110 + i * 172, 730, 150)
+	# The tabs share the left page's 880 px, so a seventh section still fits (172 px rows for five).
+	var step := minf(172.0, 880.0 / BookCatalog.SECTIONS.size())
+	var row := Rect2(190, 110 + i * step, 730, step - 22.0)
 	var col: Color = BookArt.SECTION_COLORS[s]
 	if here:
 		ci.draw_rect(row, Color(col, 0.22))
 		# A ribbon bookmark from this row across to the open page.
-		ci.draw_rect(Rect2(row.end.x - 10, row.position.y + 50, 80, 50), col)
-	var ic := row.position + Vector2(80, 75)
+		ci.draw_rect(Rect2(row.end.x - 10, row.position.y + row.size.y * 0.5 - 25.0, 80, 50), col)
+	var ic := row.position + Vector2(80, row.size.y * 0.5)
 	if here and on_tabs:
 		var pop := 1.0 + 0.15 * hop
 		var shake := Vector2(sin(t * 60.0) * 8.0 * bump, 0)
-		_ring(ci, ic + shake, (70.0 + 3.0 * sin(t * 6.0)) * pop, cursor_color(), 6.0)
+		_ring(ci, ic + shake, (minf(70.0, step * 0.45) + 3.0 * sin(t * 6.0)) * pop, cursor_color(), 6.0)
 	BookArt.tab_icon(ci, s, ic, t)
 	# The counter: one slot per entry, filled in the section's colour when found.
 	var l: Array = entries.get(s, [])
@@ -288,14 +290,14 @@ func _draw_tab(ci: Control, i: int) -> void:
 	var per := clampi(l.size(), 1, 14)
 	var gap := minf(40.0, 540.0 / per)
 	for j in l.size():
-		var p := Vector2(x0 + (j % 14) * gap, row.position.y + 55 + (j / 14) * 40)
+		var p := Vector2(x0 + (j % 14) * gap, row.position.y + row.size.y * 0.37 + (j / 14) * 40)
 		var got := have.has(l[j].id)
 		if got:
 			ci.draw_circle(p, gap * 0.36, col)
 		ci.draw_circle(p, gap * 0.36, PENCIL if got else Color(PENCIL, 0.35), false, 3.0)
 	if l.is_empty():
 		# No data for this section on this build: an empty dotted box, not a made-up page.
-		_ring(ci, Vector2(x0 + 30, row.position.y + 55), 18.0, Color(PENCIL, 0.3), 2.0, true)
+		_ring(ci, Vector2(x0 + 30, row.position.y + row.size.y * 0.37), 18.0, Color(PENCIL, 0.3), 2.0, true)
 	elif BookCatalog.count(l, have) == l.size():
 		BookArt.star(ci, Vector2(row.end.x - 50, row.position.y + 40), 22.0, col, true)
 

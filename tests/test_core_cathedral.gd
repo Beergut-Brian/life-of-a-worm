@@ -231,9 +231,9 @@ func test_core_crystals_are_scattered_in_the_core_in_play() -> void:
 	assert_int((load("res://data/foods/core_crystal.tres") as RingFood).look).is_equal(RingFood.Look.CRYSTAL)
 
 
-func test_lava_blobs_are_counted_but_never_spawned_without_a_body() -> void:
+func test_lava_blobs_are_counted_and_wanted_live() -> void:
 	assert_bool(_dir.ecology.rules.has(&"lava_blob")).is_true()
-	assert_int(_dir.wanted(_dir.ecology.rules[&"lava_blob"])).is_equal(0)
+	assert_int(_dir.wanted(_dir.ecology.rules[&"lava_blob"])).is_greater(0)
 	assert_bool(_dir.ecology.rules.has(&"core_crystal")).is_true()
 
 

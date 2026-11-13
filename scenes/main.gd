@@ -132,9 +132,17 @@ func open_tin(i: int) -> void:
 func _open_level() -> void:
 	level = PLANET.instantiate()
 	arena.add_child(level)
+	# Old Reel's heirloom (S-12): a tin made after a sun gives its chosen trait to every worm in it.
+	level.worm_spawned.connect(_on_worm_spawned)
 	for p in Players.active_players():
 		level.spawn_worm(p)
 	print("tin: %s open (%s)" % [Save.slot, ", ".join(Players.active_players().map(func(p): return NAMES[p]))])
+
+
+func _on_worm_spawned(w: Worm) -> void:
+	if OldReelTin.give(w):
+		HeirloomBubble.show_over(w)
+		print("tin: %s keeps the heirloom %s" % [NAMES.get(w.player, w.player), OldReelTin.heirloom()])
 
 
 func close_level() -> void:
