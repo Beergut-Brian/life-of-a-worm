@@ -21,6 +21,12 @@ extends Resource
 @export var part_priority := 0
 ## Turns per second for a spinning part (0 = still).
 @export var part_spin := 0.0
+## No textures: a code-drawn part (StarParts.SHAPES: snowflake, leaf, nut, pinwheel, cog) in `color`.
+@export var part_shape: StringName
+## A Star trait (D-10): earned only by eating its space planet (`star_planet`, a PlanetData id),
+## never from flavours, never offered as a choice. The trait wall marks it with a gold star.
+@export var star := false
+@export var star_planet: StringName
 ## Signature sound (reveal sting), a cue name for Audio.play.
 @export var cue := ""
 ## Picture colour on the trait wall and the reveal flash.
@@ -33,5 +39,5 @@ func is_hybrid() -> bool:
 
 func part_texture(stage: int) -> Texture2D:
 	if part_textures.is_empty():
-		return null
+		return StarParts.texture(part_shape, color) if part_shape != &"" else null
 	return part_textures[clampi(stage - 1, 0, part_textures.size() - 1)]

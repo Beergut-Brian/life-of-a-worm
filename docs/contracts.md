@@ -1131,3 +1131,41 @@ func request_beat(w: Worm) -> void   # camera: level.camera via the "rings" grou
 ```
 
 Cues: all existing files (`boot_rumble`, `threat_near`, `space_bump`); none added.
+### Star trait (worm-star-trait-1)
+
+`feature/worm-star-trait-1` (PLAN-STATUS D-10). One rare Star `TraitData` per space planet type, in
+`data/traits/<id>.tres`, listed in `WormRules.traits`, referenced by `PlanetData.star_trait`
+(`star_chance` is 0: foods never carry it; the planet itself does).
+
+```gdscript
+# TraitData additions
+@export var part_shape: StringName   # no part_textures: StarParts draws it (snowflake, leaf, nut, pinwheel, cog)
+@export var star := false            # a Star: never earned from flavours (empty requires), never offered
+@export var star_planet: StringName  # the PlanetData id that gives it
+
+# StarTraits (scripts/worm/star_traits.gd), static
+static func all(rules = null) -> Array[TraitData]
+static func is_star(id: StringName) -> bool
+static func for_planet(planet_id: StringName) -> TraitData
+static func record(player: int, id: StringName) -> bool   # onto the live planet worm and the tin's "worms"; silent
+
+# StarAward (scripts/worm/star_award.gd): child "StarAward" of scenes/levels/space_stage.tscn
+signal revealed(player: int, id: StringName)   # once per earn (SpaceDrift.star_earned)
+var reveals: Dictionary                         # trait id -> reveals shown
+func beat_showing() -> bool                     # the camera lean-in is running (REVEAL_TIME 1.8 s)
+```
+
+| Star | Planet | Stat (one, felt in space) | Seen | Cue (borrowed) |
+| --- | --- | --- | --- | --- |
+| frost_star | ice | `space_speed` +110 px/s | snowflake, `above` | `trait_slick` |
+| vine_star | jungle | `space_reach` +26 px mouth (a ring shows it) | leaf, `tail` | `trait_green_thumb` |
+| anchor_star | junk | `space_steady` 0.5 (half knock-back) | hex nut, `back` | `trait_magnet` |
+| sugar_star | candy | `space_pull` 280 px: small food drifts in (dotted ring) | pinwheel sweet, `crown` | `trait_floaty` |
+| tick_star | clockwork | `space_turn` 1.2: steering accel x2.2 | cog, `under` | `trait_drill_head` |
+
+Earn path: StarAward sets `SpacePlanet.star_trait` on each arriving planet whose Star isn't taken;
+`SpaceDrift.on_eaten` (unchanged) adds it and emits `star_earned` (+ `secret_found`); StarAward then
+plays `TraitData.cue`, two `WormRing`s, leans the camera in on that worm and flies the part into its
+orbit, applies `space_turn`, and calls `StarTraits.record`. `space_speed/reach/steady` stay with
+`SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner. No `scripts/space/`
+or `scripts/chomp/` edits.
