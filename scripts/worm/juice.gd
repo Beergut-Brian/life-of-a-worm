@@ -4,7 +4,8 @@
 ##                           worm's head), capped, on the camera that follows that worm only
 ##   tile(worm, cell)        crumbs in the ring's colour that fall toward the core (the world's own
 ##                           gravity_at, never a fixed down), throttled so tunnelling stays calm
-##   worm_flash(worm)        the stage-up: the worm goes white for exactly two drawn frames
+##   worm_flash(worm)        the stage-up: the worm draws white for exactly two drawn frames
+##                           (a shared white material lent to each drawn part, then given back)
 ## The WormHooks API (chomp, shake, stage_flash, debris) is here too with the stub's signatures, so
 ## WormHooks.JUICE_PATH can point at this file (see docs/contracts.md, Juice (worm-juice-1)).
 ## One switch turns everything off for a slow GPU: ENABLED (tests flip `on`, which starts from it).
@@ -40,7 +41,26 @@ const DEBRIS_COLOUR := Color(0.55, 0.38, 0.2)   # only when the cell has no ring
 
 # Stage-up flash.
 const FLASH_FRAMES := 2              # drawn frames, at any frame rate
-const FLASH_MODULATE := Color(6, 6, 6, 1)        # over-bright: the placeholder art reads white
+const FLASH_COLOUR := Color(1, 1, 1)             # every drawn pixel of the worm, alpha kept
+const FLASH_SHADER := "shader_type canvas_item;\nuniform vec4 flash : source_color = vec4(1.0);\nvoid fragment() { COLOR = vec4(flash.rgb, COLOR.a); }\n"
+static var _flash_mat: ShaderMaterial
+
+
+## The white material the flash lends every drawn part of the worm (one, shared).
+static func flash_material() -> ShaderMaterial:
+	if _flash_mat == null:
+		var sh := Shader.new()
+		sh.code = FLASH_SHADER
+		_flash_mat = ShaderMaterial.new()
+		_flash_mat.shader = sh
+		_flash_mat.set_shader_parameter(&"flash", FLASH_COLOUR)
+	return _flash_mat
+
+
+## True while this worm (or screen layer) is mid-flash.
+static func is_flashing(worm: Node) -> bool:
+	var f := worm.get_node_or_null(^"JuiceFlash") if worm != null else null
+	return f != null and not f.is_queued_for_deletion()
 
 ## Runtime copy of ENABLED (tests and a settings toggle may flip it).
 static var on := ENABLED
@@ -62,6 +82,7 @@ static func _log(fn: String, args: Array) -> void:
 static func clear_cache() -> void:
 	calls.clear()
 	_last_debris.clear()
+	_flash_mat = null   # no shader left in use at exit
 
 
 # --- Per-worm hooks (scripts/worm/worm.gd calls these) -------------------------------------------
@@ -138,7 +159,7 @@ static func fall_direction(world: Node2D, global_pos: Vector2) -> Vector2:
 	return world.global_transform.basis_xform(g).normalized()
 
 
-## The stage-up: the worm white for exactly FLASH_FRAMES drawn frames, then its own modulate back.
+## The stage-up: the worm white for exactly FLASH_FRAMES drawn frames, then its own materials back.
 static func worm_flash(worm: CanvasItem) -> Node:
 	_log("worm_flash", [])
 	if not on or worm == null or not worm.is_inside_tree():
@@ -307,14 +328,28 @@ class _Flash extends Node:
 	var target: Node
 	var free_target := false
 	var start_frame := 0
-	var _saved := Color.WHITE
+	var _saved := {}      # CanvasItem -> its own material, given back on clear
+	var _mat: ShaderMaterial
 
 	func _enter_tree() -> void:
 		start_frame = Engine.get_process_frames()
-		if not free_target and target is CanvasItem:
-			_saved = (target as CanvasItem).modulate
-			(target as CanvasItem).modulate = FLASH_MODULATE
 		process_priority = -100   # before anything else this frame
+		if not free_target and target is CanvasItem:
+			_whiten(target)
+
+	## Every drawn part of the worm (sprites, segments, face, parts) draws white; particles,
+	## lights and other Juice nodes keep their look.
+	func _whiten(n: Node) -> void:
+		if n is CanvasItem and not (n is CPUParticles2D or n is GPUParticles2D or n is Light2D) \
+				and not String(n.name).begins_with("Juice"):
+			var ci := n as CanvasItem
+			if _mat == null:
+				_mat = WormJuice.flash_material()
+			_saved[ci] = ci.material
+			ci.material = _mat
+		for c in n.get_children():
+			if not (c is CPUParticles2D or c is GPUParticles2D):
+				_whiten(c)
 
 	## A second stage-up while white: keep white for FLASH_FRAMES from now.
 	func restart() -> void:
@@ -333,6 +368,15 @@ class _Flash extends Node:
 			if is_instance_valid(target):
 				target.queue_free()
 			return
-		if is_instance_valid(target):
-			(target as CanvasItem).modulate = _saved
+		for ci in _saved:
+			if is_instance_valid(ci) and ci.material == _mat:
+				ci.material = _saved[ci]
+		_saved.clear()
 		queue_free()
+
+	func _exit_tree() -> void:
+		if not _saved.is_empty():   # freed early (worm gone, level change): never leave it white
+			for ci in _saved:
+				if is_instance_valid(ci) and ci.material == _mat:
+					ci.material = _saved[ci]
+			_saved.clear()

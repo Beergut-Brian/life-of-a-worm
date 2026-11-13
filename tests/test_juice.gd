@@ -15,6 +15,7 @@ func before() -> void:
 
 
 func after() -> void:
+	WormJuice.clear_cache()
 	for p in Audio._pool:
 		p.stop()
 	SuiteSandbox.leave()
@@ -134,21 +135,24 @@ func test_shake_is_only_on_the_camera_following_the_eater() -> void:
 # --- Stage-up flash -------------------------------------------------------------------------------
 
 ## Coroutines wake on process_frame before any node's _process in that iteration (checked on
-## 4.7.2), so at each wake the worm's modulate is what the previous iteration drew.
+## 4.7.2), so at each wake the worm's materials are what the previous iteration drew.
 func test_the_stage_up_flash_is_exactly_two_frames() -> void:
 	var w := _worm()
-	var before_mod := w.modulate
+	var head_mat := w.head_sprite.material
 	w.model.apex_gate = false
 	while w.model.stage < 2:
 		w.model.add_segment(&"")   # the real stage_changed path
 	var start := Engine.get_process_frames()
-	assert_that(w.modulate).is_equal(WormJuice.FLASH_MODULATE)
+	assert_bool(WormJuice.is_flashing(w)).is_true()
+	assert_object(w.head_sprite.material).is_same(WormJuice.flash_material())
 	var drawn := {}
 	for i in 5:
 		await get_tree().process_frame
-		drawn[Engine.get_process_frames() - 1 - start] = w.modulate == WormJuice.FLASH_MODULATE
+		drawn[Engine.get_process_frames() - 1 - start] = w.head_sprite.material == WormJuice.flash_material()
 	assert_dict(drawn).is_equal({ 0: true, 1: true, 2: false, 3: false, 4: false })
-	assert_that(w.modulate).is_equal(before_mod)
+	assert_object(w.head_sprite.material).is_same(head_mat)   # the sheen comes back
+	for seg in w.body.get_children():
+		assert_object((seg as CanvasItem).material).is_not_same(WormJuice.flash_material())
 	assert_object(w.get_node_or_null(^"JuiceFlash")).is_null()
 
 
@@ -213,6 +217,7 @@ func test_the_switch_turns_every_effect_off() -> void:
 	assert_object(WormJuice.bite(w, _food(500.0))).is_null()
 	assert_float(cam.shake).is_equal(0.0)
 	assert_object(WormJuice.worm_flash(w)).is_null()
+	assert_bool(WormJuice.is_flashing(w)).is_false()
 	assert_that(w.modulate).is_equal(mod)
 	assert_object(WormJuice.tile(w, world.shape.cell_at(Vector2(0, -120.0 * world.shape.cell_size)))).is_null()
 	WormJuice.stage_flash()
