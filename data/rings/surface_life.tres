@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/world/prop_data.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/rings/cameo_spot.gd" id="cameo"]
 [ext_resource type="Resource" path="res://data/foods/apple.tres" id="f0"]
 [ext_resource type="Resource" path="res://data/props/tree.tres" id="p0"]
 [ext_resource type="Resource" path="res://data/props/fence.tres" id="p1"]
@@ -54,6 +55,16 @@ live = ""
 depth_min = 0.0
 depth_max = 0.0
 
+[sub_resource type="Resource" id="cameo0"]
+script = ExtResource("cameo")
+id = &"surface_west_grass"
+angle = -0.46
+
+[sub_resource type="Resource" id="cameo1"]
+script = ExtResource("cameo")
+id = &"surface_east_grass"
+angle = 0.46
+
 [resource]
 script = ExtResource("1")
 ring = &"surface"
@@ -66,4 +77,5 @@ regrow_time = 120.0
 scatter_inner = 1.003
 scatter_outer = 1.008
 scatter_spread = 0.4
+cameos = Array[ExtResource("cameo")]([SubResource("cameo0"), SubResource("cameo1")])
 props = Array[ExtResource("4")]([ExtResource("p0"), ExtResource("p1"), ExtResource("p2"), ExtResource("p3"), ExtResource("p4"), ExtResource("p5"), ExtResource("p6"), ExtResource("p7"), ExtResource("p8"), ExtResource("p9")])
