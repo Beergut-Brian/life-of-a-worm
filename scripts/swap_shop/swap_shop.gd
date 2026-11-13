@@ -36,6 +36,8 @@ var _alone := 0.0
 var _met := false
 ## Players whose worm is ready to trade this frame (the level's hint and glyph read it).
 var ready_for: Dictionary = {}
+## His visits: he pops out of tunnel walls beside a worm digging far away (L-09).
+var visit: MoleVisit
 
 
 func _ready() -> void:
@@ -44,6 +46,10 @@ func _ready() -> void:
 	_face_up()
 	PictoBubble.register_prefix("food:", _draw_food_pic)
 	PictoBubble.register(&"swap_arrow", _draw_arrow_pic)
+	visit = MoleVisit.new()
+	visit.name = "Visit"
+	visit.shop = self
+	add_child(visit)
 
 
 func _face_up() -> void:
@@ -84,7 +90,7 @@ func _physics_process(delta: float) -> void:
 	_alone = 0.0 if near else _alone + delta
 	match state:
 		State.HIDDEN:
-			if near:
+			if near and (visit == null or not visit.is_out()):
 				pop_out()
 		State.POP:
 			if _state_t >= 0.5:
@@ -113,6 +119,8 @@ func pop_out() -> void:
 		return
 	_set_state(State.POP)
 	Audio.play("mole_pop")
+	if visit != null:
+		visit.dig_t = 0.0
 	popped_out.emit()
 
 
