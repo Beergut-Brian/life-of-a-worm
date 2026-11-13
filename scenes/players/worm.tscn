@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/burst_nudge.gd" id="burst_nudge"]
+[ext_resource type="Script" path="res://scripts/gameplay/carry_miss.gd" id="carry_miss"]
 [ext_resource type="Script" path="res://scripts/gameplay/partner_stars.gd" id="partner_stars"]
 [ext_resource type="Script" path="res://scripts/gameplay/eaten_beat.gd" id="eaten_beat"]
 [ext_resource type="Script" path="res://scripts/gameplay/drop_out_puff.gd" id="drop_out_puff"]
@@ -79,6 +80,9 @@ script = ExtResource("knacks")
 
 [node name="BurstNudge" type="Node2D" parent="."]
 script = ExtResource("burst_nudge")
+
+[node name="CarryMiss" type="Node2D" parent="."]
+script = ExtResource("carry_miss")
 
 [node name="PartnerStars" type="Node" parent="."]
 script = ExtResource("partner_stars")
