@@ -15,6 +15,8 @@ func _draw() -> void:
 		return
 	var rf := data as RingFood
 	var look := rf.look if rf else RingFood.Look.BLOB
+	if rf and look == RingFood.Look.BLOB and rf.ring == &"sky":
+		look = RingFood.Look.CLOUD
 	var accent := rf.accent if rf else data.color.lightened(0.4)
 	var r := data.radius
 	var o := Vector2(0, sin(_t * 3.0) * 0.6)
@@ -115,6 +117,36 @@ func _draw() -> void:
 				var a := TAU * i / 10.0
 				draw_line(o + Vector2.from_angle(a) * r * 0.72, o + Vector2.from_angle(a) * r * 0.95, accent, 1.0)
 			face = o + Vector2(0, r * 0.15)
+		RingFood.Look.CLOUD:
+			# a puffy cloud: five overlapping puffs, a shaded underside, the face in the middle
+			var puffs := [Vector3(-0.55, 0.15, 0.5), Vector3(-0.15, -0.2, 0.62), Vector3(0.3, -0.12, 0.55),
+					Vector3(0.65, 0.18, 0.42), Vector3(0.05, 0.25, 0.55)]
+			for q in puffs:
+				draw_circle(o + Vector2(q.x, q.y) * r, q.z * r + 1.5, INK)
+			for q in puffs:
+				draw_circle(o + Vector2(q.x, q.y + 0.08) * r, q.z * r, accent)
+			for q in puffs:
+				draw_circle(o + Vector2(q.x, q.y - 0.04) * r, q.z * r * 0.86, data.color)
+		RingFood.Look.PLANE:
+			# a toy plane: a long body, a wing across it, a tail fin, a spinning propeller
+			var body := PackedVector2Array([o + Vector2(-r, -r * 0.18), o + Vector2(r * 0.75, -r * 0.28),
+					o + Vector2(r, 0), o + Vector2(r * 0.75, r * 0.28), o + Vector2(-r, r * 0.18)])
+			var wing := PackedVector2Array([o + Vector2(-r * 0.1, -r * 0.85), o + Vector2(r * 0.25, -r * 0.85),
+					o + Vector2(r * 0.3, r * 0.85), o + Vector2(-r * 0.05, r * 0.85)])
+			var fin := PackedVector2Array([o + Vector2(-r, -r * 0.15), o + Vector2(-r * 0.75, -r * 0.15), o + Vector2(-r * 1.05, -r * 0.6)])
+			for poly in [wing, fin, body]:
+				var ol := PackedVector2Array()
+				for q in poly:
+					ol.append(o + (q - o) * 1.12)
+				draw_colored_polygon(ol, INK)
+			draw_colored_polygon(wing, accent)
+			draw_colored_polygon(fin, accent)
+			draw_colored_polygon(body, data.color)
+			var spin := absf(sin(_t * 30.0))
+			draw_line(o + Vector2(r * 1.05, -r * 0.5 * spin), o + Vector2(r * 1.05, r * 0.5 * spin), INK, 2.0)
+			draw_circle(o + Vector2(r * 1.05, 0), maxf(1.0, r * 0.1), INK)
+			face = o + Vector2(r * 0.4, 0)
+			r *= 0.6
 		_:
 			draw_circle(o, r + 1.0, INK)
 			draw_circle(o, r, data.color)
