@@ -1,0 +1,462 @@
+{
+ "rules": {
+  "ramp": [
+   "#1e090d",
+   "#3c0a1a",
+   "#7d4650",
+   "#c4917c",
+   "#e8b08c",
+   "#f0c8a4"
+  ],
+  "saddle": "#c09b95",
+  "P1": "#3cc24a",
+  "P2": "#e4393c",
+  "thickness_note": "silhouette incl. 1 px outline; median over columns excluding head and tail taper"
+ },
+ "candidates": {
+  "c1": {
+   "name": "C1 Annelid",
+   "source": "art/concepts/round1/proofs/a-worm-plain.png",
+   "stage1_art_px": [
+    48,
+    9
+   ],
+   "thickness_median": 9,
+   "thickness_range": [
+    9,
+    9
+   ],
+   "length": 48,
+   "old_colours_present": [],
+   "collar": {
+    "collar_cols": [
+     29,
+     30
+    ],
+    "separator_cols": [
+     28,
+     31
+    ],
+    "eye": [
+     42,
+     2
+    ],
+    "saddle_cols": [
+     24,
+     35
+    ]
+   },
+   "colours": [
+    {
+     "hex": "#1e090d",
+     "role": "ramp",
+     "dE_P1": 69.6,
+     "dE_P2": 42.7,
+     "flag": false
+    },
+    {
+     "hex": "#3c0a1a",
+     "role": "ramp",
+     "dE_P1": 78.2,
+     "dE_P2": 36.9,
+     "flag": false
+    },
+    {
+     "hex": "#9b2729",
+     "role": "P2 collar",
+     "dE_P1": 75.6,
+     "dE_P2": 16.0,
+     "flag": false
+    },
+    {
+     "hex": "#7d4650",
+     "role": "ramp",
+     "dE_P1": 66.0,
+     "dE_P2": 22.8,
+     "flag": false
+    },
+    {
+     "hex": "#298432",
+     "role": "P1 collar",
+     "dE_P1": 19.4,
+     "dE_P2": 67.6,
+     "flag": false
+    },
+    {
+     "hex": "#e4393c",
+     "role": "P2 collar",
+     "dE_P1": 75.8,
+     "dE_P2": 0.0,
+     "flag": false
+    },
+    {
+     "hex": "#3cc24a",
+     "role": "P1 collar",
+     "dE_P1": 0.0,
+     "dE_P2": 75.8,
+     "flag": false
+    },
+    {
+     "hex": "#eb6a6d",
+     "role": "P2 collar",
+     "dE_P1": 70.6,
+     "dE_P2": 10.9,
+     "flag": false
+    },
+    {
+     "hex": "#c4917c",
+     "role": "ramp",
+     "dE_P1": 45.1,
+     "dE_P2": 21.3,
+     "flag": false
+    },
+    {
+     "hex": "#c09b95",
+     "role": "saddle",
+     "dE_P1": 44.2,
+     "dE_P2": 24.2,
+     "flag": false
+    },
+    {
+     "hex": "#6dd177",
+     "role": "P1 collar",
+     "dE_P1": 6.7,
+     "dE_P2": 72.4,
+     "flag": false
+    },
+    {
+     "hex": "#e8b08c",
+     "role": "ramp",
+     "dE_P1": 42.8,
+     "dE_P2": 28.7,
+     "flag": false
+    },
+    {
+     "hex": "#f0c8a4",
+     "role": "ramp",
+     "dE_P1": 37.2,
+     "dE_P2": 35.1,
+     "flag": false
+    }
+   ],
+   "stage_screen_px": [
+    [
+     144,
+     27
+    ],
+    [
+     127,
+     21
+    ],
+    [
+     86,
+     12
+    ],
+    [
+     106,
+     14
+    ],
+    [
+     64,
+     8
+    ]
+   ]
+  },
+  "c2": {
+   "name": "C2 Lamplit",
+   "source": "art/concepts/round1/proofs/mix-worm-plain.png",
+   "stage1_art_px": [
+    46,
+    10
+   ],
+   "thickness_median": 10.0,
+   "thickness_range": [
+    10,
+    10
+   ],
+   "length": 46,
+   "old_colours_present": [],
+   "collar": {
+    "collar_cols": [
+     31,
+     32
+    ],
+    "separator_cols": [
+     30,
+     33
+    ],
+    "eye": [
+     40,
+     3
+    ],
+    "saddle_cols": [
+     29,
+     38
+    ]
+   },
+   "colours": [
+    {
+     "hex": "#1e090d",
+     "role": "ramp",
+     "dE_P1": 69.6,
+     "dE_P2": 42.7,
+     "flag": false
+    },
+    {
+     "hex": "#3c0a1a",
+     "role": "ramp",
+     "dE_P1": 78.2,
+     "dE_P2": 36.9,
+     "flag": false
+    },
+    {
+     "hex": "#9b2729",
+     "role": "P2 collar",
+     "dE_P1": 75.6,
+     "dE_P2": 16.0,
+     "flag": false
+    },
+    {
+     "hex": "#7d4650",
+     "role": "ramp",
+     "dE_P1": 66.0,
+     "dE_P2": 22.8,
+     "flag": false
+    },
+    {
+     "hex": "#298432",
+     "role": "P1 collar",
+     "dE_P1": 19.4,
+     "dE_P2": 67.6,
+     "flag": false
+    },
+    {
+     "hex": "#e4393c",
+     "role": "P2 collar",
+     "dE_P1": 75.8,
+     "dE_P2": 0.0,
+     "flag": false
+    },
+    {
+     "hex": "#3cc24a",
+     "role": "P1 collar",
+     "dE_P1": 0.0,
+     "dE_P2": 75.8,
+     "flag": false
+    },
+    {
+     "hex": "#eb6a6d",
+     "role": "P2 collar",
+     "dE_P1": 70.6,
+     "dE_P2": 10.9,
+     "flag": false
+    },
+    {
+     "hex": "#c4917c",
+     "role": "ramp",
+     "dE_P1": 45.1,
+     "dE_P2": 21.3,
+     "flag": false
+    },
+    {
+     "hex": "#c09b95",
+     "role": "saddle",
+     "dE_P1": 44.2,
+     "dE_P2": 24.2,
+     "flag": false
+    },
+    {
+     "hex": "#6dd177",
+     "role": "P1 collar",
+     "dE_P1": 6.7,
+     "dE_P2": 72.4,
+     "flag": false
+    },
+    {
+     "hex": "#e8b08c",
+     "role": "ramp",
+     "dE_P1": 42.8,
+     "dE_P2": 28.7,
+     "flag": false
+    },
+    {
+     "hex": "#f0c8a4",
+     "role": "ramp",
+     "dE_P1": 37.2,
+     "dE_P2": 35.1,
+     "flag": false
+    }
+   ],
+   "stage_screen_px": [
+    [
+     138,
+     30
+    ],
+    [
+     127,
+     24
+    ],
+    [
+     79,
+     14
+    ],
+    [
+     102,
+     15
+    ],
+    [
+     64,
+     9
+    ]
+   ]
+  },
+  "c3": {
+   "name": "C3 Plated",
+   "source": "art/concepts/round1/proofs/b-worm-plain.png",
+   "stage1_art_px": [
+    44,
+    10
+   ],
+   "thickness_median": 10.0,
+   "thickness_range": [
+    10,
+    10
+   ],
+   "length": 44,
+   "old_colours_present": [],
+   "collar": {
+    "collar_cols": [
+     29,
+     30
+    ],
+    "separator_cols": [
+     28,
+     31
+    ],
+    "eye": [
+     39,
+     2
+    ],
+    "saddle_cols": [
+     23,
+     27
+    ]
+   },
+   "colours": [
+    {
+     "hex": "#1e090d",
+     "role": "ramp",
+     "dE_P1": 69.6,
+     "dE_P2": 42.7,
+     "flag": false
+    },
+    {
+     "hex": "#3c0a1a",
+     "role": "ramp",
+     "dE_P1": 78.2,
+     "dE_P2": 36.9,
+     "flag": false
+    },
+    {
+     "hex": "#9b2729",
+     "role": "P2 collar",
+     "dE_P1": 75.6,
+     "dE_P2": 16.0,
+     "flag": false
+    },
+    {
+     "hex": "#7d4650",
+     "role": "ramp",
+     "dE_P1": 66.0,
+     "dE_P2": 22.8,
+     "flag": false
+    },
+    {
+     "hex": "#298432",
+     "role": "P1 collar",
+     "dE_P1": 19.4,
+     "dE_P2": 67.6,
+     "flag": false
+    },
+    {
+     "hex": "#e4393c",
+     "role": "P2 collar",
+     "dE_P1": 75.8,
+     "dE_P2": 0.0,
+     "flag": false
+    },
+    {
+     "hex": "#3cc24a",
+     "role": "P1 collar",
+     "dE_P1": 0.0,
+     "dE_P2": 75.8,
+     "flag": false
+    },
+    {
+     "hex": "#eb6a6d",
+     "role": "P2 collar",
+     "dE_P1": 70.6,
+     "dE_P2": 10.9,
+     "flag": false
+    },
+    {
+     "hex": "#c4917c",
+     "role": "ramp",
+     "dE_P1": 45.1,
+     "dE_P2": 21.3,
+     "flag": false
+    },
+    {
+     "hex": "#c09b95",
+     "role": "saddle",
+     "dE_P1": 44.2,
+     "dE_P2": 24.2,
+     "flag": false
+    },
+    {
+     "hex": "#6dd177",
+     "role": "P1 collar",
+     "dE_P1": 6.7,
+     "dE_P2": 72.4,
+     "flag": false
+    },
+    {
+     "hex": "#e8b08c",
+     "role": "ramp",
+     "dE_P1": 42.8,
+     "dE_P2": 28.7,
+     "flag": false
+    },
+    {
+     "hex": "#f0c8a4",
+     "role": "ramp",
+     "dE_P1": 37.2,
+     "dE_P2": 35.1,
+     "flag": false
+    }
+   ],
+   "stage_screen_px": [
+    [
+     132,
+     30
+    ],
+    [
+     116,
+     24
+    ],
+    [
+     80,
+     14
+    ],
+    [
+     99,
+     15
+    ],
+    [
+     59,
+     9
+    ]
+   ]
+  }
+ }
+}
