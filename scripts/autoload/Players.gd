@@ -37,6 +37,7 @@ var _marker: CanvasLayer
 func _ready() -> void:
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_dpad()
 	_marker = SoloMarker.new()
 	add_child(_marker)
 	_last_us = Time.get_ticks_usec()
@@ -104,6 +105,34 @@ func move_vector(player: int) -> Vector2:
 func join_virtual(player: int) -> void:
 	if not is_active(player):
 		_assign(player, VIRTUAL)
+
+
+## The d-pad moves too (feel rule: no stick-only requirement). project.godot binds move_* to the
+## stick and the keys only, so each move action also gets its d-pad button here, on every pad until
+## a pad is assigned (then _rebind narrows it, like the stick). Safe to call again: never doubles.
+const DPAD := { "move_left": JOY_BUTTON_DPAD_LEFT, "move_right": JOY_BUTTON_DPAD_RIGHT,
+	"move_up": JOY_BUTTON_DPAD_UP, "move_down": JOY_BUTTON_DPAD_DOWN }
+
+
+func add_dpad() -> void:
+	for p in [P1, P2]:
+		for a: String in DPAD:
+			var name := action(p, a)
+			if not InputMap.has_action(name):
+				continue
+			var device := -1
+			var has := false
+			for ev in InputMap.action_get_events(name):
+				if ev is InputEventJoypadMotion:
+					device = ev.device
+				elif ev is InputEventJoypadButton and ev.button_index == DPAD[a]:
+					has = true
+			if has:
+				continue
+			var b := InputEventJoypadButton.new()
+			b.button_index = DPAD[a]
+			b.device = device
+			InputMap.action_add_event(name, b)
 
 
 static func solo_from_args(args: PackedStringArray) -> bool:
