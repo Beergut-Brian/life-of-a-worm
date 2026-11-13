@@ -86,6 +86,8 @@ var dressing: TopsoilDressing
 ## G-06: castings in the topsoil sprout while it rains (scripts/rings/castings_sprouts.gd).
 var sprouts: CastingsSprouts
 var balloon: SkyBalloon
+## X-08: the empty Jarling cameo spots (one bare marker each until a cameo update fills one).
+var cameo_stands: CameoStands
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
 var _last_clock := 0.0
@@ -211,6 +213,10 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 		spot.position = cities[s.id]
 		spot.director = self
 		add_child(spot)
+	cameo_stands = CameoStands.new()
+	cameo_stands.name = "CameoStands"
+	add_child(cameo_stands)
+	cameo_stands.setup(self)
 	balloon = SkyBalloon.new()
 	balloon.name = "SkyBalloon"
 	balloon.sky = SKY

@@ -134,7 +134,7 @@ func can_trade(w: Worm) -> bool:
 	if state == State.HIDDEN or state == State.POP:
 		return false
 	var c := w.carrying
-	if c == null or not is_instance_valid(c) or c.has_method("pet_id") or c.data.id == &"seed":
+	if c == null or not is_instance_valid(c) or c.has_method("pet_id") or c is Creature or c.data.id == &"seed":
 		return false
 	return w.head.global_position.distance_to(global_position + mole_position() - position) <= TRADE_PX
 
