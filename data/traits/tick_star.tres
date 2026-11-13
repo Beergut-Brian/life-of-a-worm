@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tick_star"
+requires = {}
+add = {"space_turn": 1.2}
+mul = {}
+part_slot = &"under"
+part_shape = &"cog"
+part_priority = 0
+part_spin = 0.0
+star = true
+star_planet = &"clockwork"
+cue = "trait_drill_head"
+color = Color(1, 0.8117647, 0.3529412, 1)
