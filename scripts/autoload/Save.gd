@@ -6,6 +6,9 @@ extends Node
 
 signal saved()
 signal loaded()
+## A save file was there but could not be read (kid-check N6): it was moved aside to
+## `backup_path` (never written over), and the save opens empty.
+signal damaged(backup_path: String)
 
 var profile: String = "p1"
 ## Which save of this profile is open: "" = the profile's own file; a game with several saves per
@@ -16,6 +19,8 @@ var slot := ""
 var dir := "user://saves"
 var _data: Dictionary = {}
 var _dirty := false
+## Where the last unreadable save was moved to ("" = none this session).
+var last_backup := ""
 ## Tests point this somewhere else so they never touch the real settings.
 var settings_path := "user://settings.json"
 var _settings: Dictionary = {}
@@ -52,12 +57,18 @@ func flush() -> void:
 	if not _dirty:
 		return
 	DirAccess.make_dir_recursive_absolute(dir)
-	var f := FileAccess.open(_path(), FileAccess.WRITE)
+	# Written whole to a side file, then swapped in: a crash or a full disk mid-write leaves the
+	# last good save in place instead of half a file.
+	var tmp := _path() + ".tmp"
+	var f := FileAccess.open(tmp, FileAccess.WRITE)
 	if f == null:
-		push_warning("Save: could not open %s" % _path())
+		push_warning("Save: could not open %s" % tmp)
 		return
 	f.store_string(JSON.stringify(_data, "\t"))
 	f.close()
+	if DirAccess.rename_absolute(tmp, _path()) != OK:
+		push_warning("Save: could not write %s" % _path())
+		return
 	_dirty = false
 	saved.emit()
 
@@ -128,7 +139,25 @@ func _load() -> void:
 	var text := FileAccess.get_file_as_string(_path())
 	var parsed = JSON.parse_string(text)
 	_data = parsed if parsed is Dictionary else {}
+	if not parsed is Dictionary:
+		_keep_damaged(_path())
 	loaded.emit()
+
+
+## Moves an unreadable save to <path>.bak (or .bak2, .bak3 ... if one is there already), so the
+## next autosave never writes over it: a damaged tin is kept for a grown-up, not lost unseen.
+func _keep_damaged(path: String) -> void:
+	var to := path + ".bak"
+	var n := 2
+	while FileAccess.file_exists(to):
+		to = "%s.bak%d" % [path, n]
+		n += 1
+	if DirAccess.rename_absolute(path, to) != OK:
+		push_warning("Save: could not keep the unreadable %s" % path)
+		return
+	push_warning("Save: %s could not be read, kept as %s" % [path, to])
+	last_backup = to
+	damaged.emit(to)
 
 
 func _notification(what: int) -> void:

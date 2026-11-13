@@ -117,6 +117,12 @@ shows that tin as a new planet (`scripts/planet/bait_tins.gd:32-33` returns `{}`
 writes over it. A failed write only logs a warning (`Save.gd:57`). This is rare, but it is the one
 place play can lose progress unseen. The fix (keep the unreadable file as `.bak`, show the tin as
 damaged) is a few lines in a Systems autoload.
+**Fixed (worm-gap-close-34), keep half:** `Save._load` moves a file it cannot read to
+`<file>.bak` (then `.bak2`, ...) before any autosave can write over it, warns, sets
+`Save.last_backup` and emits `Save.damaged(path)`; the tin opens as a new planet. `Save.flush` now
+writes a side file (`.tmp`) and swaps it in whole, so a write stopped halfway leaves the last good
+tin. `tests/test_save_damaged.gd` (4 cases). Still open: the dock does not draw a damaged tin
+(`scripts/planet/dock.gd` is changed on unmerged `feature/worm-jar-2`).
 
 **N7 (note): a jar failure says "yes" and then does nothing.** `scripts/chomp/planet_chomp.gd:240-245`
 plays `confirm_yes` before it tries `jars.snapshot()`. If that fails, the ring quietly resets with
