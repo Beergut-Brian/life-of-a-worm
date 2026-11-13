@@ -433,18 +433,24 @@ func grow_to(s: int) -> bool:
 	return true
 
 
+## B-06: tiles of crust a burrow never digs under the grass, so its home never opens to the sky.
+const ROOF_TILES := 2.0
+
+
 ## Carves this stage's chamber round the bed (only what a worm of this stage could eat), and from
 ## the house stage the inside of the buried house too.
 func _carve() -> void:
 	if world == null or not has_home:
 		return
+	# Never dig the last ROOF_TILES of crust: a home just under the grass keeps its roof.
+	var roof := (float(world.shape.radius) - ROOF_TILES) * 16.0
 	var r := chamber_tiles() * 16.0
 	var c := world.shape.cell_at(home)
 	var n := ceili(r / 16.0)
 	for y in range(-n, n + 1):
 		for x in range(-n, n + 1):
 			var cell := c + Vector2i(x, y)
-			if world.shape.center_of(cell).distance_to(home) <= r and world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
+			if world.shape.center_of(cell).distance_to(home) <= r and world.shape.center_of(cell).length() < roof and world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
 				world.dig(cell)
 	if has_house():
 		var hs := house_size()
@@ -455,7 +461,7 @@ func _carve() -> void:
 			for fx in range(0, int(hs.x / 16.0)):
 				var at := base + up * (fy + 0.5) * 16.0 + side * ((fx + 0.5) * 16.0 - hs.x * 0.5)
 				var cell := world.shape.cell_at(at)
-				if world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
+				if world.shape.center_of(cell).length() < roof and world.is_edible_by(stage, cell) and not trophy_cells.has(cell):
 					world.dig(cell)
 
 
