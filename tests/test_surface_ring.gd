@@ -233,10 +233,19 @@ func test_a_cow_falls_toward_the_core_when_the_ground_under_it_is_eaten() -> voi
 	for k in range(-2, 3):
 		for depth in range(0, 5):
 			w.eat_tile(w.shape.cell_at(cow.position + side * (k * 16.0) - up * (depth * 16.0 + 8.0)), 0)
+	# P-26: the cow alone over its own pit; its landing is counted through LooseFall.landed.
+	var landed := []
+	cow.fall.landed.connect(func(_b: Node2D, speed: float) -> void: landed.append(speed))
 	assert_bool(cow.fall.step(1.0 / 60.0)).is_true()
 	for i in 600:
-		if not cow.fall.step(1.0 / 60.0) and cow.fall.resting:
+		if not landed.is_empty():
 			break
+		cow.fall.step(1.0 / 60.0)
+	for i in 30:   # resting stays resting: no second touchdown, no roll
+		assert_bool(cow.fall.step(1.0 / 60.0)).is_false()
 	assert_bool(cow.fall.resting).is_true()
-	assert_float(cow.position.length()).is_less(top - 60.0)
+	assert_bool(cow.fall.supported_at(cow.position)).is_true()
+	assert_float(cow.position.length()).is_between(top - 6.0 * 16.0, top - 4.0 * 16.0)
+	assert_float(cow.position.normalized().dot(up)).is_greater(0.9999)   # straight down
+	assert_int(landed.size()).override_failure_message("landings %s" % [landed]).is_equal(1)
 	assert_bool(cow.broken).is_false()   # it lands, it is not hurt
