@@ -1,39 +1,78 @@
-# Audio hooks lane report (feature/worm-audio-hooks-1)
+# Deep rock lane report (feature/worm-deep-rock-1, 2026-11-12)
 
-PLAN-STATUS IDs moved: **U-09, U-11, U-14** → built. No new audio, no ElevenLabs, no music (U-12 untouched).
+## Rows moved
+- **W-03** partial -> **built**: the deep rock runs in play (rock beetles live, ore nuggets live,
+  fossils scattered and regrowing, nugget and fossil have their own looks).
+- **W-02** stays **partial** (notes updated): the lava blob now has a body and bounces, but
+  `live_max` is still 0 so it never appears in play. That is the one thing left (see follow-ups).
 
-## What changed
-
-| ID | Where | What |
-| --- | --- | --- |
-| U-09 `breakthrough` | none (already wired) | `CrustBurst._burst()` (`scripts/gameplay/crust_burst.gd`) already called `Audio.play("breakthrough")`; PLAN-STATUS was out of date. I only added a test that the call resolves to the real `breakthrough.ogg` and fires once per worm per tin. |
-| U-11 `space_drift` | `scripts/space/space_stage.gd` (+15 lines) | `drift_bed = Audio.loop_player("space_drift")` at `DRIFT_DB = -4.0`, `autoplay` on, added as a child in `_ready`; `_exit_tree` stops it. So it plays whenever the space stage is in the tree and stops when the stage leaves. |
-| U-14 ring beds | new `scripts/audio/ring_ambience.gd`; one node added to `scenes/levels/planet.tscn` | `RingAmbience` finds the level's `world` and the lowest-numbered worm in the level, reads which ring the head is in (`RingDef.id`) and plays `amb_<id>` at `LEVEL_DB = -6.0` (constant at the top of the file). When the ring changes, the old bed fades out and the new one fades in over `FADE = 1.5` s, at the same time. Above `SkyLife.inner` (1.03 x planet radius) the id is `sky`. If an id has no `amb_<id>.ogg` it plays nothing: no placeholder beep, no warning. All beds fade out while the chomp shot or space is on screen (`level.chomp.busy()`). |
-
-Contract: `docs/contracts.md` → `### Audio hooks (worm-audio-hooks-1)` (appended).
-
-## Each cue: what the tests prove, what a human still has to hear
-
-| Cue | Test proved (`tests/test_audio_hooks.gd`) | Still needs a listen on the TV |
-| --- | --- | --- |
-| `breakthrough` | The first crust bite at stage 5 adds 1 to `Audio.played["breakthrough"]`, and exactly one pool player holds `breakthrough.ogg` (the file, not the grey beep). Two more crust bites add nothing. Reloading the tin plays no second one (`test_stages_crust`). | Whether the crumble and birds land with the flash and debris, and whether it's loud enough over the bite cue (`burst`) that plays in the same frame. |
-| `space_drift` | When the space stage enters the tree, `DriftBed` is playing `space_drift.ogg` with `loop = true` at `DRIFT_DB`. Still playing a frame later. `remove_child` stops it, adding the stage back starts it again. A planet level never has a player on `space_drift.ogg`. | Level against `warp` and the space cues (`DRIFT_DB` -4 dB on a -28 LUFS file); whether the 16 s loop seam can be heard; whether it should fade in after the warp instead of starting at full level. |
-| `amb_dirt`, `amb_topsoil`, `amb_deep_rock`, `amb_core`, `amb_surface` | Every ring in `data/rings/rings.tres` has a bed file. A bed starts silent and fades up to exactly `LEVEL_DB` (below 0 dB). On a ring change, halfway through the fade both beds are playing, one going down and one going up. After the fade the old bed has stopped, and going back brings it back. On the real planet, a few frames after spawn the playing bed is the head's ring. `ring_id_at` returns dirt, topsoil and deep_rock for cells in those rings, and `sky` above the grass. When the worm is removed, the bed fades out and stops. | Whether -6 dB feels "under the music" (there is no music yet, U-12). Whether a 1.5 s crossfade is too slow or fast when a worm bobs along a ring border; if it flutters, add hysteresis. Whether the beds suit the rings. |
-| unknown id / `sky` | `follow(&"no_such_ring")` and `follow(&"sky")` make no player, fade the old bed out, and play no placeholder beep (`Audio.played` stays empty). | Flying up into the sky goes quiet (the wind stops), since there is no `amb_sky`. Decide whether that's right (see follow-ups). |
-
-## Choices made
-
-- **Which worm in co-op:** the bed follows P1's head (or the lowest player present). Only one bed plays at a time, so two players in different rings don't mix two beds. Change `followed()` to follow the camera centre if Kaden prefers that.
-- **Bus:** the beds and the drift are on the SFX bus, so the sound slider controls them, not the music slider.
-- **Sky:** it follows the brief's rule, so it stays silent until an `amb_sky.ogg` exists. The other option is to alias the sky to `amb_surface` (wind).
-- The node is in `scenes/levels/planet.tscn`, not `planet_level.gd` (`scripts/planet/` is off-limits). It finds `world` and `chomp` itself through `get_parent()`.
-
-## Follow-ups for other lanes
-
-- **Audio lane:** `assets/audio/CUES.md` still says `space_drift` has "no call site yet", and that the `amb_*` beds play when the camera is in a ring. Update both to `SpaceStage.drift_bed` and `RingAmbience` (it follows the head). Also an `amb_sky.ogg` if the sky should have its own bed.
-- **Space lane:** the prototype `SpaceLevel` (`scripts/space/space.gd`, `scenes/levels/space.tscn`, used by `planet_chomp.gd`) does not play `space_drift`. If that path is still live, add the same three lines there.
-- **Music (U-12):** when layered music lands, recheck `LEVEL_DB` and `DRIFT_DB` against it.
+## What was built
+1. **Rock beetle body.** `scenes/creatures/rock_beetle.tscn` (the shared `Creature`, drawn with the
+   beetle placeholder in the data's grey shell and gold spot). `deep_rock_life.tres` points
+   `rock_beetle.live` at it with `live_scale 0.5`, `live_max 3`. **These two numbers are mine:** the
+   data said `live_max 0` (no body), so there was no number to reuse; I took the dirt beetle's shape
+   (a few bodies near the worm, start 6 -> 3 live). Tune them freely; the counter chain is unchanged
+   and `test_thinning_rock_beetles_lets_ore_nuggets_build_up` stays green. Eating a live beetle thins
+   the counter (tested). Also in `creature.gd`: a TRUNDLE creature that goes straight into its wind-up
+   (worm already inside strike range) now turns to face the worm first; before, it could wind up
+   and lunge facing away (seen in the first frames).
+2. **Deep rock life in `RingsDirector.LIVES`** (that line only). 5 fossils are scattered in the deep
+   rock and grow back where they were (`regrow_time` 600); ore nuggets come live from their counter.
+   Side effect, same as when the core joined: fossils go into the static list before the picnic
+   crumbs, sky and apples, so in an **old tin** those later slots shift (they start uneaten; the
+   slot-id check already guards this) and their scattered positions move once.
+3. **Nugget and fossil looks**, `RingFood.Look.NUGGET` / `FOSSIL`, drawn in code in
+   `scripts/rings/ring_pickup.gd`. **These are placeholders** (no new art; held until Kaden picks the
+   Worm art direction). Nugget: a lumpy gold 8-point rock with a pale facet and a twinkling glint.
+   Fossil: a cream disc with a ribbed rim and a curled spiral shell. Both keep the usual face.
+4. **Lava blob body and bounce (W-02).** `CreatureData.Behaviour.BOUNCE` (appended, index 6),
+   `CreatureData.bounce` (px), `scenes/creatures/lava_blob.tscn` (code-drawn wobbling lava drop with
+   rising bubbles and a glow). For a smaller worm (stage <= 5):
+   - the telegraph: within 48 px it swells 12% and plays `lava_blob_swell`;
+   - contact (head within radius + 14 px): it squashes flat toward the worm, a white burst at the
+     contact point, `boing`, and the worm's head is pushed straight away 80 px over 0.45 s. The worm
+     keeps its stick the whole time (the push is added to the head; heading untouched). 0.8 s
+     cooldown per worm so holding against it is a slow boing-boing, not a buzz;
+   - a worm bonking it also gets the existing smug squint and its bark `lava_blob_blorp` (worm code,
+     unchanged).
+   A stage-6 worm is never bounced; it eats the blob (tested). `core_life.tres` now points
+   `lava_blob.live` at the scene, **`live_max` stays 0**, so lava blobs still never spawn.
 
 ## Tests
+- New `tests/test_deep_rock.gd` (11 cases, runs in its own `SuiteSandbox` profile).
+- `tests/test_rings_content.gd`: three "no scene yet" assertions now expect the scenes; the lava blob
+  is BOUNCE with `bounce > 0`.
+- Full suite after `rm -rf .godot; godot --headless --path . --import`: see
+  `handoff/test-output.txt` (465 test cases, 0 errors, 0 failures on three runs; the third overlapped
+  the second and two other lanes' gdUnit runs).
 
-See `handoff/test-output.txt`. The build box sometimes aborts at exit after "Exit code: 0" (known); read the Overall Summary line.
+## Frames
+`handoff/shots/deep-rock/` (scratch scene `.scratch/deep_rock_shot/shot.tscn`, no planet, camera
+zoom 4 so the shapes read; looked at all four):
+- `t000.3s`: left, the rock beetle (grey shell, gold spot) beside a stage-3 worm, the nugget and the
+  fossil below; right, a stage-5 worm driving into the lava blob.
+- `t001.0s`: the beetle has turned to the worm and is swelling (wind-up); the worm has been
+  bounced back off the blob, which squints smug.
+- `t001.6s`: the beetle lunges and gulps the small worm; the blob is squashed flat with the white
+  burst at the contact point as the worm comes back in.
+- `t002.0s`: the beetle mid-gulp (the worm a bulge in it); the blob back to round.
+
+## What I could not check
+- **Not seen on a real planet.** The frames are a scratch scene without `PolarWorld` (no rotation,
+  no rock). In play the knock moves the worm's head directly (the lawnmower does the same), so a
+  bounce could push the head a few px into solid core rock; I could not see how the worm handles
+  that there. Only matters once lava blobs spawn.
+- Not seen on the TV or with a controller; frame rate on the software renderer means nothing.
+- K-01 size check passes for both creatures (`test_kid_checks`), but the swell (+12%) and squash
+  were not checked against a stage-5 head on screen in play.
+- Saves: the brief asked for `.scratch/` save paths; `Save` (systems lane, not mine) only writes to
+  `user://saves/<profile>.json`, so the suite uses the standard `SuiteSandbox` profile
+  `gdunit_deep_rock` instead (never the family's tin). The frames write no save.
+
+## Follow-ups (not mine)
+- **Gary (design): spawn lava blobs?** One number: `data/rings/core_life.tres` `lava_blob`
+  `live_scale` / `live_max` (the counter sits at 4-10; e.g. `live_scale 0.3`, `live_max 2` gives
+  1-2 near a stage-5 worm in the core). Then check a real-planet frame for the head-into-rock push
+  above, and mark W-02 built.
+- Art lane: replace the NUGGET / FOSSIL / lava blob / rock beetle placeholders once the Worm art
+  direction is picked.

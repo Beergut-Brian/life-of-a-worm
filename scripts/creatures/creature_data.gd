@@ -5,7 +5,9 @@ class_name CreatureData
 extends FoodData
 
 ## WAVE: a wavy chaser that gives up fast (CentipedeData, scripts/creatures/centipede.gd).
-enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE }
+## BOUNCE: wobbles in place and bounces a smaller worm off on contact (a squash, a push, a boing);
+## never chases, never bites (the lava blob, W-02).
+enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE, BOUNCE }
 
 @export var behaviour := Behaviour.WIGGLE
 ## The ring it lives in (RingDef.id).
@@ -31,6 +33,8 @@ enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE }
 ## A Jarling (a library character met in the world): never food, never a threat, drawn with the
 ## soft "friend" outline. Every other creature becomes food once the worm outgrows it.
 @export var jarling := false
+## BOUNCE: px a smaller worm's head is pushed away on contact (over about 0.45 s).
+@export var bounce := 0.0
 
 
 func telegraph_time() -> float:
