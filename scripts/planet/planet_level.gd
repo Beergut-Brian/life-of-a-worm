@@ -50,6 +50,8 @@ var chomp: ChompDirector
 ## The home half of the vertical slice (scripts/burrow/home_slice.gd): trophies, pets, tackle box,
 ## the Mole's swap shop and their hints.
 var home_slice: HomeSlice
+## The layered theme: one layer per stage (U-12).
+var music: MusicLayers  # made in _ready, so a level that never enters the tree leaks nothing
 var actors: Node2D
 var foods_root: Node2D
 var planet_seed := 4
@@ -160,6 +162,8 @@ func _ready() -> void:
 	Game.state_changed.connect(func(_f: int, to: int) -> void:
 		if to == Game.State.PAUSED:
 			save_now())
+	music = MusicLayers.new()
+	add_child(music)
 	_tunnel = Audio.loop_player("tunnel")
 	_tunnel.volume_db = -60.0
 	add_child(_tunnel)
@@ -369,6 +373,7 @@ func max_stage() -> int:
 
 func _physics_process(delta: float) -> void:
 	played += delta
+	music.set_stage(MusicLayers.LAYERS if ChompDirector.eaten() else max_stage())
 	if chomp and chomp.busy():
 		# the planet shot or space owns the screen; the disk waits, and the tin still autosaves
 		_tunnel_step(false, delta)

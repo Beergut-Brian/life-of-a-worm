@@ -125,8 +125,11 @@ func _on_round_started(_round: int) -> void:
 ## The dock picked tin i: open its planet (an empty tin is a new planet).
 func open_tin(i: int) -> void:
 	tin = i
+	var fresh := BaitTins.summary(i).is_empty()
 	BaitTins.open(i)
 	_open_level()
+	if fresh and not template_only:
+		OpeningHook.start(level)   # Y-01: a new planet starts on Old Reel's opening
 
 
 func _open_level() -> void:

@@ -23,7 +23,8 @@ static func open_demo() -> void:
 
 
 ## What the dock shows for tin i without opening it: {} = an empty tin (a new planet), else
-## { stage, segments, minutes, worms }.
+## { stage, segments, minutes, worms, bodies }. `bodies` is the picture on the tin, one per worm in
+## player order: { player, stage, segments: [flavour id per segment, "" = plain] }.
 static func summary(i: int) -> Dictionary:
 	var path := Save.path_for(slot_name(i))
 	if not FileAccess.file_exists(path):
@@ -33,7 +34,13 @@ static func summary(i: int) -> Dictionary:
 		return {}
 	var worms: Dictionary = parsed.get("worms", {})
 	var segs := 0
+	var bodies: Array[Dictionary] = []
 	for k in worms:
-		segs = maxi(segs, (worms[k].get("segments", []) as Array).size())
+		var w: Dictionary = worms[k] if worms[k] is Dictionary else {}
+		var list: Array = w.get("segments", [])
+		segs = maxi(segs, list.size())
+		bodies.append({ "player": int(k), "stage": int(w.get("stage", 1)),
+			"segments": list.map(func(f): return String(f)) })
+	bodies.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.player < b.player)
 	return { "stage": int(parsed.get("stage", 1)), "segments": segs,
-		"minutes": int(float(parsed.get("played", 0.0)) / 60.0), "worms": worms.size() }
+		"minutes": int(float(parsed.get("played", 0.0)) / 60.0), "worms": worms.size(), "bodies": bodies }

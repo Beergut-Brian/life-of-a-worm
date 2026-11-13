@@ -777,7 +777,8 @@ func swell(amount: float) -> void:
 	_ring_fx(Players.COLOR[player])
 	for i in _seg_nodes.size():
 		var node := _seg_nodes[i]
-		var tw := create_tween()
+		# Bound to the segment: a segment freed mid-swell (eaten, rebuilt) takes its tween with it.
+		var tw := node.create_tween()
 		tw.tween_interval(0.035 * i)
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.0, 1.0 + (amount - 1.0) * 0.6, 0.1)
 		tw.tween_method(func(v: float) -> void: node.set_meta("pop", v), 1.0 + (amount - 1.0) * 0.6, 1.0, 0.25).set_trans(Tween.TRANS_BACK)
