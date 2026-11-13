@@ -110,6 +110,11 @@ grown round the worm).
 carried one is taken (`scripts/burrow/burrow.gd:203-210`, then `:218` `food.call("take")`). Only
 the resident pet's hello shows. Nothing shows the newcomer "back to the wild", as the comment
 says. The fix needs a small run-off animation (Gameplay plus Art), so it is more than one line.
+**Fixed (worm-gap-close-34):** the newcomer is shown going: `Burrow.bring` adds a `PetFarewell`
+(`scripts/pets/pet_farewell.gd`, code-drawn with `PetLook`, no new art) at the mouth, which rises
+out of the room away from the core with a heart over it, plays `pet_away` (the ladybird's leaving
+cue) and fades out in 1.6 s; the resident still says hello. It is not a pet (not counted, not
+saved). `Burrow.pet_waved_off` reports it. `tests/test_pet_farewell.gd` (4 cases).
 
 **N6 (note): a damaged or unwritable tin is silent.** At `scripts/autoload/Save.gd:130`
 (`_data = parsed if parsed is Dictionary else {}`), a corrupt file reads as empty. The dock then
@@ -117,6 +122,12 @@ shows that tin as a new planet (`scripts/planet/bait_tins.gd:32-33` returns `{}`
 writes over it. A failed write only logs a warning (`Save.gd:57`). This is rare, but it is the one
 place play can lose progress unseen. The fix (keep the unreadable file as `.bak`, show the tin as
 damaged) is a few lines in a Systems autoload.
+**Fixed (worm-gap-close-34), keep half:** `Save._load` moves a file it cannot read to
+`<file>.bak` (then `.bak2`, ...) before any autosave can write over it, warns, sets
+`Save.last_backup` and emits `Save.damaged(path)`; the tin opens as a new planet. `Save.flush` now
+writes a side file (`.tmp`) and swaps it in whole, so a write stopped halfway leaves the last good
+tin. `tests/test_save_damaged.gd` (4 cases). Still open: the dock does not draw a damaged tin
+(`scripts/planet/dock.gd` is changed on unmerged `feature/worm-jar-2`).
 
 **N7 (note): a jar failure says "yes" and then does nothing.** `scripts/chomp/planet_chomp.gd:240-245`
 plays `confirm_yes` before it tries `jars.snapshot()`. If that fails, the ring quietly resets with
@@ -133,6 +144,11 @@ already tracks this (the jar shelf on the dock), so it is a bigger build.
 `scripts/planet/planet_level.gd:338-347` (`remove_worm`, called from `scenes/main.gd`), the worm is
 simply freed. The fix is a cue plus a puff: one or two lines, but in `planet_level.gd`, which other
 branches are editing (see N4). Owner: Systems.
+**Fixed (worm-gap-close-34):** without touching `planet_level.gd`: `DropOutPuff`
+(`scripts/gameplay/drop_out_puff.gd`, a worm.tscn child) listens to `Players.player_left` and, for
+its own worm, opens a ring in the slot colour with specks where the head was (a sibling in the
+level, so it outlives the worm, 0.9 s) and plays `warp`, whichever of it and `remove_worm` runs
+first. `tests/test_drop_out_puff.gd` (3 cases). Space worms (`SpaceDropIn`) are not covered.
 
 ## Checked and passed (looked like a "no")
 

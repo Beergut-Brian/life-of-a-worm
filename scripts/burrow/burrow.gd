@@ -24,6 +24,8 @@ extends Node2D
 
 signal home_set(player: int, at: Vector2)
 signal brought_home(player: int, what: StringName, kind: StringName)   # trophy | seed | pet
+## A pet carried home whose kind already lives here went back to the wild (a PetFarewell flies off).
+signal pet_waved_off(id: StringName)
 ## The family bonus changed (stat -> add); HomeSlice applies it to every worm.
 signal bonus_changed(bonus: Dictionary)
 ## The room grew (a stage-up).
@@ -208,6 +210,7 @@ func bring(w: Worm, food: Node2D) -> StringName:
 				p.meet_t = Pet.MEET_SECS * 0.5
 				break
 		Audio.play("pet_hello")
+		_wave_off(pid, food)
 	elif data.id == &"seed" and world and _plant(data.flavour):
 		kind = &"seed"
 		Audio.play("home_seed")
@@ -376,6 +379,17 @@ func add_pet(id: StringName, t := 0.0) -> Node2D:
 	pets.append(p)
 	add_child(p)
 	return p
+
+
+## The newcomer of a kind that already lives here flies back out (PetFarewell, kid-check N5).
+func _wave_off(id: StringName, food: Node2D) -> void:
+	var path := PETS % id
+	if not ResourceLoader.exists(path):
+		return
+	var at := to_local(food.global_position) if food.is_inside_tree() and is_inside_tree() else food.position
+	var f := PetFarewell.make(load(path), at, home if home.length() > 0.01 else at)
+	add_child(f)
+	pet_waved_off.emit(id)
 
 
 func pet_count(id: StringName) -> int:
