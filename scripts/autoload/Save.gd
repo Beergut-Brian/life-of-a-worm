@@ -128,6 +128,14 @@ func wipe() -> void:
 	flush()
 
 
+## The open save, replaced whole and written now (tests start with Save.replace({}) on their own
+## profile; a restore can hand it a backup's contents).
+func replace(d: Dictionary) -> void:
+	_data = d.duplicate(true)
+	_dirty = true
+	flush()
+
+
 func _path() -> String:
 	return path_for(slot)
 
