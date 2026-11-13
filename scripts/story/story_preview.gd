@@ -1,5 +1,6 @@
 ## Plays one dock scene on its own, for frames and for Kaden: a grey stand-in for the game behind a
-## Story node. Args after `--`: --story=<id> (default opening), --speed=<x>, --no-quit.
+## Story node. Args after `--`: --story=<id> (default opening), --speed=<x>, --no-quit,
+## --subtitles (show the lines' scripts; off by default, as in the game).
 ##   godot --path . res://scenes/story/story_preview.tscn -- --story=stage_4
 ##   scripts/tools/shots.sh res://scenes/story/story_preview.tscn 4,14,24,40 .scratch/shots --story=opening
 extends Node
@@ -21,6 +22,8 @@ func _ready() -> void:
 		elif a == "--no-quit" or a.begins_with("--shots="):
 			quit_at_end = false
 	add_child(story)
+	if OS.get_cmdline_user_args().has("--subtitles"):
+		story.subtitles = true
 	story.finished.connect(_on_finished)
 	story.handoff.connect(func(sid: StringName, what: String) -> void: print("story: handoff %s %s" % [sid, what]))
 	_t0 = Time.get_ticks_msec()
