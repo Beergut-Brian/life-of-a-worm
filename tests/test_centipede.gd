@@ -290,9 +290,13 @@ func test_the_first_give_up_leans_the_camera_in_once() -> void:
 
 func test_it_never_moves_the_worm_on_its_own() -> void:
 	# a chased worm holding its gap, a missed lunge, a give-up and the sulk: the head stays put
-	var w := _worm(Vector2.ZERO, 1)
-	var c := _centipede(Vector2(120, 0))
+	# The worm starts well inside `notice` so the chase begins on the first step. (It used to start
+	# exactly `notice` away; `prey_d < notice` is strict, so the centipede idled and wandered to a
+	# randf() point, and whether it ever came close enough depended on the global RNG.)
 	var at := Vector2(-40, 0)
+	var w := _worm(Vector2.ZERO, 1)
+	w.head.global_position = at
+	var c := _centipede(at + Vector2(_cd().notice - 40.0, 0))
 	var eaten := [0]
 	w.eaten_by.connect(func(_p: int, _who: StringName) -> void: eaten[0] += 1)
 	var saw := {}
@@ -301,11 +305,14 @@ func test_it_never_moves_the_worm_on_its_own() -> void:
 			at = c.global_position + Vector2(-260, 0)   # the kid dodges the lunge
 		w.head.global_position = at
 		c.step(DT)
+		if i == 0:
+			assert_int(c.mode).is_equal(Creature.Mode.STALK)   # no wander, no dice
 		saw[c.mode] = true
 		assert_vector(w.head.global_position).is_equal(at)
 	assert_int(eaten[0]).is_equal(0)
 	assert_bool(saw.has(Creature.Mode.WINDUP)).is_true()
 	assert_bool(saw.has(Creature.Mode.GIVE_UP)).is_true()
+	assert_int(c.give_ups).is_greater_equal(1)   # counted per give_up() call, not per sampled frame
 	# a worm its own size and a bigger one sitting right on it are never pushed either
 	for stage in [3, 4]:
 		var big := _worm(Vector2(stage * 4000, 0), stage)

@@ -78,10 +78,11 @@ func test_lava_blob_is_harmless_core_threat() -> void:
 	var c := _creature("lava_blob")
 	assert_str(String(c.id)).is_equal("lava_blob")
 	assert_str(String(c.ring)).is_equal("core")
-	# Bounces every worm that can get into the core (stage 5), food once the worm is stage 6.
-	assert_int(c.size_stage).is_equal(6)
-	assert_bool(c.is_threat_to(5)).is_true()
-	assert_bool(c.is_threat_to(6)).is_false()
+	# Edible from stage 5 like the other core foods (feature/worm-lava-blob-1); bounces the
+	# smaller worms that dig down to the core's rim.
+	assert_int(c.size_stage).is_equal(5)
+	assert_bool(c.is_threat_to(4)).is_true()
+	assert_bool(c.is_threat_to(5)).is_false()
 	# No damage, never steers: BOUNCE never lunges or eats a worm, and it never notices one; it
 	# only knocks a smaller worm back on contact (tests/test_deep_rock.gd).
 	assert_int(c.behaviour).is_equal(CreatureData.Behaviour.BOUNCE)
@@ -104,10 +105,10 @@ func test_core_life_chain() -> void:
 	assert_array(ids).contains_exactly(["core_crystal", "lava_blob"])
 	assert_str(l.species[0].live).is_equal("res://data/foods/core_crystal.tres")
 	assert_bool(ResourceLoader.exists(l.species[0].live)).is_true()
-	# The lava blob has a body now (deep-rock-1) but live_max stays 0: counted, never spawned live
-	# until Gary decides to spawn them.
+	# The lava blob has a body (deep-rock-1) and spawns live (lava-blob-1).
 	assert_str(l.species[1].live).is_equal("res://scenes/creatures/lava_blob.tscn")
-	assert_int(l.species[1].live_max).is_equal(0)
+	assert_int(l.species[1].live_max).is_greater(0)
+	assert_float(l.species[1].live_scale).is_greater(0.0)
 	assert_int(l.scatter_count).is_greater(0)
 	for f in l.scatter:
 		assert_str(String(f.ring)).is_equal("core")

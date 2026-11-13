@@ -112,9 +112,13 @@ func test_the_director_counts_the_sky_and_scatters_it_in_its_band() -> void:
 		assert_str(String(_dir.ecology.ring_of(r.id))).is_equal("sky")
 	assert_vector(_dir.ring_band(&"sky")).is_equal(Vector2(sky.inner, sky.outer))
 	var in_sky := 0
+	var secret_foods := {}
+	for sd in RingsDirector.SECRETS:
+		secret_foods[sd.food] = true
 	for s in _dir._statics:
 		if (s.food as RingFood).ring == &"sky":
-			in_sky += 1
+			if not secret_foods.has(s.food.id):   # the cloud nest's rainbow drops are its own
+				in_sky += 1
 			var d := _dir.depth_of(s.node.position)
 			assert_float(d).is_between(sky.inner, sky.outer)
 			# nothing in the sky sits in tiles: it is air

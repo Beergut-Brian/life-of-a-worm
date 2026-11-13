@@ -3,6 +3,8 @@
 [ext_resource type="Script" path="res://scripts/rings/ring_life.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
+[ext_resource type="Resource" path="res://data/foods/droplet.tres" id="f0"]
+[ext_resource type="Resource" path="res://data/foods/bottle_cap.tres" id="f1"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -65,5 +67,5 @@ depth_max = 0.0
 script = ExtResource("1")
 ring = &"topsoil"
 species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2")])
-scatter = Array[ExtResource("3")]([])
-scatter_count = 0
+scatter = Array[ExtResource("3")]([ExtResource("f0"), ExtResource("f1")])
+scatter_count = 4

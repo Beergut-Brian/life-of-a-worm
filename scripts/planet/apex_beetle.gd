@@ -1,4 +1,4 @@
-## The dirt ring's apex creature, grey-box placeholder: a big round beetle. To a worm that has not
+## A ring's apex creature, grey-box placeholder (the dirt beetle first, one per ring: see `look`). To a worm that has not
 ## grown to its size it is a threat: it trundles closer, the `threat_near` rumble plays once, then it
 ## winds up for a full second (swells, shakes, jaws open, `beetle_windup`) before it lunges. A worm
 ## it catches pops out of its far end one segment shorter and dizzy; then it is full and dozes.
@@ -23,6 +23,15 @@ const NOTICE := 260.0       # px: "within a screen" at stage-1 zoom
 const STRIKE := 46.0        # px: starts the wind-up
 const BITE := 16.0          # px added to the radius: a lunge that reaches the head eats it
 const WANDER_RANGE := 120.0
+## The ring apexes below the slice's two (L-03), one per ring the worm opens, deepest last. Each is
+## eaten at the size it gates (size), tunnels the rings a stage-`ring` mouth can (ring), and lives
+## `at` tiles from the spawn (x to the right, y up: negative is toward the core), on the way down:
+## the cricket deep in the dirt above the rock, the pill bug in the deep rock, the newt in the core.
+const DEEP: Array[Dictionary] = [
+	{ "name": "CricketApex", "ring": 3, "size": 4, "r": 19.0, "look": &"cricket", "at": Vector2(18, -70) },
+	{ "name": "PillbugApex", "ring": 4, "size": 5, "r": 21.0, "look": &"pillbug", "at": Vector2(-12, -140) },
+	{ "name": "EmberApex", "ring": 5, "size": 6, "r": 23.0, "look": &"ember", "at": Vector2(8, -200) },
+]
 
 @export var id := &"apex_beetle"
 ## Bigger eats smaller: a stage-1 worm is smaller; a worm grown to 2 eats it.
@@ -30,7 +39,12 @@ const WANDER_RANGE := 120.0
 ## The ring stage whose apex this is (eating it opens size_stage).
 @export var ring_stage := 1
 @export var radius := 15.0
-## How it is drawn: &"dirt" (round purple beetle) or &"topsoil" (green stag beetle with a horn).
+## How it is drawn (one look per ring apex, code-drawn placeholders):
+##  &"dirt"     round purple beetle (stage 1 -> 2)
+##  &"topsoil"  bronze stag beetle with a horn (2 -> 3)
+##  &"cricket"  rust digger cricket with shovel claws, deep in the dirt (3 -> 4)
+##  &"pillbug"  slate-blue banded pill bug in the deep rock (4 -> 5)
+##  &"ember"    orange ember newt with teal spots and frilly gills in the core (5 -> 6)
 @export var look := &"dirt"
 var world: PolarWorld
 var home := Vector2.ZERO
@@ -214,19 +228,20 @@ func _draw() -> void:
 		swell = 1.15
 	draw_set_transform(jitter, facing.angle(), Vector2.ONE * swell)
 	var stag := look == &"topsoil"
-	var shell := Color("c9b8ff") if food else Color("3b2d63")
-	if stag:
-		shell = Color("ffe9a0") if food else Color("9a4a12")   # bronze on the green topsoil
+	var shell := shell_color(look, food)
 	var rim := Color("2a1a14")
-	# Legs (three a side), walking.
-	for i in 3:
-		var x := (i - 1) * r * 0.6
+	_draw_back(r, rim, shell, food)
+	# Legs (three a side, seven short ones on the pill bug), walking.
+	var legs := 7 if look == &"pillbug" else 3
+	for i in legs:
+		var x := (float(i) / maxf(1.0, legs - 1) - 0.5) * r * 1.2
 		var wob := sin(_anim * 2.0 + i * 2.1) * r * 0.15
+		var reach := 1.05 if look == &"pillbug" else 1.25
 		for sgn in [-1.0, 1.0]:
-			draw_line(Vector2(x, sgn * r * 0.6), Vector2(x + wob, sgn * r * 1.25), rim, 3.0)
+			draw_line(Vector2(x, sgn * r * 0.6), Vector2(x + wob, sgn * r * reach), rim, 3.0)
 	draw_circle(Vector2.ZERO, r + 2.0, rim)
 	draw_circle(Vector2.ZERO, r, shell)
-	draw_line(Vector2(-r, 0), Vector2(r * 0.4, 0), rim, 2.0)   # wing seam
+	_draw_shell(r, rim, shell, food)
 	draw_circle(Vector2(-r * 0.3, -r * 0.35), r * 0.25, shell.lightened(0.35))   # shine
 	# Head with eyes: smug half-lids as a threat, wide eyes as food.
 	var hc := Vector2(r * 0.95, 0)
@@ -236,6 +251,7 @@ func _draw() -> void:
 		draw_line(hc + Vector2(r * 0.2, -r * 0.3), tip, rim, 6.0)
 		draw_line(hc + Vector2(r * 0.2, -r * 0.3), tip, Color("c98a3a"), 3.0)
 		draw_circle(tip, 3.0, Color("c98a3a"))
+	_draw_head_extras(hc, r, rim, food)
 	draw_circle(hc, r * 0.55 + 2.0, rim)
 	draw_circle(hc, r * 0.55, shell.darkened(0.2))
 	for sgn in [-1.0, 1.0]:
@@ -262,6 +278,90 @@ func _draw() -> void:
 	if food:
 		# Sweat drops: it knows.
 		draw_circle(Vector2(0, -r * 1.5) + Vector2(sin(_t * 9.0) * 2.0, 0), 2.5, Color("7fd6ff"))
+
+
+## The shell colour of a look: dark and saturated as a threat, pale as food (it knows).
+static func shell_color(l: StringName, food: bool) -> Color:
+	match l:
+		&"topsoil":
+			return Color("ffe9a0") if food else Color("9a4a12")   # bronze on the green topsoil
+		&"cricket":
+			return Color("ffd9b0") if food else Color("b4511f")   # rust on the brown dirt
+		&"pillbug":
+			return Color("d8e8ff") if food else Color("4a6890")   # slate blue on the grey rock
+		&"ember":
+			return Color("ffe2c4") if food else Color("e0461c")   # hot orange in the core
+	return Color("c9b8ff") if food else Color("3b2d63")
+
+
+## Behind the body: the cricket's big hind legs, the newt's tail.
+func _draw_back(r: float, rim: Color, shell: Color, _food: bool) -> void:
+	match look:
+		&"cricket":
+			for sgn in [-1.0, 1.0]:
+				var knee := Vector2(-r * 0.2, sgn * r * 1.35)
+				var foot := Vector2(-r * 1.4 + sin(_anim * 2.0) * r * 0.1, sgn * r * 1.0)
+				draw_line(Vector2(-r * 0.3, sgn * r * 0.5), knee, rim, 8.0)
+				draw_line(Vector2(-r * 0.3, sgn * r * 0.5), knee, shell.lightened(0.15), 5.0)
+				draw_line(knee, foot, rim, 4.0)
+				draw_line(knee, foot, shell.lightened(0.3), 2.0)
+		&"ember":
+			var sway := sin(_anim * 1.5) * r * 0.35
+			var tail := PackedVector2Array([Vector2(-r * 0.6, -r * 0.45), Vector2(-r * 2.2, sway),
+				Vector2(-r * 0.6, r * 0.45)])
+			draw_colored_polygon(tail, rim)
+			var inner := PackedVector2Array([Vector2(-r * 0.6, -r * 0.3), Vector2(-r * 2.0, sway),
+				Vector2(-r * 0.6, r * 0.3)])
+			draw_colored_polygon(inner, shell)
+
+
+## On the shell: the wing seam (beetles), bands (pill bug), stripes (cricket), spots (newt).
+func _draw_shell(r: float, rim: Color, shell: Color, food: bool) -> void:
+	match look:
+		&"pillbug":
+			for i in 4:
+				var x := -r * 0.75 + i * r * 0.45
+				var h := sqrt(maxf(0.0, r * r - x * x))
+				draw_line(Vector2(x, -h), Vector2(x, h), rim, 2.0)
+		&"cricket":
+			draw_line(Vector2(-r, 0), Vector2(r * 0.4, 0), rim, 2.0)
+			for sgn in [-1.0, 1.0]:
+				draw_line(Vector2(-r * 0.8, sgn * r * 0.45), Vector2(r * 0.2, sgn * r * 0.3), shell.darkened(0.3), 2.0)
+		&"ember":
+			var spot := Color("7ff0d8") if not food else Color("bff8ee")
+			for p in [Vector2(-r * 0.4, -r * 0.4), Vector2(0.1 * r, r * 0.45), Vector2(-r * 0.55, r * 0.25), Vector2(r * 0.2, -r * 0.35)]:
+				draw_circle(p, r * 0.14, spot)
+		_:
+			draw_line(Vector2(-r, 0), Vector2(r * 0.4, 0), rim, 2.0)   # wing seam
+
+
+## Round the head: the cricket's shovel claws and antennae, the newt's frilly gills.
+func _draw_head_extras(hc: Vector2, r: float, rim: Color, food: bool) -> void:
+	match look:
+		&"cricket":
+			var dig := sin(_anim * 3.0) * 0.25
+			for sgn in [-1.0, 1.0]:
+				# Antenna sweeping back over the body (droops when it is food).
+				var tip := hc + Vector2(-r * 1.6, sgn * r * (0.6 if food else 1.3))
+				draw_line(hc + Vector2(r * 0.2, sgn * r * 0.2), tip, rim, 3.0)
+				draw_line(hc + Vector2(r * 0.2, sgn * r * 0.2), tip, Color("e8a86a"), 1.5)
+				# Shovel claw: a broad paddle at each front corner.
+				var base := hc + Vector2(r * 0.1, sgn * r * 0.55)
+				var d := Vector2.from_angle(sgn * (0.5 + dig))
+				var side := d.orthogonal() * r * 0.28
+				var paddle := PackedVector2Array([base, base + d * r * 0.7 - side, base + d * r * 0.95, base + d * r * 0.7 + side])
+				draw_colored_polygon(paddle, rim)
+				var pin := PackedVector2Array([base + d * r * 0.15, base + d * r * 0.62 - side * 0.6, base + d * r * 0.8, base + d * r * 0.62 + side * 0.6])
+				draw_colored_polygon(pin, Color("d98c52"))
+		&"ember":
+			var frill := Color("ff9ccf")
+			for sgn in [-1.0, 1.0]:
+				for i in 3:
+					var a: float = sgn * (1.1 + i * 0.35) + sin(_anim * 2.0 + i) * 0.1
+					var from := hc + Vector2(-r * 0.15, sgn * r * 0.35)
+					var to := from + Vector2.from_angle(a + PI * 0.15 * -sgn) * r * 0.6
+					draw_line(from, to, rim, 4.0)
+					draw_line(from, to, frill, 2.0)
 
 
 func to_dict() -> Dictionary:
