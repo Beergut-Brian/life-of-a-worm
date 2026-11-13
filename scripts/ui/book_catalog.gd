@@ -5,7 +5,8 @@
 ##
 ## Sections and their sources:
 ##   foods      data/foods/*.tres        FoodData
-##   creatures  data/creatures/*.tres    CreatureData, and data/pets/*.tres (PetData; a pet is met too)
+##   creatures  data/creatures/*.tres    CreatureData, and data/pets/*.tres (PetData; a pet is met too),
+##              data/apexes/*.tres (the ring apexes, ApexBeetle) and data/jarlings/*.tres (the Mole)
 ##   traits     data/traits/*.tres       TraitData (worm_rules.tres is not one and is skipped)
 ##   secrets    data/secrets/*.tres      SecretData
 ##   cutscenes  data/cutscenes/*.json    {"id": ...}, in Story.SCENES order
@@ -17,7 +18,7 @@ extends RefCounted
 const SECTIONS: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes", &"planets"]
 const DIRS := {
 	&"foods": ["res://data/foods/"],
-	&"creatures": ["res://data/creatures/", "res://data/pets/"],
+	&"creatures": ["res://data/creatures/", "res://data/pets/", "res://data/apexes/", "res://data/jarlings/"],
 	&"traits": ["res://data/traits/"],
 	&"secrets": ["res://data/secrets/"],
 	&"cutscenes": ["res://data/cutscenes/"],

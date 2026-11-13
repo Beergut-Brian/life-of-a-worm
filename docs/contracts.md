@@ -1064,6 +1064,33 @@ the cue again, no ring. At work = the cue, a small ring, the part pops (throttle
 Cart riders emit `carried` when picked up and `dropped` when X is let go, like the mouth's thing.
 A listener that takes `Worm.carrying` (the burrow) gets the next rider in the mouth next frame.
 
+### Mayhem (worm-mayhem-1)
+
+`feature/worm-mayhem-1`, K-09. Eating a house, a cow or a car is cartoon mayhem. No hook in
+`scripts/world/`: `SurfaceProp.broke(prop, player, chunks)` already carries the kind (`prop.data.id`).
+
+```gdscript
+# Mayhem (scripts/mayhem/mayhem.gd): node "Mayhem" in scenes/levels/planet.tscn, after "Destruct"
+signal mayhem(kind: StringName, prop: SurfaceProp, burst: MayhemBurst)
+const KINDS := { &"house": {pop "mole_pop"}, &"cow": {pop "boop", squeak "grub_squeak"}, &"car": {pop "boing"} }
+var history: Array[Dictionary]            # {kind, key, cues} per eaten house / cow / car
+func watch(world: TileWorld) -> void      # hooks every SurfaceProp on the world, now and later
+static func is_mayhem(d: PropData) -> bool
+static func cues_for(kind) -> Array[String]       # pop, then the squeak (cow only)
+static func colours_of(d: PropData) -> Array[Color]   # tile + top tile (atlas average) + its marks
+#   On a house / cow / car `broke`: Audio.play each cue (existing files, CUES.md) and one MayhemBurst
+#   on the world at prop.centre(). Every other prop keeps the plain break. Nothing else is spawned.
+
+# MayhemBurst (scripts/mayhem/mayhem_burst.gd): Node2D on the world, code-drawn, no text
+var colours: Array[Color]; var pieces: int; var world: TileWorld; var spread: float
+func step(delta) -> bool                  # false once gone (LIFE 1.3 s); tests drive it
+#   A white pop ring (0.22 s), inked dots / squares / stars that fly out and up, fall with
+#   world.shape.gravity_at and rest on the first solid tile, fade, free.
+```
+
+The destruct lane's `prop_break` (still no file, grey beep) also plays on the same bite; the
+chunks still fall to the core with their LooseFall.
+
 ### Juice (worm-juice-1)
 
 `feature/worm-juice-1` (PLAN-STATUS A-14). `scripts/worm/juice.gd`, class `WormJuice` (static

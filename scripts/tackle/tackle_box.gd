@@ -15,6 +15,13 @@ signal closed()
 signal rewatch(id: StringName)
 
 const COLS := 5
+## Rows of sketches the paper holds; a longer page scrolls a row at a time with the cursor.
+const ROWS := 4
+## Paper layout: the first row's centre below the paper's top, and the row step (px). A doodle is
+## about 60 px round its centre, so four rows end inside the 720 px paper.
+const FIRST_ROW := 110.0
+const ROW_H := 165.0
+const PAPER_H := 720.0
 const PAPER := Color("f7efd9")
 const PENCIL := Color("4a3a30")
 const TIN := Color("3f6f5a")
@@ -280,7 +287,7 @@ func _tab_icon(c: Vector2, p: StringName, col: Color) -> void:
 
 
 func _draw_page() -> void:
-	var paper := Rect2(450, 262, 1180, 720)
+	var paper := Rect2(450, 262, 1180, PAPER_H)
 	var lift := _flip * 30.0
 	_root.draw_rect(Rect2(paper.position + Vector2(10, 10), paper.size), Color(0, 0, 0, 0.3))
 	_root.draw_rect(Rect2(paper.position - Vector2(0, lift), paper.size), PAPER)
@@ -291,9 +298,13 @@ func _draw_page() -> void:
 	var list := _list()
 	var p := page_id()
 	var cell := 216.0
+	var top := top_row()
 	for i in list.size():
+		var row := i / COLS
+		if row < top or row >= top + ROWS:
+			continue   # off the paper: the page scrolls to it when the cursor gets there
 		var cx := paper.position.x + 130 + (i % COLS) * cell
-		var cy := paper.position.y + 130 + (i / COLS) * 190 - lift
+		var cy := paper.position.y + FIRST_ROW + (row - top) * ROW_H - lift
 		var c := Vector2(cx, cy)
 		var id: StringName = list[i]
 		var got := tlog.is_found(p, id)
@@ -311,8 +322,44 @@ func _draw_page() -> void:
 			PictoBubble.picture(_root, &"question", c, 50.0, 0.25)
 		if p == &"cutscenes" and got and i == cursor:
 			UiStyle.draw_glyph(_root, c + Vector2(70, 70), 46.0, "a")
+	# More rows above or below: a pencil arrow at the paper's edge.
+	var rows := ceili(list.size() / float(COLS))
+	if top > 0:
+		_page_arrow(Vector2(paper.get_center().x, paper.position.y + 26 - lift), -1)
+	if top + ROWS < rows:
+		_page_arrow(Vector2(paper.get_center().x, paper.end.y - 26 - lift), 1)
 	if tlog and tlog.is_complete(p):
 		_draw_lure(Vector2(paper.end.x - 90, paper.position.y + 80 - lift), sin(_t) * 0.1, PAGE_COLORS[p])
+
+
+var _creature_colors := {}
+
+
+## The first row of sketches on the paper: rows scroll so the cursor's row is always drawn.
+func top_row() -> int:
+	return maxi(0, cursor / COLS - (ROWS - 1))
+
+
+## Rows of the open page that are drawn on the paper right now (first, last), for tests and frames.
+func shown_rows() -> Vector2i:
+	var rows := ceili(_list().size() / float(COLS))
+	var top := top_row()
+	return Vector2i(top, mini(rows, top + ROWS) - 1)
+
+
+func _page_arrow(c: Vector2, dir: int) -> void:
+	var d := float(dir)
+	_root.draw_colored_polygon(PackedVector2Array([c + Vector2(-22, -10 * d), c + Vector2(22, -10 * d), c + Vector2(0, 14 * d)]),
+		Color(PENCIL, 0.6))
+
+
+## A creature's own colour from its book entry (ring creatures, pets, apexes), else Reel's brown.
+func _creature_color(id: StringName) -> Color:
+	if _creature_colors.is_empty():   # read once: the page redraws every frame
+		for e in BookCatalog.entries(&"creatures"):
+			var col = (e.data as Resource).get(&"color")
+			_creature_colors[e.id] = col if col is Color else Color("8c6a4a")
+	return _creature_colors.get(id, Color("8c6a4a"))
 
 
 # One sketch per entry.
@@ -328,7 +375,7 @@ func _doodle(c: Vector2, p: StringName, id: StringName, i: int) -> void:
 				&"mole":
 					MoleLook.draw(_root, c + Vector2(0, 42), 4.2, MoleLook.Face.HAPPY, _t)
 				_:
-					_bug_doodle(c, 46.0, Color("3a3046") if id == &"beetle" else Color("8c6a4a"))
+					_bug_doodle(c, 46.0, Color("3a3046") if id == &"beetle" else _creature_color(id))
 		&"traits":
 			var t: TraitData = null
 			for r in _traits():

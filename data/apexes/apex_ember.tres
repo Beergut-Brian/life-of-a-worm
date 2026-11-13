@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+; Core apex: orange ember newt with teal spots (5 -> 6). The live apex is ApexBeetle (scripts/planet/apex_beetle.gd); this file is its tackle-box page
+; (T-01): id, size, ring and colour match the one PlanetLevel makes (tests/test_book_creatures.gd).
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"apex_ember"
+flavour = &"bug"
+growth = 0.0
+size_stage = 6
+color = Color(0.8784, 0.2745, 0.1098, 1)
+radius = 23.0
+behaviour = 2
+ring = &"core"
+telegraph = 1.0
+hat = Color(0, 0, 0, 0)
+accent = Color(0.4980, 0.9412, 0.8471, 1)

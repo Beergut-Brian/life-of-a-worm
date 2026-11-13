@@ -32,6 +32,12 @@ const SAVE_KEY := "story_seen"
 const LAYER := 90
 ## Save setting that turns subtitles on (default off, GAME.md "Rules for cutscenes").
 const SUBTITLES_SETTING := "subtitles"
+## Y-09: Reel's excuses told in this tin, oldest first (tin key), so the next one can differ.
+const EXCUSE_KEY := "story_excuses"
+## An excuse never repeats any of the last this-many he told (rewatches included).
+const EXCUSE_FRESH := 2
+## The told list keeps only the newest this-many (enough to know which is oldest of six).
+const EXCUSE_LOG := 24
 
 ## Keep `seen` in Save (off in tests).
 var persist := true
@@ -43,6 +49,8 @@ var subtitles := false
 var seen: Array[StringName] = []
 ## Lines the last scene voiced: [line id, character, "file" | "bark" | "sfx" | "none"].
 var said: Array = []
+## Excuse ids Reel has told in this tin, oldest first (Y-09). Saved under EXCUSE_KEY.
+var excuses_told: Array[StringName] = []
 ## Host calls the last scene made: [fn, args].
 var calls: Array = []
 
@@ -78,6 +86,8 @@ func _ready() -> void:
 		for id in _save().call("get_value", SAVE_KEY, []):
 			if not seen.has(StringName(id)):
 				seen.append(StringName(id))
+		for e in _save().call("get_value", EXCUSE_KEY, []):
+			excuses_told.append(StringName(e))
 
 
 func _exit_tree() -> void:
@@ -188,11 +198,12 @@ func _open(id: StringName) -> void:
 		_subtitle.visible = false
 		ui.add_child(_subtitle)
 		player.beat.connect(_on_beat)
+	player.beat.connect(_on_excuse_beat)
 	player.finished.connect(_on_finished)
 	said = player.said
 	calls.clear()
 	_pressed = false
-	player.play(id)
+	player.play_data(script_for(id), {}, id)
 	started.emit(id)
 
 
@@ -204,6 +215,78 @@ func _on_beat(kind: String, detail: String) -> void:
 		_subtitle.visible = _subtitle.text != ""
 	elif kind in ["fade", "end", "skip"]:
 		_subtitle.visible = false
+
+
+# --- Y-09: a different excuse every time he is asked ------------------------------------------
+
+## Every excuse step in story order: [{excuse, line, pics, scene}], one per scene that asks
+## "what happened?". The pool a rewatch draws from.
+static func excuse_pool() -> Array:
+	var out := []
+	for sid in SCENES:
+		for s in CutscenePlayer.load_scene(sid).get("steps", []):
+			if s is Dictionary and s.get("do", "") == "line":
+				var e := excuse_of(String(s.get("line", "")))
+				if e != &"":
+					out.append({"excuse": e, "line": String(s.line), "pics": s.get("pics", []), "scene": sid})
+	return out
+
+
+## The excuse a line gives (its `excuse` field in lines.json), or &"".
+static func excuse_of(line_id: String) -> StringName:
+	return StringName(str(CutscenePlayer.line(line_id).get("excuse", ""))) if line_id != "" else &""
+
+
+## The excuse to tell where the script says `own`: `own` itself unless he told it among the last
+## EXCUSE_FRESH, else the pool excuse told longest ago (never-told first, in story order).
+func pick_excuse(own: StringName) -> StringName:
+	var recent := excuses_told.slice(maxi(0, excuses_told.size() - EXCUSE_FRESH))
+	if not recent.has(own):
+		return own
+	var best := own
+	var best_at := INF
+	for p in excuse_pool():
+		var e: StringName = p.excuse
+		if recent.has(e):
+			continue
+		var at := float(excuses_told.rfind(e))   # -1 when never told
+		if at < best_at:
+			best_at = at
+			best = e
+	return best
+
+
+## Scene `id`'s data with each excuse line swapped for pick_excuse's (line and its pictures; the
+## speaker and every other step stay). The first time through, in story order, nothing changes.
+func script_for(id: StringName) -> Dictionary:
+	var d := CutscenePlayer.load_scene(id).duplicate(true)
+	var pool := {}
+	for p in excuse_pool():
+		pool[p.excuse] = p
+	for s in d.get("steps", []):
+		if not (s is Dictionary and s.get("do", "") == "line"):
+			continue
+		var own := excuse_of(String(s.get("line", "")))
+		if own == &"":
+			continue
+		var e := pick_excuse(own)
+		if e != own and pool.has(e):
+			s["line"] = pool[e].line
+			s["pics"] = pool[e].pics.duplicate()
+	return d
+
+
+func _on_excuse_beat(kind: String, detail: String) -> void:
+	if kind != "line":
+		return
+	var e := excuse_of(detail)
+	if e == &"":
+		return
+	excuses_told.append(e)
+	if excuses_told.size() > EXCUSE_LOG:
+		excuses_told = excuses_told.slice(excuses_told.size() - EXCUSE_LOG)
+	if persist and _save() != null:
+		_save().call("set_value", EXCUSE_KEY, excuses_told.map(func(x): return String(x)))
 
 
 func _close() -> void:

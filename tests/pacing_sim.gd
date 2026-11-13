@@ -36,30 +36,37 @@ var _tasted := {}
 ## each "new" was, for the report.
 class Recorder:
 	extends RefCounted
-	var sim: PacingSim
-	var times := { &"eaten": [], &"food": [], &"new": [] }
+	## Weak: the sim's signals hold this recorder, so a strong link back would be a reference
+	## cycle that never frees (the suite's "ObjectDB instances leaked" line).
+	var _sim: WeakRef
+	var times := { &"eaten": [], &"food": [], &"new": [], &"trait": [] }
 	var labels: Array[String] = []
 	var stage_at := { 1: 0.0 }
 	var end := 0.0
 
 	func _init(s: PacingSim) -> void:
-		sim = s
+		_sim = weakref(s)
 		s.model.segment_added.connect(func(_f: StringName) -> void: _log(&"eaten"))
 		s.tasted.connect(func(_id: StringName) -> void: _log(&"food"))
 		s.first_taste.connect(func(id: StringName) -> void: _new("food " + String(id)))
-		s.model.trait_earned.connect(func(id: StringName, _eq: bool) -> void: _new("trait " + String(id)))
+		s.model.trait_earned.connect(func(id: StringName, _eq: bool) -> void:
+			_log(&"trait")
+			_new("trait " + String(id)))
 		s.model.stage_changed.connect(_on_stage)
 
+	func sim() -> PacingSim:
+		return _sim.get_ref() as PacingSim
+
 	func _log(kind: StringName) -> void:
-		(times[kind] as Array).append(sim.clock)
+		(times[kind] as Array).append(sim().clock)
 
 	func _new(what: String) -> void:
 		_log(&"new")
-		labels.append("%s @%.0fs" % [what, sim.clock])
+		labels.append("%s @%.0fs" % [what, sim().clock])
 
 	func _on_stage(_from: int, to: int) -> void:
-		stage_at[to] = sim.clock
-		var d := sim.rules.stage_info(to)
+		stage_at[to] = sim().clock
+		var d := sim().rules.stage_info(to)
 		_new("stage %d (%s)" % [to, String(d.opens_ring) if d.opens_ring != &"" else String(d.feature_id)])
 
 	## Waits between events of a kind, counted from the start of the run to the first one, and
