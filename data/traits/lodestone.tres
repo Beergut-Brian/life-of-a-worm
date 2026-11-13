@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lodestone"
+requires = {"stone": 4, "junk": 4}
+add = {"pull_radius": 40.0, "pull_speed": 50.0}
+mul = {}
+part_slot = &"crown"
+part_priority = 1
+part_spin = 0.0
+part_shape = &"snowflake"
+cue = "trait_magnet"
+color = Color(0.62, 0.58, 0.36, 1)
