@@ -442,6 +442,11 @@ func remove_worm(player: int) -> void         # kept in the tin
 func save_now() -> void                       # writes the tin and flushes (autosave 30 s, sleep, pause,
                                               # quit, back to lobby, stage-up, apex bite)
 # Cutscene hook (story lane): on every stage-up, if /root/Story exists: Story.play("stage_<to>").
+var music: MusicLayers                        # U-12 (scripts/audio/music_layers.gd): stage N plays layers 1..N
+# Music files (Audio lane): res://assets/audio/music/theme_1.ogg .. theme_7.ogg, one theme in seven
+# layers, all the same length and tempo, seamless loops (they start together and only ever fade).
+# Layer 1 dirt (ukulele) ... layer 7 space (cosmic pad). A missing layer is skipped; ducks -12 dB
+# while a dock scene plays.
 
 # Burrow (scripts/burrow/burrow.gd since feature/slice-burrow-1)
 signal home_set(player: int, at: Vector2)
