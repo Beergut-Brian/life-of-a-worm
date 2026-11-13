@@ -1131,3 +1131,40 @@ func request_beat(w: Worm) -> void   # camera: level.camera via the "rings" grou
 ```
 
 Cues: all existing files (`boot_rumble`, `threat_near`, `space_bump`); none added.
+
+### Deep rock (worm-deep-rock-1)
+
+PLAN-STATUS W-03 (built) and W-02 (bounce built, spawning held). Appended only; nothing above changes.
+
+```gdscript
+# CreatureData (scripts/creatures/creature_data.gd)
+enum Behaviour { WIGGLE, MARCH, TRUNDLE, PECK, STOMP, WAVE, BOUNCE }   # BOUNCE appended (index 6)
+@export var bounce := 0.0        # BOUNCE: px a smaller worm's head is pushed away on contact
+
+# Creature (scripts/creatures/creature.gd), BOUNCE only
+const BOUNCE_DECAY := 8.0        # knock: v = push * DECAY, decays exp(-DECAY t), total ~= push
+const BOUNCE_TIME := 0.45        # s the knock lasts (the worm keeps steering on top of it)
+const SQUASH_TIME := 0.35        # s the blob draws squashed flat toward the worm
+const BOUNCE_COOL := 0.8         # s per player before it can bounce that worm again
+const SWELL_RANGE := 48.0        # px past touching: a smaller worm this close makes it swell (+12%)
+const BOUNCE_CUE := "boing"      # every bounce; data.windup_cue plays as it swells
+var bounces: int                 # bounces given (tests, frames)
+func can_bounce(w) -> bool       # smaller worms only (CreatureSense.worm_size < size_stage)
+func bounce(w) -> Vector2        # push straight away from the blob; returns the push
+# Contact = head within radius + BITE (14 px). Never a bite, never a steer. A worm of its size or
+# bigger eats it (the food protocol, unchanged).
+
+# RingFood.Look (scripts/rings/ring_food.gd): NUGGET (10), FOSSIL (11) appended, placeholders.
+static func RingPickup.look_shape(look, r) -> PackedVector2Array
+#   NUGGET: the lumpy 8-point outline; FOSSIL: the spiral polyline (rim -> centre); else empty.
+```
+
+```
+scenes/creatures/rock_beetle.tscn   Creature + data/creatures/rock_beetle.tres
+scenes/creatures/lava_blob.tscn     Creature + data/creatures/lava_blob.tres (behaviour BOUNCE, bounce 80)
+data/rings/deep_rock_life.tres      rock_beetle: live = rock_beetle.tscn, live_scale 0.5, live_max 3
+data/rings/core_life.tres           lava_blob:   live = lava_blob.tscn, live_scale 0, live_max 0 (never spawns)
+data/foods/ore_nugget.tres          look NUGGET     data/foods/fossil.tres   look FOSSIL
+RingsDirector.LIVES                 + deep_rock_life.tres (appended last: older tins' statics after
+                                    the deep-rock fossils shift and start uneaten, as with the core)
+```
