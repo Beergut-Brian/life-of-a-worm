@@ -13,5 +13,5 @@ radius = 14.0
 ring = &"sky"
 regrow_time = 150.0
 plants = &""
-look = 4
+look = 13
 accent = Color(0.2, 0.55, 0.95, 1)
