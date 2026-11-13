@@ -14,7 +14,8 @@
 ## BOUNCE (the lava blob) never chases or bites: a smaller worm that comes near makes it swell
 ## (the telegraph, `windup_cue`), and touching it squashes it flat and pushes the worm's head away
 ## (`CreatureData.bounce` px, a decaying knock over BOUNCE_TIME) with a boing and a burst at the
-## contact point. A push, never a steer: the worm keeps its stick the whole time.
+## contact point. A push, never a steer: the worm keeps its stick the whole time. When the nearest
+## worm can eat it, it sits cowered (drawn 0.85x), so food never looks bigger than the worm.
 ## Never steers a worm. Placeholder art drawn in code (Art lane after D92).
 class_name Creature
 extends Node2D
@@ -78,6 +79,8 @@ var _bounce_cool := {}
 var _squash := 0.0
 var _squash_at := Vector2.ZERO
 var _swell := 0.0
+## BOUNCE: the nearest worm can eat me (I cower, drawn smaller; a same-size worm never scares me).
+var _meek := false
 ## How many bounces it has given (tests, frames).
 var bounces := 0
 
@@ -264,7 +267,13 @@ func _bounce_step(delta: float) -> void:
 	for k in _bounce_cool.keys():
 		_bounce_cool[k] = maxf(0.0, _bounce_cool[k] - delta)
 	var closest := INF
+	var nearest_d := INF
+	_meek = false
 	for w in _worms():
+		var dn: float = w.head_position().distance_to(global_position)
+		if dn < nearest_d:
+			nearest_d = dn
+			_meek = can_be_eaten_by(w)
 		if not can_bounce(w):
 			continue
 		var d: float = w.head_position().distance_to(global_position) - data.radius
@@ -474,13 +483,13 @@ static func _length(p: PackedVector2Array) -> float:
 ## Drawn size: smaller and cowering when something can eat it (bigger-than-me reads at a glance).
 func draw_scale() -> float:
 	var s := 1.0
-	if _scared or _carried:
+	if _scared or _carried or _meek:
 		s = 0.85
 	if mode == Mode.WINDUP:
 		s = 1.0 + 0.25 * minf(1.0, _mode_t / data.telegraph_time())
 	if _gulp > 0.0:
 		s = 1.0 + 0.3 * sin(PI * (1.0 - _gulp / GULP_TIME))
-	if _swell > 0.0 and not _scared:
+	if _swell > 0.0 and not _scared and not _meek:
 		s = 1.0 + 0.12 * _swell
 	return s
 

@@ -120,6 +120,9 @@ func add_pile(at_cell: Vector2i, stage: int, fresh: bool) -> bool:
 	var cell := settle(at_cell)
 	if piles.has(cell):
 		return false
+	var edge := DiskEdge.of(world)
+	if edge != null and edge.is_open_to_sky(cell):
+		return false   # the rim is eaten away here (W-12): castings would hang in the sky
 	var g := gap_for(stage)
 	for dy in range(-g, g + 1):
 		for dx in range(-g, g + 1):

@@ -12,6 +12,8 @@ const RAIN := Color(0.62, 0.78, 1.0, 0.75)
 var director: RingsDirector
 var _t := 0.0
 var _rain_k := 0.0
+## The planet's eaten outline (W-12): no grass or mushroom stands where the rim has been eaten away.
+var _edge: DiskEdge
 
 
 func _process(delta: float) -> void:
@@ -42,6 +44,7 @@ func _draw() -> void:
 	var span: float = (v.half + 40.0) / R
 	var a0 := c.angle() - span
 	var a1 := c.angle() + span
+	_edge = DiskEdge.of(director.world)
 	_grass(R, a0, a1)
 	_mushrooms(R, a0, a1)
 	if _in(director.sandwich.angle(), a0, a1):
@@ -57,10 +60,18 @@ func _in(a: float, a0: float, a1: float) -> bool:
 	return absf(wrapf(a - mid, -PI, PI)) <= (a1 - a0) * 0.5
 
 
+## False where the worm has eaten the ground away under this angle (DiskEdge).
+func _ground_at(a: float, R: float) -> bool:
+	return _edge == null or _edge.target_at(a) >= R - 2.0
+
+
 func _grass(R: float, a0: float, a1: float) -> void:
 	var step := 5.0 / R
 	var a := floorf(a0 / step) * step
 	while a < a1:
+		if not _ground_at(a, R):
+			a += step
+			continue
 		var i := int(round(a / step))
 		var h := 5.0 + float(absi(i * 7919) % 6)
 		var up := Vector2.from_angle(a)
@@ -76,7 +87,7 @@ func _mushrooms(R: float, a0: float, a1: float) -> void:
 	var a := floorf(a0 / step) * step
 	while a < a1:
 		var i := int(round(a / step))
-		if absi(i * 31337) % 3 == 0:
+		if absi(i * 31337) % 3 == 0 and _ground_at(a, R):
 			var up := Vector2.from_angle(a + 0.002 * float(absi(i) % 5))
 			var side := up.orthogonal()
 			var base := up * R
