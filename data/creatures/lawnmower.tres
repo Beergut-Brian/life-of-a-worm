@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="LawnmowerData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/lawnmower_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lawnmower"
+flavour = &"junk"
+growth = 10.0
+size_stage = 5
+color = Color(0.95, 0.62, 0.16, 1)
+radius = 18.5
+behaviour = 1
+ring = &"surface"
+telegraph = 1.2
+bark = "threat_near"
+windup_cue = ""
+speed = 28.0
+notice = 170.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(0.98, 0.9, 0.55, 1)
+bump = 90.0
+cue = "boot_rumble"
+bump_cue = "space_bump"
+loud_db = 6.0
+hear = 900.0
+drive = 240.0
+bump_cooldown = 1.6
+scene = "res://scenes/creatures/lawnmower.tscn"
+live_max = 1
+spawn_depth = Vector2(0.97, 0.999)
