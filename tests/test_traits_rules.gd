@@ -15,7 +15,7 @@ func _fill(m: WormGrowth, flavour: StringName, n: int) -> void:
 func test_every_single_flavour_trait_earns_exactly_at_its_threshold() -> void:
 	var checked := 0
 	for t in _rules().traits:
-		if t.is_hybrid():
+		if t.is_hybrid() or t.star:   # Star traits come from space planets, not flavours (D-10)
 			continue
 		var f: StringName = StringName(t.requires.keys()[0])
 		var need := int(t.requires[f])

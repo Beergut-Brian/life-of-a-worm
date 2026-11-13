@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1_2kb8d"]
 [ext_resource type="Script" path="res://scripts/space/planet_data.gd" id="2_n2g4k"]
 [ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="3_ao4sp"]
+[ext_resource type="Resource" path="res://data/traits/sugar_star.tres" id="4_star"]
 
 [sub_resource type="Resource" id="Resource_e0tmh"]
 script = ExtResource("1_2kb8d")
@@ -31,16 +32,6 @@ size_stage = 6
 color = Color(0.9843137, 0.8901961, 0.78431374, 1)
 radius = 54.0
 
-[sub_resource type="Resource" id="Resource_qk6nh"]
-script = ExtResource("3_ao4sp")
-id = &"sugar_star"
-add = {
-"space_reach": 8.0,
-"space_speed": 30.0
-}
-part_slot = &"space"
-color = Color(1, 0.56078434, 0.8156863, 1)
-
 [resource]
 script = ExtResource("2_n2g4k")
 id = &"candy"
@@ -49,4 +40,5 @@ accent = Color(0.827451, 0.37254903, 0.6039216, 1)
 radius = 200.0
 foods = Array[ExtResource("1_2kb8d")]([SubResource("Resource_e0tmh"), SubResource("Resource_pdatv"), SubResource("Resource_3cpi8")])
 drift = 28.0
-star_trait = SubResource("Resource_qk6nh")
+star_trait = ExtResource("4_star")
+star_chance = 0.0

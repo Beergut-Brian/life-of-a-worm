@@ -1,34 +1,44 @@
-# Centipede lane report (feature/worm-centipede-1, 2026-11-12)
+# REPORT: worm-star-trait-1 (2026-11-12)
+
+Branch `feature/worm-star-trait-1`, not pushed. Ended: **complete**.
 
 ## Rows moved
-None. **W-04** stays partial with a new note: the centipede part is built, the Mole is still open. L-08 was already built.
+**D-10** missing → built. D-13 stays partial (note added: Stars show on the wall).
 
-## Found
-The centipede data, script and `dirt_life.tres` row were already on dev from worm-creatures-2: stage 3, a 1.1 s wind-up, a 3 s chase, gives up past 200 px, live_max 2. I left the data alone and added the missing parts.
+## The Star traits (`data/traits/*_star.tres`)
+| Star | Planet | Felt in space | Seen |
+| --- | --- | --- | --- |
+| frost_star | ice | top speed +110 | snowflake |
+| vine_star | jungle | mouth +26 px (ring) | leaf |
+| anchor_star | junk | half knock-back | hex nut |
+| sugar_star | candy | small food within 280 px drifts in (dotted ring) | pinwheel sweet |
+| tick_star | clockwork | sharper turns (accel x2.2) | cog |
 
-## New on this branch
-- **Wind-up wave:** a lifted, lighter hump runs from head to tail twice over the telegraph and reaches the tail as it lunges (`windup_wave()`).
-- **Give-up beat:** the first give-up only leans the camera in one step for 0.8 s, with no shake (`gave_up_beat`).
-- **K-01 fix:** at worm stage 3 the centipede counts as food but never cowered, so it was drawn 1.10x a stage-3 head. It now cowers (0.85x) like the bird.
-- No new cues, art or forced movement (a bite still goes through `Gulp`).
+Each planet shows its Star (gold star plus part) before it is eaten. Eating the planet earns it,
+once per run, via SpaceDrift's existing `star_earned`. `StarAward` (in `space_stage.tscn`) plays the
+sting and two rings, leans the camera in for 1.8 s and flies the part into orbit. The Star is then
+written onto the planet worm and into the tin. It shows on the trait wall with a gold star corner
+and toggles like any trait. It never comes from flavours, it is never a curse, and foods never carry it.
+Parts are code-drawn (`StarParts`) and have no text.
 
 ## Tests
-`tests/test_centipede.gd` has 6 new tests (14 total): the wave before every lunge, the hump position, a single camera beat that gets released, never moving a worm, never bigger than a stage-3 or stage-4 head, and counter spawns only in the dirt band up to live_max. The suite runs in `SuiteSandbox.enter("centipede")`.
-Full suite after a clean import, run twice: **460 cases, 0 errors, 0 failures** both times, with no leak line.
+`tests/test_star_traits.gd`, 7 cases, with contacts resolved directly (no pile). After a clean
+import I ran the full suite twice: **461 cases, 0 errors, 0 failures** both times. Both runs print
+"20 ObjectDB instances were leaked at exit" (stings still playing at exit).
 
-## Frames (`handoff/shots/centipede/`)
-From a scratch scene with no world. The green blob behind the tail is the worm's body, left behind because the head is teleported.
-- `t000.9s`: the chase, along a wavy path.
-- `t001.2s`/`t001.6s`/`t002.0s`: the wind-up. Jaws open, the pale hump moves down the body, then the second pass reaches the tail.
-- `t002.3s`: the lunge.
-- `t002.7s`/`t003.1s`: the give-up. Eyes shut, antennae drooped, greyed, huffing.
-The camera beat is not in the frames; only a test covers it.
+## Frames (`handoff/shots/star-trait/`)
+1. `1-before`: the worm next to the ripe jungle planet, with the gold Star and leaf on the planet's rim.
+2. `2-reveal`: the camera leans in, a big gold star with the leaf above the head, and rings.
+3. `3-after`: the leaf on a small gold star orbiting the head, with the reach ring at the mouth.
+4. `4-wall`: the trait wall with the vine and frost tiles marked with gold stars, and their parts on the worm.
 
-## Outside owned files
-`docs/contracts.md` (appended section) and the `PLAN-STATUS.md` W-04 row.
+## Outside my files
+- `trait_data.gd` (`part_shape`, `star`, `star_planet`), `trait_wall.gd` (marker), `worm_rules.tres`.
+- `data/planets/*.tres` (star trait → file, `star_chance` 0), `make_space_data.gd` to match.
+- `space_stage.tscn` (+ `StarAward` node). No `scripts/space/` or `scripts/chomp/` edits.
+- `test_traits_rules` skips Stars; `test_space_planets` accepts `space_turn`/`space_pull`.
 
 ## Follow-ups
-- The Mole in the dirt ring.
-- The sneakers from dev are still drawn while gear and art are held. Keep them or not?
-- A centipede give-up cue (it borrows `bird_offended`).
-- A real-planet frame of the camera beat.
+- **The cues are borrowed** from the slice traits (slick, green_thumb, magnet, floaty, drill_head) because assets/ was off-limits. The Audio lane needs to add five `trait_<id>` files, then change `cue` in each .tres.
+- The `space_*` stats do nothing on the planet worm. Decide this with S-12.
+- This replaces the unmerged `feature/worm-star-traits-1` (it reused its `StarParts`). Merge only one of them.
