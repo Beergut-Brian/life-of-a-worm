@@ -22,8 +22,8 @@ extends Node2D
 
 signal secret_found(id: StringName)
 
-## The core's chain (core crystals scattered and growing back live; lava blobs counted only, no
-## body yet) runs in play too (W-02).
+## The core's chain (core crystals scattered and growing back live; lava blobs live in the core
+## and its rim) runs in play too (W-02).
 const LIVES: Array[RingLife] = [preload("res://data/rings/dirt_life.tres"), preload("res://data/rings/topsoil_life.tres"),
 		preload("res://data/rings/core_life.tres"), preload("res://data/rings/deep_rock_life.tres")]
 ## The sky ring: no tiles, so its band and stage live in the SkyLife itself.
