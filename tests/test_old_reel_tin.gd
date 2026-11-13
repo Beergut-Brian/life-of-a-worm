@@ -67,6 +67,7 @@ func _stage() -> SpaceStage:
 	s.set_process(false)
 	s.drift.set_process(false)
 	(s.get_node("OldReelOffer") as OldReelOffer).auto = false
+	(s.get_node("SpaceStory") as SpaceStory).auto = false
 	_stages.append(s)
 	return s
 
@@ -96,6 +97,10 @@ func test_sun_eaten_offers_the_tin_once_never_twice_per_tin() -> void:
 	# Reel's scene plays (skippable), then the choice; the worms hold still meanwhile.
 	var st := _story()
 	offer.play_scene()
+	assert_str(String(st.current())).is_equal("ending")          # Y-07: the ending comes first
+	assert_bool(offer.holding()).is_true()
+	st.skip()
+	await await_millis(150)
 	assert_str(String(st.current())).is_equal("new_tin")
 	assert_bool(offer.holding()).is_true()
 	s.worms[0].steer = Vector2.RIGHT
