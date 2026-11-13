@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/space/space_stage.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/space/space_keep.gd" id="5"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/space/space_fit.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/story/space_story.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/space/next_tin_trip.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/space/space_drop_in.gd" id="8"]
 
 [node name="SpaceStage" type="Node2D"]
 script = ExtResource("1")
@@ -28,3 +29,6 @@ script = ExtResource("6")
 
 [node name="NextTinTrip" type="Node" parent="."]
 script = ExtResource("7")
+
+[node name="SpaceDropIn" type="Node" parent="."]
+script = ExtResource("8")
