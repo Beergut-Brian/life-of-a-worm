@@ -42,6 +42,9 @@ func handle(nav: int, confirm: bool, back: bool) -> void:
 		else:
 			_shake = 0.3
 			Audio.play("bonk")
+	if (nav != 0 or confirm) and earned.is_empty():
+		_shake = 0.3          # nothing on the wall yet: the empty sockets shake and bonk, never silence
+		Audio.play("bonk")
 	if back:
 		worm.set_wall_open(false)
 	_root.queue_redraw()
@@ -67,6 +70,8 @@ func _draw_wall() -> void:
 	var tile := tile_size(n, vp.x)
 	var w := n * (tile + GAP) + GAP
 	var x0 := (vp.x - w) * 0.5
+	if model.earned.is_empty() and _shake > 0.0:
+		x0 += sin(_shake * 80.0) * 6.0     # the empty wall itself shakes (handle: nothing to pick yet)
 	var h := maxf(tile * 2.0, tile + 84.0)   # the pictures, then the slot sockets under them
 	var y0 := vp.y - h * 1.2 - (0.0 if worm.player == 0 else h * 1.3)
 	_root.draw_rect(Rect2(x0 - 8, y0 - 8, w + 16, h + 16), Color(0.16, 0.1, 0.07, 0.92))
