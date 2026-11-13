@@ -1177,3 +1177,33 @@ func step(camera: PolarCamera, worms: Array[Node2D], focus := -1) -> Array[Node2
   - `follow(id: StringName)`, `step(delta)`, `ring_id_at(local: Vector2) -> StringName`,
     `cue_for(id) -> String` ("" = silent), `current: StringName`, `beds: {id: AudioStreamPlayer}`.
   - A new ring needs only `amb_<its id>.ogg`; no code change.
+
+### Story: Old Reel's dock scenes (story-1; documented by worm-gap-close-1 for W-28)
+
+Already on `dev`; this section only writes down the API other lanes already call (TackleLog, the
+book, PlanetLevel's stage hook).
+
+```gdscript
+# Story (scripts/story/story.gd, scenes/story/story.tscn). Not an autoload: the game adds one node
+# for the session; find it with Story.find(tree) (group &"story"). Scenes are data/cutscenes/<id>.json.
+signal started(id: StringName)
+signal finished(id: StringName, skipped: bool)
+signal cutscene_finished(id: StringName)          # GAME.md contract name: a scene ended, watched or skipped
+signal handoff(id: StringName, what: String)      # "follow_worm_underground" after the opening
+signal input_locked(on: bool)                     # lock / unlock every player's input
+const SCENES: Array[StringName]                   # opening, stage_2 .. stage_7, ending (book order)
+const STAGE_SCENES := {1: &"opening", 2: &"stage_2", ..., 7: &"stage_7"}
+const SAVE_KEY := "story_seen"                    # per tin: Array[String] of scene ids watched, in order
+static func find(tree: SceneTree) -> Story
+static func scene_for_stage(stage: int) -> StringName   # &"" when none
+func play(id: StringName) -> bool                 # queues if one is playing; false if no such scene
+func is_playing() -> bool ; func current() -> StringName ; func skip() -> void
+func has_seen(id: StringName) -> bool
+func watch(source: Object) -> void                # anything with stage_changed(player, from, to)
+func on_stage_changed(player: int, from: int, to: int) -> void   # once per tin, only going up
+var seen: Array[StringName] ; var persist := true ; var speed := 1.0
+```
+
+TackleLog connects `cutscene_finished` to fill its "cutscenes" page, and `sync_seen()` reads
+`story_seen` from the tin when no Story node is up. `tests/test_tin_keys.gd` checks each tin keeps its
+own `story_seen` (and its own `rings`, `home_slice.tackle` and `jars`).
