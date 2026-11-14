@@ -103,3 +103,37 @@ func test_no_chomp_inside_a_jar() -> void:
 	_run(c, 3.0, true)
 	assert_int(c.phase).is_equal(PlanetChomp.Phase.IDLE)
 	assert_bool(c.jars.has_jar(c.planet_id())).is_false()
+
+
+## Kid-check N7: when the jar cannot be written, the hold never says "yes". It bonks, shakes the
+## shot, empties the ring and asks again; nothing is eaten, and a later hold with a jar goes on.
+func test_a_jar_that_cannot_be_written_bonks_instead_of_saying_yes() -> void:
+	var c := _chomp()
+	var store := c.jars
+	var refused := [0]
+	var eaten := [0]
+	c.jar_refused.connect(func(): refused[0] += 1)
+	c.planet_eaten.connect(func(): eaten[0] += 1)
+	assert_bool(c.begin()).is_true()
+	c.jars = null   # the jar write fails
+	var yes_before := int(Audio.played.get("confirm_yes", 0))
+	var bonk_before := int(Audio.played.get("bonk", 0))
+	_run(c, 2.2, true)
+	assert_int(refused[0]).is_equal(1)
+	assert_int(int(Audio.played.get("confirm_yes", 0))).is_equal(yes_before)
+	assert_int(int(Audio.played.get("bonk", 0))).is_equal(bonk_before + 1)
+	assert_float(c.shake).is_greater(0.0)
+	assert_int(c.phase).is_equal(PlanetChomp.Phase.CONFIRM)
+	assert_float(c.confirm.progress).is_less(0.1)
+	assert_bool(c.confirm.done).is_false()
+	_run(c, 3.0, false)
+	assert_int(eaten[0]).is_equal(0)
+	assert_bool(store.has_jar(c.planet_id())).is_false()
+	assert_int(int(Save.get_value("stage"))).is_equal(6)
+	# The jar works again: the next full hold says yes and jars the planet.
+	c.jars = store
+	_run(c, 2.2, true)
+	assert_int(int(Audio.played.get("confirm_yes", 0))).is_equal(yes_before + 1)
+	assert_int(c.phase).is_not_equal(PlanetChomp.Phase.CONFIRM)
+	assert_bool(store.has_jar(c.planet_id())).is_true()
+	assert_int(refused[0]).is_equal(1)
