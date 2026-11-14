@@ -3,7 +3,11 @@
 ## tweet), then the beak comes down on THAT spot, never a moved one. A worm still under it is
 ## gulped (one segment, out with stars); a worm that wriggled off makes the beak hit the ground with
 ## a boing and the bird flies off offended. It can never eat a worm at or above its own stage: the
-## peck boings off. Never food in the slice (it never comes low enough; sky ring later).
+## peck boings off. Once a worm has outgrown it (L-17, gap-close-41) it is food like any creature:
+## it cowers, its shadow shrinks, and a worm whose mouth meets it swallows it (the outgrow sting and
+## grin the first time). It only joins the food list while the worm nearest it can eat it, so a
+## small worm under its shadow never bonks off it. RingsDirector counts an eaten bird off the
+## topsoil's bird counter (eat the birds and the beetles boom).
 class_name Bird
 extends Creature
 
@@ -23,11 +27,14 @@ var _phase_t := 0.0
 var _up := Vector2.UP
 var _from := Vector2.ZERO
 var _hover := Vector2.ZERO
+## True once a worm swallowed it (not when it flew off): the director's counter loses one.
+var eaten := false
+## K-01: a bird the nearest worm has outgrown draws its shadow this much smaller: it no longer looms.
+const OUTGROWN_SHADOW := 0.5
 
 
 func _ready() -> void:
-	super._ready()
-	remove_from_group(&"food")
+	super._ready()   # in group "food": is_available() says when a worm may eat it
 	add_to_group(&"birds")
 	z_index = 5   # its shadow falls over the worm
 
@@ -45,8 +52,16 @@ func aim(at: Vector2, up: Vector2, ground_top := 0.0) -> void:
 	_phase_t = 0.0
 
 
+## Food only while the worm nearest it has outgrown it (CreatureSense via _nearest_can_eat_me).
 func is_available() -> bool:
-	return false
+	return not _gone and not _carried and _block <= 0.0 and _scared
+
+
+func take() -> void:
+	if _gone:
+		return
+	eaten = true
+	super.take()
 
 
 ## Seconds the shadow has been on the spot (0 before it lands).
@@ -59,7 +74,17 @@ func step(delta: float) -> void:
 		return
 	_t += delta
 	_phase_t += delta
+	_startle = maxf(0.0, _startle - delta)
+	_block = maxf(0.0, _block - delta)   # just let go: not bitten again at once
 	_scared = _nearest_can_eat_me()
+	if _carried:   # in a worm's mouth (gentle bite): it rides along; let go, it flies off
+		phase = Peck.LEAVE
+		_phase_t = 0.0
+		queue_redraw()
+		return
+	for w in _worms():   # remember it as a threat, so the first bite of an outgrown bird stings
+		if Outgrown.of(w).note(data.id, react_to(w), w.head_position().distance_to(global_position)):
+			_on_outgrown()
 	var hover := _hover
 	match phase:
 		Peck.ARRIVE:
@@ -123,7 +148,7 @@ func _draw() -> void:
 	if phase == Peck.SHADOW or phase == Peck.DIVE:
 		var k := minf(1.0, _phase_t / data.telegraph_time()) if phase == Peck.SHADOW else 1.0
 		var at := to_local(spot)
-		var w := PECK_RADIUS * (0.9 + 0.9 * k)
+		var w := PECK_RADIUS * (0.9 + 0.9 * k) * (OUTGROWN_SHADOW if _scared else 1.0)
 		_ellipse(at, Vector2(w, w * 0.55), Color(0, 0, 0, 0.22 + 0.3 * k))
 		_ellipse(at, Vector2(w, w * 0.55) * 0.5, Color(0, 0, 0, 0.2 * k))
 		# a pulsing target ring, so the spot shows even with a worm on it
