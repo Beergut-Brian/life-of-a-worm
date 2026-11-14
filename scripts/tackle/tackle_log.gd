@@ -11,14 +11,17 @@
 ##  - traits: Worm.trait_earned (and the worm's earned list on spawn), every TraitData in data/traits/;
 ##  - secrets: any node with a `secret_found(id)` signal, connected as it enters the tree; secrets
 ##    listed in data/secrets/*.tres (id property), unknown ids are added to the page;
-##  - cutscenes: the Story node's seen list and its cutscene_finished signal (Story.SCENES).
+##  - cutscenes: the Story node's seen list and its cutscene_finished signal (Story.SCENES);
+##  - things (T-05): every surface thing in data/props/ (PropData). Unlocked when a worm breaks one
+##    (SurfaceProp.broke, connected as the prop enters the tree); a tin whose props were broken
+##    before this page existed gets them on load, silently (the tin's "destruct" state).
 class_name TackleLog
 extends Node
 
 signal unlocked(page: StringName, id: StringName)
 signal page_completed(id: StringName)
 
-const PAGES: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes"]
+const PAGES: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes", &"things"]
 const MEET_PX := 120.0
 ## Creatures the slice knows about before data/creatures/ exists (the other lane adds files there).
 const KNOWN_CREATURES: Array[StringName] = [&"beetle", &"ladybird", &"mole"]
@@ -52,6 +55,7 @@ func _init() -> void:
 	var scenes: Array[StringName] = []
 	scenes.assign(Story.SCENES)
 	entries[&"cutscenes"] = scenes
+	entries[&"things"] = _ids_in("res://data/props/", "PropData")
 	for p in PAGES:
 		found[p] = [] as Array[StringName]
 
@@ -63,6 +67,8 @@ func _ready() -> void:
 	for n in get_tree().get_nodes_in_group(&"creature") + get_tree().get_nodes_in_group(&"creatures"):
 		if n is ApexBeetle:   # the level makes its apexes before the home slice makes this log
 			_on_node_added(n)
+	for n in get_tree().get_nodes_in_group(SurfaceProp.GROUP):   # stood before this log was made
+		_on_node_added(n)
 	_watch_story()
 
 
@@ -164,6 +170,8 @@ func _on_node_added(n: Node) -> void:
 		var a := n as ApexBeetle
 		if not a.eaten.is_connected(_on_apex_eaten):
 			a.eaten.connect(_on_apex_eaten.bind(a))
+	if n is SurfaceProp and not (n as SurfaceProp).broke.is_connected(_on_prop_broke):
+		(n as SurfaceProp).broke.connect(_on_prop_broke)
 	if n.has_signal(&"secret_found") and not n.is_connected(&"secret_found", note_secret):
 		n.connect(&"secret_found", note_secret)
 	if n is Story:
@@ -172,6 +180,25 @@ func _on_node_added(n: Node) -> void:
 
 func _on_apex_eaten(_player: int, a: ApexBeetle) -> void:
 	meet(a.id)
+
+
+## A worm broke a surface thing: its sketch is found (the first of its kind; later ones are quiet).
+func _on_prop_broke(prop: SurfaceProp, _player: int, _chunks: Array) -> void:
+	if prop.data:
+		unlock(&"things", prop.data.id)
+
+
+## Things already broken in this tin (WorldDestruct's saved state: "<id>_<n>" -> hits left), for a
+## tin played before the things page existed. No sound, no fresh mark: nothing just happened.
+func sync_broken(state: Dictionary) -> void:
+	for key: String in state:
+		if int(state[key]) > 0:
+			continue
+		var id := StringName(key.substr(0, key.rfind("_")))
+		if (entries[&"things"] as Array).has(id) and not is_found(&"things", id):
+			(found[&"things"] as Array).append(id)
+	if is_complete(&"things") and not lures.has(&"things"):
+		lures.append(&"things")
 
 
 func _watch_story() -> void:
@@ -254,6 +281,9 @@ func from_dict(d: Dictionary) -> void:
 	for p in d.get("lures", []):
 		lures.append(StringName(p))
 	fresh = int(d.get("fresh", 0))
+	var destruct = Save.get_value(WorldDestruct.SAVE_KEY, {})
+	if destruct is Dictionary and destruct.get("props") is Dictionary:
+		sync_broken(destruct.props)
 
 
 ## True when the script or any base script is the named global class (RingFood extends FoodData).

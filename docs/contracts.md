@@ -535,7 +535,10 @@ func note_pickup(w, inside: bool); func should_bring(w) -> bool   # the level ca
 signal secret_found(id: StringName)           # connected automatically when it enters the tree
 
 # TackleLog
-signal page_completed(id: StringName)         # &"foods" | &"creatures" | &"traits" | &"secrets" | &"cutscenes"
+signal page_completed(id: StringName)         # &"foods" | &"creatures" | &"traits" | &"secrets" | &"cutscenes" | &"things"
+# Page &"things" (T-05, gap-close-40): every PropData in data/props/. Unlocked by SurfaceProp.broke
+# (props join group SurfaceProp.GROUP = &"surface_props"); func sync_broken(destruct_props) marks
+# things broken in an older visit of the tin, silently.
 signal unlocked(page: StringName, id: StringName)
 func unlock(page, id) -> bool; func meet(id); func note_secret(id); func note_cutscene(id)
 # TackleBox: open(player), close(), nav(dx, dy), confirm(); signal rewatch(id)
@@ -580,7 +583,7 @@ The book reads, it never writes: entries from the data registries, the found-set
 
 ```gdscript
 # BookCatalog (scripts/ui/book_catalog.gd, static)
-const SECTIONS = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes"]
+const SECTIONS = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes"]   # + &"planets" (S-18), &"things" (T-05: data/props PropData, drawn by PropSketch)
 func files(section) -> PackedStringArray     # every data file the section reads
 func entries(section) -> Array[Dictionary]    # {id, data (Resource or cutscene Dictionary), path}
 func found_set(tree) -> Dictionary            # section -> Array[StringName]; live TackleLog first,
@@ -833,7 +836,8 @@ func touches(global_point: Vector2) -> bool
 #   It falls (LooseFall, radius 0) if the ground under its middle is eaten.
 
 # WorldDestruct (scripts/world/world_destruct.gd): node "Destruct" in scenes/levels/planet.tscn
-@export var loose_foods: Array[StringName] = [&"pebble"]   # food ids that get a LooseFall
+@export var loose_foods: Array[StringName] = [&"pebble", &"apple", &"boulder", &"big_boulder", &"ore_nugget", &"fossil"]   # food ids that get a LooseFall
+var thumps: int   # W-35: landings of a loose food with radius >= THUMP_RADIUS near a worm (camera nudge)
 var props: Dictionary[String, SurfaceProp]               # live props by key
 func setup(world, spawn: Vector2, saved: Dictionary, foods: Node = null) -> void
 func place(d: PropData, angle: float, key: String, hp := -1) -> SurfaceProp
