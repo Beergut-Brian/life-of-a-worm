@@ -152,7 +152,8 @@ func test_its_party_sweets_are_unique_and_tied_on_while_the_balloon_is_up() -> v
 func test_an_older_tin_gains_it_and_keeps_its_statics() -> void:
 	var statics: Array = _dir.to_dict().statics
 	var n := RingsDirector.secret(ID).food_count
-	var old := statics.slice(0, statics.size() - n)
+	var late := RingsDirector.late_food_count()   # D105 ring foods come after it
+	var old := statics.slice(0, statics.size() - n - late)
 	old[0] = [old[0][0], 7.0]
 	var again := RingsDirector.new()
 	again.auto_tick = false
@@ -164,8 +165,8 @@ func test_an_older_tin_gains_it_and_keeps_its_statics() -> void:
 	assert_int(now.size()).is_equal(statics.size())
 	assert_float(float(now[0][1])).is_equal(7.0)
 	for i in n:
-		assert_str(String(now[now.size() - 1 - i][0])).is_equal(String(FOOD))
-		assert_float(float(now[now.size() - 1 - i][1])).is_less(0.0)
+		assert_str(String(now[now.size() - 1 - late - i][0])).is_equal(String(FOOD))
+		assert_float(float(now[now.size() - 1 - late - i][1])).is_less(0.0)
 	assert_bool(again.to_dict().carved.has(String(ID))).is_true()
 	remove_child(again)
 	again.free()

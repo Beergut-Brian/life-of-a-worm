@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"clover_leaf"
+eat_cue = "world_sprout"
+flavour = &"root"
+growth = 0.8
+size_stage = 1
+color = Color(0.3600, 0.7600, 0.3200, 1)
+radius = 4.5
+ring = &"topsoil"
+regrow_time = 120.0
+plants = &""
+look = 2
+accent = Color(0.7000, 0.9500, 0.6000, 1)

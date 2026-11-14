@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chalk_bit"
+eat_cue = "rock_beetle_clack"
+flavour = &"stone"
+growth = 1.0
+size_stage = 1
+color = Color(0.9700, 0.9000, 0.9200, 1)
+radius = 4.5
+ring = &"topsoil"
+regrow_time = 200.0
+plants = &""
+look = 7
+accent = Color(1.0000, 0.7500, 0.8500, 1)

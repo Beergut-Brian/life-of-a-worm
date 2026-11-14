@@ -166,6 +166,11 @@ func test_their_foods_come_last_so_older_tins_keep_their_statics() -> void:
 	for id in RingsDirector.LATE_SECRETS:
 		for i in RingsDirector.secret(id).food_count:
 			tail.append(String(RingsDirector.secret(id).food))
+	# the rings' D105 foods come after them, last of all
+	for life in RingsDirector.LIVES:
+		for i in life.late_scatter_count:
+			if not life.late_scatter.is_empty():
+				tail.append(String(life.late_scatter[i % life.late_scatter.size()].id))
 	var got: Array[String] = []
 	for e in statics.slice(statics.size() - tail.size()):
 		got.append(String(e[0]))

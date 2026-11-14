@@ -195,7 +195,12 @@ static func seed_for(gave: FoodData) -> FoodData:
 				if r is RingFood and (r as RingFood).plants != &"":
 					_plantables.append(r)
 		_plantables.sort_custom(func(a: RingFood, b: RingFood) -> bool:
-			return a.size_stage < b.size_stage or (a.size_stage == b.size_stage and String(a.id) < String(b.id)))
+			# the plain seed first among equals, so a later root seed (D105 cherry pit) never takes its place
+			if a.size_stage != b.size_stage:
+				return a.size_stage < b.size_stage
+			if (a.id == SEED.id) != (b.id == SEED.id):
+				return a.id == SEED.id
+			return String(a.id) < String(b.id))
 	for r in _plantables:
 		if r.plants == gave.flavour and r.size_stage <= SEED.size_stage:
 			return r

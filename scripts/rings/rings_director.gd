@@ -16,6 +16,9 @@
 ##   stuck in the sky (SkyBalloon), popped once per tin by eating its tie, and its birds (SkyFlock);
 ## - the surface ring (data/rings/surface_life.tres, SurfaceLife): its counters and its apples, and
 ##   the lawnmower driving the grass (its counter's body from data/creatures/lawnmower.tres).
+## - the rings' visible events (RingLife.events, D105: a root pocket bursting, seeds blowing down, a
+##   fairy ring after rain), played by its RingEvents child, and each ring's late foods
+##   (RingLife.late_scatter), placed after every older static.
 ## Everything it keeps goes in the tin under Save key "rings".
 class_name RingsDirector
 extends Node2D
@@ -88,6 +91,8 @@ var sprouts: CastingsSprouts
 var balloon: SkyBalloon
 ## X-08: the empty Jarling cameo spots (one bare marker each until a cameo update fills one).
 var cameo_stands: CameoStands
+## D105: the rings' visible events (RingLife.events: a root pocket bursting, seeds blowing down...).
+var events: RingEvents
 var _statics: Array[Dictionary] = []  # {node, food}
 var _rng := RandomNumberGenerator.new()
 var _last_clock := 0.0
@@ -213,6 +218,10 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 		spot.position = cities[s.id]
 		spot.director = self
 		add_child(spot)
+	events = RingEvents.new()
+	events.name = "RingEvents"
+	add_child(events)
+	events.setup(self, LIVES, p_seed)
 	cameo_stands = CameoStands.new()
 	cameo_stands.name = "CameoStands"
 	add_child(cameo_stands)
@@ -343,6 +352,14 @@ func _scatter(saved: Array) -> void:
 		var late := secret(id)
 		if late:
 			_place_secret_foods(late, placed)
+	# D105 content: each ring's late foods, last of all (older tins keep their order)
+	for life in LIVES:
+		var band := ring_band(life.ring)
+		for i in life.late_scatter_count:
+			if life.late_scatter.is_empty():
+				break
+			var at := polar(rng.randf_range(-0.12, 0.12), rng.randf_range(band.x + 0.01, band.y - 0.01))
+			placed.append({ "food": life.late_scatter[i % life.late_scatter.size()], "at": at })
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
 		# A slot only takes its saved "eaten" if the same food was saved there (a tin from before a
@@ -355,6 +372,15 @@ func _scatter(saved: Array) -> void:
 
 
 ## A hidden place's foods: food_count around the hall, extra_food in its first side room.
+## How many statics the rings' late foods (RingLife.late_scatter, D105) add at the very end.
+static func late_food_count() -> int:
+	var n := 0
+	for life in LIVES:
+		if not life.late_scatter.is_empty():
+			n += life.late_scatter_count
+	return n
+
+
 func _place_secret_foods(s: SecretData, placed: Array[Dictionary]) -> void:
 	var food: RingFood = load("res://data/foods/%s.tres" % s.food)
 	var c: Vector2 = cities[s.id]
@@ -486,6 +512,8 @@ func tick() -> void:
 	_last_clock = world.clock
 	ecology.step(dt)
 	_traits_and_rain(dt)
+	if events:
+		events.step(dt)
 	for s in _statics:
 		var p: RingPickup = s.node
 		if p.gone_at >= 0.0 and world.clock >= p.gone_at + s.food.regrow_time and _near_worm(p.home, 2000.0) \

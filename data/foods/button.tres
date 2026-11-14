@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"button"
+eat_cue = "jar_clink"
+flavour = &"junk"
+growth = 0.8
+size_stage = 1
+color = Color(0.9200, 0.3000, 0.3500, 1)
+radius = 4.0
+ring = &"dirt"
+regrow_time = 300.0
+plants = &""
+look = 7
+accent = Color(1.0000, 0.8000, 0.8000, 1)

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cherry_pit"
+eat_cue = "home_seed"
+flavour = &"root"
+growth = 1.0
+size_stage = 1
+color = Color(0.7000, 0.3600, 0.2400, 1)
+radius = 4.5
+ring = &"topsoil"
+regrow_time = 120.0
+plants = &"root"
+look = 1
+accent = Color(0.9500, 0.7000, 0.5500, 1)

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"crayon"
+eat_cue = "creature_munch"
+flavour = &"junk"
+growth = 2.0
+size_stage = 2
+color = Color(0.2500, 0.5000, 0.9500, 1)
+radius = 7.0
+ring = &"topsoil"
+regrow_time = 400.0
+plants = &""
+look = 4
+accent = Color(0.9500, 0.9500, 0.3000, 1)

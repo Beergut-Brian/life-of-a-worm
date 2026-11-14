@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"caterpillar"
+flavour = &"bug"
+growth = 2.5
+size_stage = 2
+color = Color(0.5500, 0.8000, 0.2000, 1)
+radius = 12.5
+behaviour = 0
+ring = &"topsoil"
+telegraph = 1.0
+bark = "grub_squeak"
+windup_cue = ""
+speed = 10.0
+notice = 0.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0000, 0.9000, 0.3000, 1)

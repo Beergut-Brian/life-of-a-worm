@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wild_berry"
+eat_cue = "boop"
+flavour = &"root"
+growth = 1.5
+size_stage = 1
+color = Color(0.7500, 0.1600, 0.4200, 1)
+radius = 5.0
+ring = &"topsoil"
+regrow_time = 150.0
+plants = &""
+look = 0
+accent = Color(1.0000, 0.6000, 0.8000, 1)

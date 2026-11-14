@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"aphid"
+flavour = &"bug"
+growth = 0.8
+size_stage = 1
+color = Color(0.5600, 0.8600, 0.3200, 1)
+radius = 4.0
+behaviour = 0
+ring = &"topsoil"
+telegraph = 1.0
+bark = "grub_squeak"
+windup_cue = ""
+speed = 14.0
+notice = 0.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(0.8500, 1.0000, 0.7000, 1)

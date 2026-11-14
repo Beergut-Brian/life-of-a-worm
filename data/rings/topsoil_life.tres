@@ -5,6 +5,16 @@
 [ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
 [ext_resource type="Resource" path="res://data/foods/droplet.tres" id="f0"]
 [ext_resource type="Resource" path="res://data/foods/bottle_cap.tres" id="f1"]
+[ext_resource type="Script" path="res://scripts/rings/ring_event.gd" id="ev"]
+[ext_resource type="Resource" path="res://data/foods/wild_berry.tres" id="d0"]
+[ext_resource type="Resource" path="res://data/foods/cherry_pit.tres" id="d1"]
+[ext_resource type="Resource" path="res://data/foods/clover_leaf.tres" id="d2"]
+[ext_resource type="Resource" path="res://data/foods/lost_coin.tres" id="d3"]
+[ext_resource type="Resource" path="res://data/foods/glass_bead.tres" id="d4"]
+[ext_resource type="Resource" path="res://data/foods/chalk_bit.tres" id="d5"]
+[ext_resource type="Resource" path="res://data/foods/walnut.tres" id="d6"]
+[ext_resource type="Resource" path="res://data/foods/crayon.tres" id="d7"]
+[ext_resource type="Resource" path="res://data/foods/mushroom.tres" id="d8"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -63,9 +73,133 @@ live = ""
 depth_min = 0.0
 depth_max = 0.0
 
+[sub_resource type="Resource" id="d105a"]
+script = ExtResource("2")
+id = &"aphid"
+ring = &"topsoil"
+start = 30.0
+plant = false
+growth_rate = 0.0
+capacity = 80.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.25
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.2
+live_max = 6
+live = "res://scenes/creatures/aphid.tscn"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="d105b"]
+script = ExtResource("2")
+id = &"caterpillar"
+ring = &"topsoil"
+start = 6.0
+plant = false
+growth_rate = 0.0
+capacity = 15.0
+death = 0.006
+efficiency = 0.4
+immigration = 0.03
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.4
+live_max = 3
+live = "res://scenes/creatures/caterpillar.tscn"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="d105c"]
+script = ExtResource("2")
+id = &"snail"
+ring = &"topsoil"
+start = 5.0
+plant = false
+growth_rate = 0.0
+capacity = 12.0
+death = 0.005
+efficiency = 0.4
+immigration = 0.02
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.5
+live_max = 3
+live = "res://scenes/creatures/snail.tscn"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="d105d"]
+script = ExtResource("2")
+id = &"shield_bug"
+ring = &"topsoil"
+start = 3.0
+plant = false
+growth_rate = 0.0
+capacity = 10.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.004
+eats = Dictionary[StringName, float]({&"aphid": 0.03})
+half_sat = 10.0
+live_scale = 0.5
+live_max = 2
+live = "res://scenes/creatures/shield_bug.tscn"
+depth_min = 0.0
+depth_max = 0.0
+
+[sub_resource type="Resource" id="e0"]
+script = ExtResource("ev")
+id = &"seed_shower"
+ring = &"topsoil"
+stage_from = 2
+first_after = 120.0
+every = 300.0
+after_rain = false
+food = ExtResource("d1")
+count = 4
+shape = 1
+distance = 64.0
+cue = "world_seed"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("ev")
+id = &"fairy_ring"
+ring = &"topsoil"
+stage_from = 2
+first_after = 0.0
+every = 240.0
+after_rain = true
+food = ExtResource("d8")
+count = 6
+shape = 2
+distance = 56.0
+cue = "world_sprout"
+fx = &"plant"
+
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("ev")
+id = &"dew_drip"
+ring = &"topsoil"
+stage_from = 2
+first_after = 200.0
+every = 480.0
+after_rain = false
+food = ExtResource("f0")
+count = 5
+shape = 1
+distance = 64.0
+cue = "boop"
+fx = &"yum"
+
 [resource]
 script = ExtResource("1")
 ring = &"topsoil"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("d105a"), SubResource("d105b"), SubResource("d105c"), SubResource("d105d")])
 scatter = Array[ExtResource("3")]([ExtResource("f0"), ExtResource("f1")])
 scatter_count = 4
+late_scatter = Array[ExtResource("3")]([ExtResource("d0"), ExtResource("d1"), ExtResource("d2"), ExtResource("d3"), ExtResource("d4"), ExtResource("d5"), ExtResource("d6"), ExtResource("d7")])
+late_scatter_count = 16
+events = Array[ExtResource("ev")]([SubResource("e0"), SubResource("e1"), SubResource("e2")])

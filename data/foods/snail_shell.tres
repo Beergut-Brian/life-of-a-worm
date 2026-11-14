@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"snail_shell"
+eat_cue = "rock_beetle_clack"
+flavour = &"stone"
+growth = 1.0
+size_stage = 1
+color = Color(0.9300, 0.8200, 0.6200, 1)
+radius = 4.5
+ring = &"dirt"
+regrow_time = 240.0
+plants = &""
+look = 11
+accent = Color(0.7200, 0.5000, 0.3000, 1)

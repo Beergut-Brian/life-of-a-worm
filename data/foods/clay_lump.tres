@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"clay_lump"
+eat_cue = "world_munch"
+flavour = &"stone"
+growth = 1.5
+size_stage = 1
+color = Color(0.8000, 0.4500, 0.3000, 1)
+radius = 5.0
+ring = &"dirt"
+regrow_time = 200.0
+plants = &""
+look = 0
+accent = Color(0.9500, 0.6800, 0.5000, 1)
