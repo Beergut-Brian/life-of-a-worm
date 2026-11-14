@@ -1,92 +1,113 @@
-# REPORT: worm-start-fresh-1 (branch `feature/worm-start-fresh-1`)
+# REPORT: worm-gap-close-37 (UI and HUD gap-close)
 
-K-11 (S8, Start fresh) moves from **partial** to **built**. Kaden's standing rule: with a save present the menu shows
-Continue and New world. New asks with a held A, backs up the old save first (and never deletes it) and starts a
-fresh world. Settings offers Restore old world. The pause menu's Main menu reaches all of this.
-
-## Where Worm's "menu" is
-Worm keeps three saves per profile, its bait tins (`<profile>_tin<N>.json`). The menu that loads a save is the
-**bait-tin dock**: lobby, ready-up, then the dock, where you pick a tin. The rule's Continue / New world therefore sits
-under the focused played tin on the dock. The lobby keeps all its own buttons (Play, Settings, Back to Open Jar), and
-the dock keeps its own (left/right pick, A open, B back).
+Branch `feature/worm-gap-close-37`, based on `origin/dev` at `6b18824` (merged `origin/dev` first:
+already up to date). Not pushed: the producer ships.
 
 ## What changed
-- **Dock: Continue / New world** (`scripts/planet/tin_fresh.gd`). Under a played tin there are two bars: `[a] Continue`
-  (the tin itself; A opens it as before) and below it `[y] New world`. Down lights New world and takes the pad from the
-  dock. On New world, A or Y asks; up or B goes back to Continue; left/right goes to the next tin. Y on Continue also
-  asks. Down on an empty tin plays a "no" beep (an empty tin is already new). `[x] Restore` still shows on a tin that
-  has a backup.
-- **Hold-A card.** The card uses the template's `HoldConfirm`: 1.5 s on a ring in the asker's colour, with a tick as it
-  starts and while it fills. A tap drains it with a back tick, and B keeps the save. The copy is "START A NEW WORLD?"
-  and "Tin N's planet is kept safe: Settings > Restore old world brings it back."
-- **Backups** (`scripts/planet/bait_tins.gd`). A backup is now a copy, written to
-  `user://saves/backups/<profile>_tin<N>--<UTC stamp>-<n>.json` and read back to check it is whole. Only then is the
-  tin emptied. If the copy cannot be made (the folder cannot be created, the write fails, or the read-back differs),
-  `start_fresh` returns "" and the tin is left byte for byte as it was; the card beeps no and nothing opens.
-  Backups are never removed. Backups in the old layout (`<profile>_tin<N>.old<k>.json` beside the tin, from the
-  partial K-11 on dev) are moved into the folder the first time the tin's backups are listed.
-  - **Naming deviation:** the rule says `<profile>--<stamp>-<n>.json`. Worm has three saves per profile, so the tin is
-    in the name (`p1_tin2--20261113T101500-000.json`) so that Restore knows which tin a backup belongs to. The backup's
-    contents are the tin file's own JSON, unchanged.
-- **Restore** copies a backup back into its tin. The planet in the tin is backed up first. If that backup fails,
-  Restore refuses and changes nothing. Because the old backup is kept and the replaced planet becomes the newest
-  backup, a second Restore undoes the first.
-- **Settings > Restore old world** (`scenes/ui/settings_panel.gd`). The panel has a new fifth row, which shows only
-  while `restore_check` returns true. A on that row emits `restore_asked(player)`. `TinFresh.hook_settings` wires it
-  for the lobby's panel only: the row shows while any tin has a backup, and it asks with the same held-A card. It
-  brings the newest backup of any tin back into its own tin (`BaitTins.restore_newest`), backing up first. The pause
-  menu's panel never gets a `restore_check`, so restoring the open world mid-game is impossible. Settings is a
-  template-structured file. The change is additive and does nothing in a game that never sets `restore_check`.
-- **Pause, then Main menu** (unchanged, already on dev): `Game.to_lobby()` saves and closes the tin. The lobby, then
-  the dock, then show Continue / New world again. Covered end to end by `::test_through_the_boot_scene_new_then_pause_back_to_restore`.
-- **`Save.replace(dict)`** (`scripts/autoload/Save.gd`): replaces the open save whole and writes it now. Tests use
-  `Save.replace({})` to start empty.
+
+**One hint panel per player (C-24, moves P-13 on).** Dev had a single shared panel, bottom-right,
+lit when *any* worm could carry or was in the burrow, with green pictures for both players. Now:
+
+- `HintRules` (`scripts/ui/hint_rules.gd`) is a pure rule set: `rows_for(ctx)`, `hot_for(ctx)`,
+  `visible_rows(ctx, awake)`, `glyph_for(ctx)`, `signature(ctx)`, `refusal_for(button, solo)`.
+  No nodes, no state; the tests drive it directly.
+- `PlayerHints` (`scripts/ui/player_hints.gd`) draws one player's panel: glyph + picture per row,
+  edged in the player's colour, green bottom-left and red bottom-right (clear of the stage icons
+  at the top). Lit rows pulse. It **folds to its lit rows after 8 s with no change** (a thin
+  coloured tab when nothing is lit), so two panels never sit over the play area for long. A new
+  context, Select or a refused press opens it again.
+- Context is per worm now: `PlanetLevel.hint_context(w)` (carry ready / carrying, what held B warps
+  to, partner lost, the bed's wall), then `HomeSlice` adds the swap shop and the tackle box's new
+  page for each worm. `PlanetHud.set_player_context(player, ctx)` feeds the panel, and
+  `keep_panels` drops a panel when its worm leaves.
+- New context row: **held B back to your partner**. When the partner is far and one of the two is
+  off screen, the B row shows the partner worm with a pull arrow and lights (the warp target
+  follows `_on_warp_requested`: partner if you are not ahead, else home).
+
+**Head glyph (C-25).** `ReadyGlyph.token` comes from `HintRules.glyph_for`: A swap, X carry,
+Y wall, and new: B when the partner is lost. `ReadyGlyph.refuse(tok)` shows a refused press's
+glyph there with a steady side-to-side shake for 0.6 s.
+
+**Every press answers (C-26, K-15).** `PressAnswer` (`scripts/ui/press_answer.gd`, made by
+PlanetHud, `_unhandled_input` only, so the pause menu, menus and cutscenes never reach it): in
+play, Select alone (outside solo; not while Start is held, which is the solo hold), keyboard R,
+LB / RB and the stick clicks now play `bonk`, pop the worm, shake that button's glyph over *that
+player's* worm (Select glyph, stick glyph; shoulders have no glyph art, so only the panel shakes)
+and open that player's panel, which shows the buttons that do work. A, B, X, Y, Start and the
+d-pad are never refused; the guide button is left to the launcher.
+
+Text-free: the new files have no text nodes or string drawing; a test greps their source for the
+same calls `test_hud_has_no_numbers_or_words` bans. No image or audio files added (existing
+`UiStyle.draw_glyph` glyphs, existing `bonk` cue, drawn placeholder pictures like the old panel's).
+
+## Sync (first commit)
+
+| Row | Was | Now | Proof |
+| --- | --- | --- | --- |
+| P-11 | partial | built | `test_lobby::test_lobby_menu_has_text_labels`; `test_hud_stage_icon::test_hud_has_no_numbers_or_words`, `::test_gameplay_screen_has_no_visible_text`; `test_hint_rules::test_hint_pieces_draw_no_text`. Menu half and gameplay half (K-10) are both built |
+| P-13 | built | built, moved on | one panel per player (C-24); `tests/test_hint_rules.gd` |
+| K-15 | built | built, moved on | Select alone, shoulders, stick clicks answered (C-26) |
+| P-06 / K-13 / K-11 | built | unchanged | Checked against code: pause has Resume, Main menu, Settings, Back to Open Jar with the big door icon (`pause_menu.gd` asks, then `Game.quit()`); the lobby's Back to Open Jar bar does the same (`lobby.gd`); Continue / New world on the dock (K-11, `tests/test_fresh_start.gd`). Nothing to build |
+| R-05 | partial | unchanged | Not a UI row: still waits on Reel's revised bible (Y-13) and worm personalities |
+| R-07 | missing | unchanged | Not a UI row (ring chapters with their cutscenes); gameplay and story lanes |
+| P-05 | partial | unchanged | Code side done; waits on the dock art (held for direction) |
+
+The brief's "R-05 and R-07-style rows (every press answers; show the buttons that matter)" read as
+the feel rules, which are K-15 (every press answers) and P-12 / P-13 (show the buttons); those are
+the rows moved above.
+
+## Moved row IDs
+
+- **P-11** partial → built (sync)
+- **P-13** built, proof moved on
+- **K-15** built, note moved on
+- **C-24**, **C-25**, **C-26** new rows (source S9, this brief), built
+
+Totals: 267 rows: 202 built, 32 partial, 21 missing, 5 superseded, 4 dropped, 3 later.
+
+## Skipped
+
+- No unmerged `origin/feature/worm-*` or `origin/fix/*` branches besides the held art branches
+  (`art-rings-1`, `art-worms-1`), so no file was off-limits from origin.
+- `feature/worm-gap-close-36` (local, parallel, gameplay): touches `scripts/burrow/burrow_wall.gd`,
+  PLAN-STATUS D-13 / K-14; none of those touched here.
+- **Overlap with local, unpushed branches (producer, please read):**
+  - `feature/worm-gap-close-4` commit `adbc7ab` built a per-player `HintPanel`
+    (`scripts/planet/hint_panel.gd`) and rewrote `planet_hud.gd`, `planet_level.gd`,
+    `home_slice.gd` and the P-13 row. It never reached origin. This branch supersedes that commit
+    (same idea, plus pure `HintRules`, folding, the partner-lost row and refusals); merging both
+    would conflict in those three files. Drop `adbc7ab` if gap-close-4 is ever shipped. Its other
+    commits (P-08, P-17 tests) do not overlap.
+  - `feature/worm-gap-close-6` (local) moves P-11 to built with the same conclusion; trivial
+    conflict on that row only.
+- Space (stage 7) has no PlanetHud, so no hint panel or refusal answers there yet:
+  `scripts/space/` belongs to the space lane and `space_stage.tscn` gets its HUD there.
+- Shoulder buttons have no glyph in `UiStyle.GLYPHS`; a shoulder press shakes the panel only.
+  An `lb`/`rb` glyph is an art-lane ask.
+- `docs/ui.md` is the template's menu doc; not edited.
 
 ## Tests
-- `tests/test_fresh_start.gd`: 20 cases (renamed from `test_tin_fresh.gd`, extended). Uses `SuiteSandbox`
-  (its own profile `gdunit_fresh_start` and settings file), and every test starts with `Save.replace({})`. The
-  failing-backup cases point `Save.dir` at a throwaway `user://test_fresh_start_broken` whose `backups` is a file, and
-  remove it afterwards. Rule checks:
-  - with a save present the menu shows Continue and New: `::test_with_a_save_present_the_menu_shows_continue_and_new_world`
-  - New keeps a backup file and the old save still reads: `::test_new_keeps_a_backup_file_and_the_old_save_still_reads` (also checks the path pattern)
-  - Restore brings back the newest and backs up the replaced world first: `::test_settings_restore_brings_the_newest_back_and_backs_up_the_world_first`, `::test_restore_brings_back_the_newest_and_keeps_the_current_one`
-  - a failing backup stops New and leaves the save alone: `::test_a_backup_that_fails_stops_new_and_leaves_the_save_alone` (direct call and through the card), `::test_restore_refuses_when_the_world_it_replaces_cannot_be_backed_up`
-- Clean import (`rm -rf .godot && godot --headless --import --path .`): exit 0, no script errors.
-- Full suite (`--continue`): `Overall Summary: 865 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |`, exit 0 (also in `handoff/test-output.txt`).
-- After the runs, the real `user://saves/backups` was empty and no test folders were left behind.
 
-## Frames (`handoff/frames/`, looked at each one)
-These were taken with `scripts/tools/shots.sh` on a throwaway profile and folder (`user://startfresh_frames`, deleted
-afterwards). The driver scene is `.scratch/fresh_frames.tscn`.
-- `start_dock_continue_new.png`: "PICK A BAIT TIN". Tin 1 and Tin 2 are played and stand open with the green and red
-  worms peeking out. Tin 3 has its lid on and reads "New planet". Under Tin 1 (focused, white frame), the dark
-  `(A) Continue` bar sits above the wide yellow lit `(Y) New world` bar. The dock's own hint bar ("Pick / Open / Back")
-  is at the bottom right. Nothing overlaps.
-- `new_confirm_hold_a.png`: the dock is dimmed under a dark slanted card: "START A NEW WORLD?", "Tin 1's planet is kept
-  safe: Settings > Restore old world brings it back.", and the A glyph in a ring half filled in P1 green. Below that:
-  "Hold (A) Yes (B) Keep it".
-- `settings_restore_old_world.png` (extra): the lobby with Settings open (Music 80, Sound 100, Screen shake ON, Solo
-  playtest OFF), and the fifth bar "RESTORE OLD WORLD" focused (cream with the yellow chevrons). It sits just above the
-  hint bar at the bottom and does not overlap it.
-- The older frames from rules-audit-1 (`start_dock_continue_new_restore.png`, `restore_confirm_hold_a.png`) were not in
-  this worktree's `handoff/` (handoff is excluded from git), so there was nothing to replace.
+- New: `tests/test_hint_rules.gd`, 10 cases (6 pure rule cases, 4 live in a real planet).
+- Touched callers kept green: `test_hud_stage_icon.gd` (5), `test_swap_shop.gd` (5;
+  `HomeSlice.token_for` now delegates to `HintRules.glyph_for`).
+- Full suite on a clean import (`.godot/` removed, `--import`, then GdUnitCmdTool `-a tests`):
+  **875 test cases, 0 errors, 0 failures, 0 orphans**, exit 0, no ObjectDB leak line.
 
-## Reference
-`~/openjar/junk-yard-zap` was readable, but its `origin/dev` has no fresh-start files. The flow is on its branch
-`origin/fix/jyz-rules-audit-1` (`scripts/levels/fresh_start.gd`, `scenes/ui/settings_panel.gd`). I read those to
-follow the pattern: copy then wipe, a `backups/` folder with a UTC stamp, the newest backup restored after backing up,
-and the Restore row only on the lobby's panel. I did not edit that repo, and I did not copy its names or copy
-(Worm says world/planet and tin).
+## Frames
 
-## PLAN-STATUS
-- K-11: partial to **built**. The proof points at `tests/test_fresh_start.gd` and the three frames.
-- The file had no totals line, so I added one under Sources: 264 rows: 198 built, 33 partial, 21 missing,
-  5 superseded, 4 dropped, 3 later.
+Taken with `scripts/tools/shots.sh res://.scratch/hints_shot.tscn 0.9,1.15,2.4,3.6` (staging scene
+in `.scratch/`, not committed), looked at, kept in `handoff/frames/`:
 
-## Skipped / notes
-- Nothing in the brief was skipped.
-- The dock's own hint bar still says "A Open" while New world is lit (then A asks instead). `dock.gd` was left alone,
-  because it is rewritten by the unmerged worm-jar-2 branch. The lit bar itself says `(Y) New world`.
-- `tests/test_burrow_chambers.gd.uid` (made by the import) and the character face PNGs under `assets/characters/`
-  are import output and not tracked; they are not in the commits.
-- Not pushed (the producer ships).
+- `handoff/frames/h01_hint_panels_per_player.png`: green panel bottom-left with X carry lit and X
+  blinking over green's head; red's panel bottom-right, plain.
+- `handoff/frames/h03_select_refused_red.png`: red pressed Select alone: the Select glyph shakes over
+  red's worm (red's panel shakes, not in a still), green keeps its X.
+- `handoff/frames/h01_panels_folded.png`: after the quiet time: green folds to its one lit X row,
+  red to a thin red tab. Play area clear.
+- `handoff/frames/h02_partner_lost_b_row.png`: red off the far side (edge arrow at the bottom): both
+  panels open again with the held-B "back to partner" row lit.
+
+Look check: full panels are 150 x ~300 px in the bottom corners (same footprint as dev's single
+panel, now one per side); folding keeps them small in normal play. Nothing covers the worms or
+the stage icons.

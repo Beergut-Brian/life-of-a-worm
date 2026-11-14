@@ -381,9 +381,8 @@ func _physics_process(delta: float) -> void:
 		if _autosave_t >= autosave_every:
 			save_now()
 		return
-	var any_carry := false
-	var any_burrow := false
 	var digging := 0
+	var shown: Array = []
 	for w in Worm.all():
 		if w.get_parent() != actors:
 			continue
@@ -397,17 +396,13 @@ func _physics_process(delta: float) -> void:
 			burrow.sleep(w)
 		if w.carrying != null and is_instance_valid(w.carrying) and in_room and burrow.should_bring(w):
 			burrow.bring(w, w.carrying)
-		any_carry = any_carry or w.carry_ready or w.carrying != null
-		any_burrow = any_burrow or w.in_burrow
 		digging += w.tiles_this_frame
+		var ctx := hint_context(w)
+		hud.set_player_context(w.player, ctx)
+		shown.append(w.player)
 		if _glyphs.has(w.player):
-			var tok := ""
-			if w.carry_ready and w.carrying == null:
-				tok = "x"
-			elif w.in_burrow and not w.wall_open:
-				tok = "y"
-			_glyphs[w.player].token = tok
-	hud.set_context(any_carry, burrow.has_home, any_burrow)
+			_glyphs[w.player].token = HintRules.glyph_for(ctx)
+	hud.keep_panels(shown)
 	crust.steer_camera(stage_beat.zoom_cap())
 	_refresh_camera_targets()
 	_tunnel_step(digging > 0, delta)
@@ -428,6 +423,31 @@ func _tunnel_step(on: bool, delta: float) -> void:
 	_tunnel.volume_db = move_toward(_tunnel.volume_db, want, delta * (160.0 if on else 60.0))
 	if _tunnel.playing and _tunnel.volume_db <= -59.0:
 		_tunnel.stop()
+
+
+## One worm's hint context (HintRules ctx keys): what its player's buttons do right now. The
+## home slice adds the swap shop, the bed's wall and the tackle box's new page on top.
+func hint_context(w: Worm) -> Dictionary:
+	var carrying := w.carrying != null and is_instance_valid(w.carrying)
+	var partner: Worm = null
+	for o in Worm.all():
+		if o != w and o.get_parent() == actors:
+			partner = o
+	var far := partner != null and partner.cam_position().distance_to(w.cam_position()) > PARTNER_FAR
+	# Same order as _on_warp_requested: a lost partner you are not ahead of, else home, else partner.
+	var warp := ""
+	if far and w.model.stage <= partner.model.stage:
+		warp = "partner"
+	elif burrow.has_home:
+		warp = "home"
+	elif far:
+		warp = "partner"
+	# Lost: far apart and one of the two is off screen (the edge arrow is showing).
+	var lost := far and camera != null and (not camera.sees(partner.cam_position(), 30.0)
+			or not camera.sees(w.cam_position(), 30.0))
+	return { "carry_ready": w.carry_ready and not carrying, "carrying": carrying,
+		"has_home": burrow.has_home, "warp": warp, "partner_far": lost,
+		"wall": w.in_burrow and not w.wall_open }
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -170,33 +170,24 @@ func _physics_process(_delta: float) -> void:
 				continue   # the ant crew: only one at a time, and it lives at home now
 			e.gone_at = -1.0
 			e.node.respawn()
-	# Hints: what can be done right now, over the level's own context.
-	var ctx := { "carry_ready": false, "carrying": false, "has_home": level.burrow.has_home,
-		"wall": false, "swap": false, "box_new": tlog.fresh > 0 }
+	# Hints: what each worm's buttons do right now, over the level's own context for it.
+	var box_new := tlog.fresh > 0
 	for w in Worm.all():
 		if w.get_parent() != level.actors:
 			continue
-		var carrying := w.carrying != null and is_instance_valid(w.carrying)
-		var swap := bool(shop.ready_for.get(w.player, false))
-		ctx.carry_ready = ctx.carry_ready or (w.carry_ready and not carrying)
-		ctx.carrying = ctx.carrying or carrying
-		ctx.swap = ctx.swap or swap
-		ctx.wall = ctx.wall or (w.in_burrow and not w.wall_open)
+		var ctx: Dictionary = level.hint_context(w)
+		ctx.swap = bool(shop.ready_for.get(w.player, false))
+		ctx.box_new = box_new
+		level.hud.set_player_context(w.player, ctx)
 		if level._glyphs.has(w.player):
-			level._glyphs[w.player].token = token_for(w, carrying, swap)
-	level.hud.set_rows(ctx)
+			level._glyphs[w.player].token = HintRules.glyph_for(ctx)
 
 
 ## The blinking glyph over a worm's head: A at the swap shop, X near something to carry, Y asleep
 ## in the bed (the trait wall), else nothing.
 static func token_for(w: Worm, carrying: bool, swap: bool) -> String:
-	if swap:
-		return "a"
-	if w.carry_ready and not carrying:
-		return "x"
-	if w.in_burrow and not w.wall_open:
-		return "y"
-	return ""
+	return HintRules.glyph_for({ "swap": swap, "carry_ready": w.carry_ready, "carrying": carrying,
+		"wall": w.in_burrow and not w.wall_open })
 
 
 # --- save -----------------------------------------------------------------------------------------
