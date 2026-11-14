@@ -106,8 +106,9 @@ func test_two_eaters_two_neighbourhoods() -> void:
 	w.update_chunks(-1)
 	var na := disk.neighbourhood(disk.chunk_of(Vector2i(0, -200)), 2)
 	var nb := disk.neighbourhood(disk.chunk_of(Vector2i(0, 199)), 2)
-	assert_int(na.size()).is_greater_equal(25)
-	assert_int(nb.size()).is_greater_equal(25)
+	# The rounded 5x5 (PolarShape, W-23): never clipped here, never over the brief's 25.
+	assert_int(na.size()).is_between(20, 25)
+	assert_int(nb.size()).is_between(20, 25)
 	for k in na:
 		assert_bool(nb.has(k)).override_failure_message("opposite sides share chunk %s" % k).is_false()
 	var want := {}
