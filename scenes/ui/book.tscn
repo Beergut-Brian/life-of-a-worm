@@ -48,3 +48,7 @@ section = &"cutscenes"
 [node name="Planets" parent="Pages" instance=ExtResource("2_page")]
 layout_mode = 1
 section = &"planets"
+
+[node name="Things" parent="Pages" instance=ExtResource("2_page")]
+layout_mode = 1
+section = &"things"

@@ -27,7 +27,7 @@ const PENCIL := Color("4a3a30")
 const TIN := Color("3f6f5a")
 const TIN_LIGHT := Color("5d9a7c")
 const PAGE_COLORS := { &"foods": Color("f08a3c"), &"creatures": Color("e0483a"), &"traits": Color("5fd0e8"),
-	&"secrets": Color("ffd23f"), &"cutscenes": Color("8a7be0") }
+	&"secrets": Color("ffd23f"), &"cutscenes": Color("8a7be0"), &"things": Color("6fbf4a") }
 const SKIES := [Color("f6b98a"), Color("9fd0f0"), Color("8cc8f4"), Color("8cc8f4"), Color("f09a6a"), Color("e07a5a"), Color("26305a"), Color("1b2244")]
 ## Seconds after opening before input counts (the Y that opened it is not a close).
 const GRACE := 0.2
@@ -216,7 +216,7 @@ func _draw_lures() -> void:
 	var n := TackleLog.PAGES.size()
 	for i in n:
 		var p: StringName = TackleLog.PAGES[i]
-		var c := Vector2(400 + i * 280, 110)
+		var c := Vector2(400 + i * minf(280.0, 1120.0 / maxf(1.0, n - 1.0)), 110)   # pegs share the lid
 		_root.draw_circle(c + Vector2(0, -40), 9.0, Color("c9b27a"))   # peg
 		_root.draw_circle(c + Vector2(0, -40), 9.0, Color("223a30"), false, 2.0)
 		if tlog and tlog.lures.has(p):
@@ -256,7 +256,8 @@ func _draw_tabs() -> void:
 	for i in TackleLog.PAGES.size():
 		var p: StringName = TackleLog.PAGES[i]
 		var on := i == page
-		var r := Rect2(268 + (14 if on else 0), 270 + i * 146, 150, 128)
+		var step := tab_step()
+		var r := Rect2(268 + (14 if on else 0), 270 + i * step, 150, step - 18.0)
 		_root.draw_rect(r, PAPER if on else PAPER.darkened(0.25))
 		_root.draw_rect(r, PENCIL, false, 3.0)
 		if on:
@@ -268,8 +269,15 @@ func _draw_tabs() -> void:
 			_root.draw_circle(r.position + Vector2(r.size.x - 22, 20), 9.0, PENCIL, false, 2.0)
 
 
+## Tab row height: the tabs share the tin's side (730 px), 146 px each for five.
+static func tab_step() -> float:
+	return minf(146.0, 730.0 / TackleLog.PAGES.size())
+
+
 func _tab_icon(c: Vector2, p: StringName, col: Color) -> void:
 	match p:
+		&"things":
+			BookArt.house(_root, c + Vector2(0, 4), 26.0, col)
 		&"foods":
 			_food_doodle(c, 26.0, col, 3)
 		&"creatures":
@@ -362,6 +370,17 @@ func _creature_color(id: StringName) -> Color:
 	return _creature_colors.get(id, Color("8c6a4a"))
 
 
+var _props := {}
+
+
+## A surface thing's data by id (read once: the page redraws every frame).
+func _prop(id: StringName) -> PropData:
+	if _props.is_empty():
+		for d in WorldDestruct.load_props():
+			_props[d.id] = d
+	return _props.get(id)
+
+
 # One sketch per entry.
 func _doodle(c: Vector2, p: StringName, id: StringName, i: int) -> void:
 	match p:
@@ -399,6 +418,8 @@ func _doodle(c: Vector2, p: StringName, id: StringName, i: int) -> void:
 				_star(c, 50.0, PAGE_COLORS[&"secrets"])
 		&"cutscenes":
 			_dock_doodle(c, 70.0, i, true, 1.0)
+		&"things":
+			PropSketch.draw(_root, _prop(id), c, 124.0, true, Book.fit_matrix(_root))
 
 
 ## "That's why": a gold ring pulses out of the newly found secret's sketch, with stars round it.
