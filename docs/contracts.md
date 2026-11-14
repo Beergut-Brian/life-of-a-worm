@@ -588,7 +588,10 @@ func files(section) -> PackedStringArray     # every data file the section reads
 func entries(section) -> Array[Dictionary]    # {id, data (Resource or cutscene Dictionary), path}
 func found_set(tree) -> Dictionary            # section -> Array[StringName]; live TackleLog first,
                                               # else Save "home_slice" -> "tackle" -> "found";
-                                              # cutscenes also take Save "story_seen" / Story.seen
+                                              # cutscenes also take Save "story_seen" / Story.seen;
+                                              # traits also take earned_stars() (S-18)
+func earned_stars() -> Array[StringName]      # Stars of planets in Save "space" -> "done", plus any
+                                              # Star on a saved worm in Save "worms"; found in space too
 func count(entries, found) -> int
 # Sources: foods = data/foods FoodData; creatures = data/creatures CreatureData + data/pets PetData;
 # traits = data/traits TraitData; secrets = data/secrets SecretData; cutscenes = data/cutscenes/*.json
@@ -1430,6 +1433,7 @@ static func all(rules = null) -> Array[TraitData]
 static func is_star(id: StringName) -> bool
 static func for_planet(planet_id: StringName) -> TraitData
 static func record(player: int, id: StringName) -> bool   # onto the live planet worm and the tin's "worms"; silent
+static func planet_of(t: TraitData) -> PlanetData        # data/planets/<star_planet>.tres; null for a plain trait
 
 # StarAward (scripts/worm/star_award.gd): child "StarAward" of scenes/levels/space_stage.tscn
 signal revealed(player: int, id: StringName)   # once per earn (SpaceDrift.star_earned)
@@ -1449,7 +1453,8 @@ Earn path: StarAward sets `SpacePlanet.star_trait` on each arriving planet whose
 `SpaceDrift.on_eaten` (unchanged) adds it and emits `star_earned` (+ `secret_found`); StarAward then
 plays `TraitData.cue`, two `WormRing`s, leans the camera in on that worm and flies the part into its
 orbit, applies `space_turn`, and calls `StarTraits.record`. `space_speed/reach/steady` stay with
-`SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner. No `scripts/space/`
+`SpaceWorm.add_star`. The trait wall draws a gold star on a Star's tile corner and its planet (`planet_of`, colour and
+band) in a dark socket at the opposite corner; the book's trait sketch draws the same pair (S-18). No `scripts/space/`
 or `scripts/chomp/` edits.
 ### Dock story follow-up (worm-story-2)
 
