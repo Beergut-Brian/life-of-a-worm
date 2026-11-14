@@ -4,7 +4,10 @@
 ## under the sole (the top STOMP_DEPTH px of the ground) is squashed the one eaten way (Gulp: one
 ## segment shorter, dizzy, sparkles), never a stage or a trait. The warning is the shadow and the
 ## rumble, STOMP_AT s before the stomp. A boot the worm has outgrown stomps small and harmless.
-## The gardener is never seen. Not food.
+## The gardener is never seen. Once a worm has outgrown it (L-17, gap-close-41) the boot is food for
+## the moment it is down: from the stomp while the sole shows (STOMP_SHOW, longer for an outgrown
+## boot: OUTGROWN_SHOW), a worm whose mouth meets it swallows it (the outgrow sting and grin the
+## first time). Before the stomp it is only a shadow, so nothing can bite it.
 class_name BootShadow
 extends Creature
 
@@ -18,6 +21,8 @@ const OUTGROWN := 0.25
 const STOMP_AT := FADE + HOLD * 0.5
 ## Seconds the solid sole and dust show after the stomp.
 const STOMP_SHOW := 0.5
+## Seconds an outgrown boot stays down after its harmless stomp, so the worm under it can bite it.
+const OUTGROWN_SHOW := 1.2
 ## px under the surface the stomp reaches (about three tiles): only a worm near the top is squashed.
 const STOMP_DEPTH := 48.0
 const STOMP_CUE := "bonk"   # existing file; a comic thump, never a pain sound
@@ -25,6 +30,7 @@ const STOMP_CUE := "bonk"   # existing file; a comic thump, never a pain sound
 signal stomped(player: int)
 
 var did_stomp := false
+var _held := false   # a worm carried it: it stays where it was let go while it fades
 
 var spot := Vector2.ZERO
 var _up := Vector2.UP
@@ -32,12 +38,12 @@ var _life := 0.0
 
 
 func _ready() -> void:
-	super._ready()
-	remove_from_group(&"food")
+	super._ready()   # in group "food": is_available() says when a worm may eat it
 
 
+## Food only while it is down (stomped, sole showing) and the worm nearest it has outgrown it.
 func is_available() -> bool:
-	return false
+	return not _gone and not _carried and _block <= 0.0 and stomp_age() >= 0.0 and outgrown()
 
 
 func pass_over(at: Vector2, up: Vector2) -> void:
@@ -62,7 +68,19 @@ func step(delta: float) -> void:
 		return
 	_t += delta
 	_life += delta
-	position = spot + _up.orthogonal() * (_life - FADE - HOLD * 0.5) * 6.0
+	_startle = maxf(0.0, _startle - delta)
+	_block = maxf(0.0, _block - delta)   # just let go: not bitten again at once
+	if data:
+		for w in _worms():   # remember it as a threat, so the first bite of an outgrown boot stings
+			if Outgrown.of(w).note(data.id, react_to(w), w.head_position().distance_to(global_position)):
+				_on_outgrown()
+	if _carried:   # in a worm's mouth (gentle bite): it rides along; let go, it is lifted away
+		_held = true
+		_life = maxf(_life - delta, FADE + HOLD)
+		queue_redraw()
+		return
+	if not _held:
+		position = spot + _up.orthogonal() * (_life - FADE - HOLD * 0.5) * 6.0
 	rotation = _up.angle() + PI / 2.0
 	if not did_stomp and _life >= STOMP_AT:
 		stomp()
@@ -97,7 +115,12 @@ func is_under(p: Vector2) -> bool:
 ## Seconds since the stomp while the sole still shows, else -1.
 func stomp_age() -> float:
 	var a := _life - STOMP_AT
-	return a if did_stomp and a <= STOMP_SHOW else -1.0
+	return a if did_stomp and a <= show_time() else -1.0
+
+
+## How long the sole stays down after the stomp: longer once outgrown, a moment to bite it.
+func show_time() -> float:
+	return OUTGROWN_SHOW if outgrown() else STOMP_SHOW
 
 
 ## True when the worm nearest the boot is big enough that the boot is no threat to it.
@@ -134,7 +157,7 @@ func _draw() -> void:
 	draw_colored_polygon(heel, col)
 	var age := stomp_age()
 	if age >= 0.0:   # the boot itself, for a moment: solid sole, ink outline, dust both sides
-		var k2 := 1.0 - age / STOMP_SHOW
+		var k2 := 1.0 - age / show_time()
 		var boot := Color(data.color if data else Color(0.23, 0.16, 0.1), k2)
 		draw_colored_polygon(sole, boot)
 		draw_colored_polygon(heel, boot)
