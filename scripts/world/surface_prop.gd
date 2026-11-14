@@ -29,6 +29,8 @@ const BREAK_CUE := "prop_break"
 const BONK_CUE := "bonk"
 const INK := Color("2a1a14")
 const CS := 16.0
+## Every standing prop is in this group (the tackle log finds the ones stood before it).
+const GROUP := &"surface_props"
 ## Seconds a knocked-out chunk can't be eaten (it is seen flying out and landing first).
 const CHUNK_BLOCK := 0.7
 
@@ -61,6 +63,7 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	add_to_group(GROUP)
 	if world == null:
 		world = get_tree().get_first_node_in_group(&"world") as TileWorld
 	if hp <= 0:

@@ -1,5 +1,5 @@
 ## W-10 / W-11 on the planet: a child of planet.tscn's root (like Rings), it hooks the level once the
-## world is built. It makes the loose foods (pebbles; a cow later) fall toward the core with a
+## world is built. It makes the loose foods (pebbles, apples, rocks of every size) fall toward the core with a
 ## LooseFall each, stands the surface props from data/props/*.tres on the surface, and keeps which
 ## props are bitten or broken in the tin (key "destruct"). Eating stays the world's: tiles go through
 ## World.eat_tile, and who may bite a prop is World.is_edible_by (the stage rule).
@@ -13,7 +13,16 @@ const SCENES_DIR := "res://scenes/props/"
 const SWEEP_EVERY := 0.5
 
 ## Food ids that are loose: they fall when the ground under them is eaten.
-@export var loose_foods: Array[StringName] = [&"pebble", &"apple"]
+## Rocks of every size are loose too (Gary's pick, gap-close-40): a boulder, an ore nugget, a fossil
+## or the core's big boulder drops down the tunnel a worm eats under it.
+@export var loose_foods: Array[StringName] = [&"pebble", &"apple", &"boulder", &"big_boulder", &"ore_nugget", &"fossil"]
+## A loose thing this big (FoodData.radius, px) or bigger lands with a thump: a camera nudge on top
+## of LooseFall's own cue, squash and dust, when a worm is within THUMP_NEAR px to see why.
+const THUMP_RADIUS := 9.0
+const THUMP_NEAR := 420.0
+const THUMP_SHAKE := 3.0
+## Heavy landings that nudged the camera (tests and the report read it).
+var thumps := 0
 
 var world: TileWorld
 var level: Node
@@ -121,6 +130,18 @@ func sweep_loose() -> void:
 		lf.name = "Fall"
 		lf.world = world
 		f.add_child(lf)
+		if float(d.radius) >= THUMP_RADIUS:
+			lf.landed.connect(_on_heavy_landed)
+
+
+## A big rock touched down: nudge the camera if a worm is near enough to see it.
+func _on_heavy_landed(body: Node2D, _speed: float) -> void:
+	for w in Worm.all():
+		if is_instance_valid(w) and w.is_inside_tree() \
+				and w.head_position().distance_to(body.global_position) <= THUMP_NEAR:
+			thumps += 1
+			WormHooks.juice().shake(THUMP_SHAKE)
+			return
 
 
 func _physics_process(delta: float) -> void:

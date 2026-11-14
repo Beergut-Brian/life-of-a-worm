@@ -12,10 +12,12 @@
 ##   cutscenes  data/cutscenes/*.json    {"id": ...}, in Story.SCENES order
 ##   planets    data/planets/*.tres      PlanetData (S-18: one page per space planet type); found
 ##              when its whole planet is eaten in space (the tin's SpaceDrift "space" -> "done")
+##   things     data/props/*.tres        PropData (T-05: the surface's town: houses, cars, cows, the
+##              water tower); found when a worm breaks one (TackleLog page "things")
 class_name BookCatalog
 extends RefCounted
 
-const SECTIONS: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes", &"planets"]
+const SECTIONS: Array[StringName] = [&"foods", &"creatures", &"traits", &"secrets", &"cutscenes", &"planets", &"things"]
 const DIRS := {
 	&"foods": ["res://data/foods/"],
 	&"creatures": ["res://data/creatures/", "res://data/pets/", "res://data/apexes/", "res://data/jarlings/"],
@@ -23,10 +25,12 @@ const DIRS := {
 	&"secrets": ["res://data/secrets/"],
 	&"cutscenes": ["res://data/cutscenes/"],
 	&"planets": ["res://data/planets/"],
+	&"things": ["res://data/props/"],
 }
 ## Script class an entry must be (or extend); "" = any resource with an `id`.
 const CLASSES := { &"foods": "FoodData", &"creatures": "", &"traits": "TraitData",
-	&"secrets": "SecretData", &"cutscenes": "", &"planets": "PlanetData" }
+	&"secrets": "SecretData", &"cutscenes": "", &"planets": "PlanetData",
+	&"things": "PropData" }
 ## Where the tackle log sits in the tin (scripts/burrow/home_slice.gd, contracts "Home slice").
 const TIN_KEY := "home_slice"
 const LOG_KEY := "tackle"

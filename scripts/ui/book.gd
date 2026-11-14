@@ -1,5 +1,5 @@
 ## The collection book (T-01), opened from the pause menu (Y on the book icon next to Back to Open
-## Jar). An open sketchbook: the left page is the section tabs (six: foods, creatures, traits, secrets, cutscenes, planets), each with a row of slots that
+## Jar). An open sketchbook: the left page is the section tabs (seven: foods, creatures, traits, secrets, cutscenes, planets, things), each with a row of slots that
 ## fill as things are found (the count as a picture, no numbers); the right page is the open
 ## section's grid, one sketch per data entry, grey silhouette until found, then the picture.
 ##
@@ -235,6 +235,12 @@ static func fit(ci: Control) -> float:
 	var k := ci.size.y / 1080.0
 	ci.draw_set_transform(Vector2((ci.size.x - 1920.0 * k) * 0.5, 0), 0.0, Vector2(k, k))
 	return k
+
+
+## The same frame as fit(), as a matrix (for a sketch that sets its own transform and puts this back).
+static func fit_matrix(ci: Control) -> Transform2D:
+	var k := ci.size.y / 1080.0
+	return Transform2D(0.0, Vector2(k, k), 0.0, Vector2((ci.size.x - 1920.0 * k) * 0.5, 0))
 
 
 # --- the spread and the left page (tabs + slot counters) ------------------------------------------
