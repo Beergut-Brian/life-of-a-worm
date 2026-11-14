@@ -51,6 +51,8 @@ func _ready() -> void:
 	$UI.add_child(dock)
 	$UI.move_child(dock, lobby.get_index() + 1)
 	dock.chosen.connect(open_tin)
+	if not template_only:
+		add_child(DockAmbience.new())   # U-16: the dock's quiet bed, silent once a planet is open
 	shelf = JarShelf.new()
 	shelf.name = "JarShelf"
 	$UI.add_child(shelf)
