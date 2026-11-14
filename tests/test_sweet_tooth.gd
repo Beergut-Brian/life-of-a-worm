@@ -39,9 +39,10 @@ func test_the_baskets_jam_is_the_only_sweet_thing_in_the_world() -> void:
 	var basket: SecretData = load(BASKET)
 	assert_str(String(basket.food)).is_equal("jam_drop")
 	assert_int(basket.food_count).is_greater_equal(3)
-	# No ring life scatters it and no other hidden place hands it out.
+	# No ring life scatters it and no other hidden place hands it out. (A trophy family only lists
+	# what counts on the shelf, it hands nothing out: every food has one, B-09.)
 	for path in _all_tres("res://data", []):
-		if path == JAM or path == BASKET:
+		if path == JAM or path == BASKET or path.begins_with("res://data/trophies/"):
 			continue
 		assert_bool(FileAccess.get_file_as_string(path).contains("jam_drop")) \
 				.override_failure_message("%s also gives jam drops" % path).is_false()
