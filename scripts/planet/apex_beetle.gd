@@ -43,7 +43,7 @@ const DEEP: Array[Dictionary] = [
 ##  &"dirt"     round purple beetle (stage 1 -> 2)
 ##  &"topsoil"  bronze stag beetle with a horn (2 -> 3)
 ##  &"cricket"  rust digger cricket with shovel claws, deep in the dirt (3 -> 4)
-##  &"pillbug"  slate-blue banded pill bug in the deep rock (4 -> 5)
+##  &"pillbug"  raspberry banded pill bug in the deep rock (4 -> 5)
 ##  &"ember"    orange ember newt with teal spots and frilly gills in the core (5 -> 6)
 @export var look := &"dirt"
 var world: PolarWorld
@@ -288,7 +288,8 @@ static func shell_color(l: StringName, food: bool) -> Color:
 		&"cricket":
 			return Color("ffd9b0") if food else Color("b4511f")   # rust on the brown dirt
 		&"pillbug":
-			return Color("d8e8ff") if food else Color("4a6890")   # slate blue on the grey rock
+			# raspberry on the slate-navy rock (K-08: it was slate blue, and vanished into the rock)
+			return Color("ffd6ea") if food else Color("b2386e")
 		&"ember":
 			return Color("ffe2c4") if food else Color("e0461c")   # hot orange in the core
 	return Color("c9b8ff") if food else Color("3b2d63")

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"jam_drop"
 eat_cue = "creature_munch"
-flavour = &"root"
+flavour = &"sweet"
 growth = 3.0
 size_stage = 1
 color = Color(0.8627, 0.2118, 0.3412, 1)
