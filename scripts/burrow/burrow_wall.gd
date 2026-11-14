@@ -12,6 +12,17 @@ var burrow: Burrow
 ## The player equipped or unequipped something since the wall opened.
 var touched := false
 
+## Gary's pick for kid-check N2 (gap-close-36): the stick always lets go of the wall. Sleep can open
+## it by itself, so a kid who just pushes the stick to go must not be stuck: a firm push up or down
+## (left / right still picks a picture) held LEAVE_HOLD s shuts the wall (the `wall_close` cue) and
+## wakes the worm, which moves off at once. Screen directions, the same as the pictures' row.
+const LEAVE_PUSH := 0.6
+const LEAVE_HOLD := 0.25
+## Reads the player's stick and d-pad (screen space). Tests swap it.
+var stick: Callable = func() -> Vector2: return Players.move_vector(worm.player)
+## How long the stick has been pushed up or down this time.
+var push_t := 0.0
+
 
 ## The pictures on the wall, in order: every earned trait of this worm.
 func pictures() -> Array[StringName]:
@@ -25,6 +36,7 @@ func set_open(on: bool) -> void:
 		touched = false
 	elif was and not on and not touched and burrow != null:
 		burrow.auto_equip(worm)
+	push_t = 0.0
 
 
 func handle(nav: int, confirm: bool, back: bool) -> void:
@@ -32,8 +44,22 @@ func handle(nav: int, confirm: bool, back: bool) -> void:
 	super.handle(nav, confirm, false)
 	if worm.model.active != before:
 		touched = true
+	if not back and pushed_away(get_physics_process_delta_time()):
+		back = true
+		worm.asleep = false   # awake: the stick moves the worm from the next frame
+		worm.still_time = 0.0
 	if back:
 		worm.set_wall_open(false)
+
+
+## True once the stick has been held up or down (more up/down than sideways) for LEAVE_HOLD s.
+func pushed_away(delta: float) -> bool:
+	var v: Vector2 = stick.call() if stick.is_valid() else Vector2.ZERO
+	if absf(v.y) >= LEAVE_PUSH and absf(v.y) > absf(v.x):
+		push_t += delta
+	else:
+		push_t = 0.0
+	return push_t >= LEAVE_HOLD
 
 
 func _draw_wall() -> void:

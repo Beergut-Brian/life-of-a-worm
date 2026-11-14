@@ -1,92 +1,61 @@
-# REPORT: worm-start-fresh-1 (branch `feature/worm-start-fresh-1`)
+# REPORT: worm-gap-close-36 (branch `feature/worm-gap-close-36`)
 
-K-11 (S8, Start fresh) moves from **partial** to **built**. Kaden's standing rule: with a save present the menu shows
-Continue and New world. New asks with a held A, backs up the old save first (and never deletes it) and starts a
-fresh world. Settings offers Restore old world. The pause menu's Main menu reaches all of this.
+Three player-visible fixes, each pinned by headless tests. Rows D-13, K-14, C-08 and K-11 stay **built**; each has a
+"Moved on (worm-gap-close-36)" note with its proof. Kid-check N2 is closed (`docs/kid-check.md`). There is one Gary's
+pick, in GAME.md "Decisions made without Kaden".
 
-## Where Worm's "menu" is
-Worm keeps three saves per profile, its bait tins (`<profile>_tin<N>.json`). The menu that loads a save is the
-**bait-tin dock**: lobby, ready-up, then the dock, where you pick a tin. The rule's Continue / New world therefore sits
-under the focused played tin on the dock. The lobby keeps all its own buttons (Play, Settings, Back to Open Jar), and
-the dock keeps its own (left/right pick, A open, B back).
+## Sync
+There are no unmerged `origin/feature/worm-*` or `origin/fix/*` branches; only the held art branches (`art-rings-1`,
+`art-worms-1`) are unmerged. All partial and missing rows on dev are still blocked: art, sound, voice, D105 pacing, the
+GTX 1060 runs, perf lanes W-09 / W-23, or Kaden's picks. None changed status. An audit agent checked the built rows'
+classes, methods, signals and input paths in burrow, rings, creatures, pets, traits, gameplay, swap_shop and world for
+live wiring and silent inputs, and found no new gap. The three gaps below came from kid-check N2 and from looking at
+real frames of the pause path.
 
 ## What changed
-- **Dock: Continue / New world** (`scripts/planet/tin_fresh.gd`). Under a played tin there are two bars: `[a] Continue`
-  (the tin itself; A opens it as before) and below it `[y] New world`. Down lights New world and takes the pad from the
-  dock. On New world, A or Y asks; up or B goes back to Continue; left/right goes to the next tin. Y on Continue also
-  asks. Down on an empty tin plays a "no" beep (an empty tin is already new). `[x] Restore` still shows on a tin that
-  has a backup.
-- **Hold-A card.** The card uses the template's `HoldConfirm`: 1.5 s on a ring in the asker's colour, with a tick as it
-  starts and while it fills. A tap drains it with a back tick, and B keeps the save. The copy is "START A NEW WORLD?"
-  and "Tin N's planet is kept safe: Settings > Restore old world brings it back."
-- **Backups** (`scripts/planet/bait_tins.gd`). A backup is now a copy, written to
-  `user://saves/backups/<profile>_tin<N>--<UTC stamp>-<n>.json` and read back to check it is whole. Only then is the
-  tin emptied. If the copy cannot be made (the folder cannot be created, the write fails, or the read-back differs),
-  `start_fresh` returns "" and the tin is left byte for byte as it was; the card beeps no and nothing opens.
-  Backups are never removed. Backups in the old layout (`<profile>_tin<N>.old<k>.json` beside the tin, from the
-  partial K-11 on dev) are moved into the folder the first time the tin's backups are listed.
-  - **Naming deviation:** the rule says `<profile>--<stamp>-<n>.json`. Worm has three saves per profile, so the tin is
-    in the name (`p1_tin2--20261113T101500-000.json`) so that Restore knows which tin a backup belongs to. The backup's
-    contents are the tin file's own JSON, unchanged.
-- **Restore** copies a backup back into its tin. The planet in the tin is backed up first. If that backup fails,
-  Restore refuses and changes nothing. Because the old backup is kept and the replaced planet becomes the newest
-  backup, a second Restore undoes the first.
-- **Settings > Restore old world** (`scenes/ui/settings_panel.gd`). The panel has a new fifth row, which shows only
-  while `restore_check` returns true. A on that row emits `restore_asked(player)`. `TinFresh.hook_settings` wires it
-  for the lobby's panel only: the row shows while any tin has a backup, and it asks with the same held-A card. It
-  brings the newest backup of any tin back into its own tin (`BaitTins.restore_newest`), backing up first. The pause
-  menu's panel never gets a `restore_check`, so restoring the open world mid-game is impossible. Settings is a
-  template-structured file. The change is additive and does nothing in a game that never sets `restore_check`.
-- **Pause, then Main menu** (unchanged, already on dev): `Game.to_lobby()` saves and closes the tin. The lobby, then
-  the dock, then show Continue / New world again. Covered end to end by `::test_through_the_boot_scene_new_then_pause_back_to_restore`.
-- **`Save.replace(dict)`** (`scripts/autoload/Save.gd`): replaces the open save whole and writes it now. Tests use
-  `Save.replace({})` to start empty.
+1. **The stick lets go of the trait wall (kid-check N2, D-13 / K-14). Gary's pick.** Sleep opens the wall by itself
+   when a trait is waiting, and until now the stick then did nothing until B or Y. Now a firm push up or down on the
+   stick or d-pad (at least 0.6, more up/down than sideways), held 0.25 s (`BurrowWall.LEAVE_HOLD`), shuts the wall
+   with `wall_close` and wakes the worm, which moves off on the next frame. Left / right still picks a picture; a tap
+   or a soft nudge does not shut it. If the player never chose, leaving by stick still auto-equips the waiting trait
+   into a free slot. File: `scripts/burrow/burrow_wall.gd`. Tests: `tests/test_wall_lets_go.gd` (4).
+2. **Nothing in play draws over the pause menu (C-08).** A real frame showed the trait wall (CanvasLayer 50) and the
+   planet HUD glyph strip (20) on top of the PAUSED menu: `main.gd` only hides layers under `PROCESS_MODE_ALWAYS`
+   nodes. The new `PauseCover` (`scripts/ui/pause_cover.gd`, a child of `UI` in `scenes/main.tscn`) hides every
+   visible arena CanvasLayer above the menu's layer while Game is PAUSED. On resume it shows exactly those layers again.
+   The sky layers (-10 / -9) stay. It covers the space and chomp overlays too. Tests: `tests/test_pause_cover.gd`
+   (4 pause cases, including over the tackle box and Main menu from pause).
+3. **The dock's tin choices no longer hang over play (K-11).** Found in the same frame. `TinFresh` drew
+   "[a] Continue / [y] New world" under a played tin, then stopped redrawing once the dock closed. The last drawing
+   stayed on screen over the planet for the whole session, and over the pause menu. It now redraws once when the dock
+   goes. File: `scripts/planet/tin_fresh.gd`. Test:
+   `tests/test_pause_cover.gd::test_the_tin_choices_are_wiped_when_the_planet_opens`.
+
+I kept `main.gd`, `dock.gd`, `worm.gd`, `planet_level.gd` and `planet_chomp.gd` untouched. Local unmerged branches
+edit them (`feature/worm-jar-2`, `feature/stages-1`, `feature/worm-gap-close-2` / `-4`, `feature/art-worms-1`).
+
+## Moved row IDs
+D-13, K-14, C-08, K-11 (built → built, each with a new proof note), plus kid-check N2 (note → fixed).
+
+## Skipped
+- Kid-check N6 dock picture of a damaged tin: `scripts/planet/dock.gd` is changed on local `feature/worm-jar-2`.
+- Kid-check N7 (a jar failure says yes): `scripts/chomp/planet_chomp.gd` is on local `feature/worm-jar-2`.
+- Kid-check N8 / S-10 jar shelf: on local `feature/worm-jar-2`, and in `scripts/jars/` (gap-close-34's area).
+- Kid-check N9 for space worms: `scripts/space/` is off-limits (gap-close-34).
+- Swapping shelf trophies at the Mole (`Burrow.remove_trophy` has no live caller): GAME.md says "not swappable
+  yet", so this is a design call for Kaden.
+- W-09, W-23 (streaming and perf): these need their own lane. All A-*, U-*, P-25 rows (art, sound, voice): off-limits.
+  S-01, S-19, W-24 (D105 pacing): held.
 
 ## Tests
-- `tests/test_fresh_start.gd`: 20 cases (renamed from `test_tin_fresh.gd`, extended). Uses `SuiteSandbox`
-  (its own profile `gdunit_fresh_start` and settings file), and every test starts with `Save.replace({})`. The
-  failing-backup cases point `Save.dir` at a throwaway `user://test_fresh_start_broken` whose `backups` is a file, and
-  remove it afterwards. Rule checks:
-  - with a save present the menu shows Continue and New: `::test_with_a_save_present_the_menu_shows_continue_and_new_world`
-  - New keeps a backup file and the old save still reads: `::test_new_keeps_a_backup_file_and_the_old_save_still_reads` (also checks the path pattern)
-  - Restore brings back the newest and backs up the replaced world first: `::test_settings_restore_brings_the_newest_back_and_backs_up_the_world_first`, `::test_restore_brings_back_the_newest_and_keeps_the_current_one`
-  - a failing backup stops New and leaves the save alone: `::test_a_backup_that_fails_stops_new_and_leaves_the_save_alone` (direct call and through the card), `::test_restore_refuses_when_the_world_it_replaces_cannot_be_backed_up`
-- Clean import (`rm -rf .godot && godot --headless --import --path .`): exit 0, no script errors.
-- Full suite (`--continue`): `Overall Summary: 865 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |`, exit 0 (also in `handoff/test-output.txt`).
-- After the runs, the real `user://saves/backups` was empty and no test folders were left behind.
+Full suite on a clean import (`rm -rf .godot`, `--import`, then gdUnit `-a tests`): **874 test cases, 134 suites,
+0 errors, 0 failures, 0 orphans.** That includes 9 new cases.
 
-## Frames (`handoff/frames/`, looked at each one)
-These were taken with `scripts/tools/shots.sh` on a throwaway profile and folder (`user://startfresh_frames`, deleted
-afterwards). The driver scene is `.scratch/fresh_frames.tscn`.
-- `start_dock_continue_new.png`: "PICK A BAIT TIN". Tin 1 and Tin 2 are played and stand open with the green and red
-  worms peeking out. Tin 3 has its lid on and reads "New planet". Under Tin 1 (focused, white frame), the dark
-  `(A) Continue` bar sits above the wide yellow lit `(Y) New world` bar. The dock's own hint bar ("Pick / Open / Back")
-  is at the bottom right. Nothing overlaps.
-- `new_confirm_hold_a.png`: the dock is dimmed under a dark slanted card: "START A NEW WORLD?", "Tin 1's planet is kept
-  safe: Settings > Restore old world brings it back.", and the A glyph in a ring half filled in P1 green. Below that:
-  "Hold (A) Yes (B) Keep it".
-- `settings_restore_old_world.png` (extra): the lobby with Settings open (Music 80, Sound 100, Screen shake ON, Solo
-  playtest OFF), and the fifth bar "RESTORE OLD WORLD" focused (cream with the yellow chevrons). It sits just above the
-  hint bar at the bottom and does not overlap it.
-- The older frames from rules-audit-1 (`start_dock_continue_new_restore.png`, `restore_confirm_hold_a.png`) were not in
-  this worktree's `handoff/` (handoff is excluded from git), so there was nothing to replace.
-
-## Reference
-`~/openjar/junk-yard-zap` was readable, but its `origin/dev` has no fresh-start files. The flow is on its branch
-`origin/fix/jyz-rules-audit-1` (`scripts/levels/fresh_start.gd`, `scenes/ui/settings_panel.gd`). I read those to
-follow the pattern: copy then wipe, a `backups/` folder with a UTC stamp, the newest backup restored after backing up,
-and the Restore row only on the lobby's panel. I did not edit that repo, and I did not copy its names or copy
-(Worm says world/planet and tin).
-
-## PLAN-STATUS
-- K-11: partial to **built**. The proof points at `tests/test_fresh_start.gd` and the three frames.
-- The file had no totals line, so I added one under Sources: 264 rows: 198 built, 33 partial, 21 missing,
-  5 superseded, 4 dropped, 3 later.
-
-## Skipped / notes
-- Nothing in the brief was skipped.
-- The dock's own hint bar still says "A Open" while New world is lit (then A asks instead). `dock.gd` was left alone,
-  because it is rewritten by the unmerged worm-jar-2 branch. The lit bar itself says `(Y) New world`.
-- `tests/test_burrow_chambers.gd.uid` (made by the import) and the character face PNGs under `assets/characters/`
-  are import output and not tracked; they are not in the commits.
-- Not pushed (the producer ships).
+## Frames (real renders, `scripts/tools/shots.sh` with `.scratch/gc36_shot.tscn` and `.scratch/gc36_pause.tscn`)
+- `handoff/frames/n2-wall-open-asleep.png`: asleep in a hollow, the wall opened by itself.
+- `handoff/frames/n2-stick-up-shuts-wall-worm-moves.png`: stick up held, the wall is shut, Stone head is equipped
+  (bubble), and the worm digs off upward.
+- `handoff/frames/c08-pause-nothing-over-the-menu.png`: paused with the wall open. Only the menu is on top; the
+  wall and the HUD strip are gone.
+- `handoff/frames/k11-no-tin-choices-left-in-play.png`: in play after picking a played tin. No Continue / New
+  world is left on screen.

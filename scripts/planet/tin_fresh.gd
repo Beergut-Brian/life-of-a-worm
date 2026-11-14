@@ -32,6 +32,8 @@ var _tick := 0.0
 var _took: Node
 ## The tin a Settings restore brings back (for the card's words).
 var _restore_tin := -1
+## The last draw put the dock's choices on screen (gap-close-36: they must be wiped when it goes).
+var drew_choices := false
 
 
 func _ready() -> void:
@@ -194,6 +196,8 @@ func _process(delta: float) -> void:
 	if not dock.visible:
 		if choice == Choice.NEW:
 			focus_continue(false)
+		if drew_choices:
+			queue_redraw()   # the dock went: wipe its Continue / New world, or they stay over play
 		return
 	var i := tin()
 	if choice == Choice.NEW and not can_new(i):
@@ -239,7 +243,8 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var v := get_viewport_rect().size
-	if dock != null and dock.visible:
+	drew_choices = dock != null and dock.visible
+	if drew_choices:
 		_draw_choices(v)
 	if ask == Ask.NONE:
 		return
