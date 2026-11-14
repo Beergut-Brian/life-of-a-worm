@@ -34,6 +34,15 @@ static func for_planet(planet_id: StringName) -> TraitData:
 	return null
 
 
+## The space planet type a Star comes from (data/planets/<star_planet>.tres), null if none: the
+## trait wall and the book draw that planet beside the Star so its cause shows.
+static func planet_of(t: TraitData) -> PlanetData:
+	if t == null or not t.star or t.star_planet == &"":
+		return null
+	var path := "res://data/planets/%s.tres" % t.star_planet
+	return load(path) as PlanetData if ResourceLoader.exists(path) else null
+
+
 ## Put an earned Star on `player`'s planet worm: the live body if there is one (hidden while in
 ## space), and the tin's saved body. Equips itself when a slot is free, like any new trait. Silent:
 ## the space reveal already showed and played it. True if anything new was written.

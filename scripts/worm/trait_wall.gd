@@ -92,8 +92,9 @@ func _draw_wall() -> void:
 			_root.draw_texture_rect(tex, Rect2(r.get_center() - size * 0.5, size), false, tint)
 		if on:
 			_root.draw_rect(r, Color(1, 1, 0.8), false, 4.0)
-		if t.star:   # a Star trait (D-10): a gold star on its corner, from the space planet it came from
+		if t.star:   # a Star trait (D-10): a gold star on its corner, and the space planet it came from
 			_star_marker(r.position + Vector2(tile - 14.0, 14.0), 13.0)
+			_planet_marker(t, r.position + Vector2(16.0, tile - 16.0), 11.0)
 		if i == cursor:
 			_root.draw_rect(r.grow(8.0), col, false, 6.0)
 	# Slot sockets under the row: filled for each active trait.
@@ -114,3 +115,14 @@ func _star_marker(c: Vector2, r: float) -> void:
 	_root.draw_colored_polygon(pts, Color("ffd94a"))
 	pts.append(pts[0])
 	_root.draw_polyline(pts, Color("2a1a14"), 2.0)
+
+
+## The little planet a Star came from (S-18), in that planet type's colour and accent band.
+func _planet_marker(t: TraitData, c: Vector2, r: float) -> void:
+	var p := StarTraits.planet_of(t)
+	if p == null:
+		return
+	_root.draw_circle(c, r + 5.0, Color("2a1a14"))   # a dark socket: it reads on a tile of its own colour
+	_root.draw_circle(c, r, p.color)
+	_root.draw_arc(c, r * 1.45, PI * 0.9, PI * 2.1, 16, p.accent, 3.0)
+	_root.draw_arc(c, r, 0.0, TAU, 20, Color("2a1a14"), 2.0)
