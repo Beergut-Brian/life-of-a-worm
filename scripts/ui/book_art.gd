@@ -13,6 +13,8 @@ const GREY_DARK := Color("8a847a")
 const SECTION_COLORS := { &"foods": Color("f08a3c"), &"creatures": Color("e0483a"),
 	&"traits": Color("5fd0e8"), &"secrets": Color("ffd23f"), &"cutscenes": Color("8a7be0"),
 	&"planets": Color("4f7fd8"), &"things": Color("6fbf4a") }
+## The Star traits' gold, the same as the trait wall's corner star.
+const STAR_GOLD := Color("ffd94a")
 ## Sky per time-of-day word in a cutscene's "time_of_day".
 const SKIES := { "dawn": Color("f6b98a"), "morning": Color("9fd0f0"), "noon": Color("8cc8f4"),
 	"dusk": Color("f09a6a"), "night": Color("26305a") }
@@ -123,6 +125,11 @@ static func trait_pic(ci: CanvasItem, c: Vector2, d: TraitData, found: bool, i: 
 		ci.draw_texture_rect(tex, Rect2(c - tex.get_size() * s * 0.5, tex.get_size() * s), false, mod)
 	else:
 		star(ci, c, 30.0, Color.WHITE if found else GREY_DARK, found)
+	if d.star and found:   # a Star trait (S-18): a gold star, and the little planet it came from
+		star(ci, c + Vector2(44, -44), 15.0, STAR_GOLD, true)
+		var p := StarTraits.planet_of(d)
+		if p != null:
+			ringed(ci, c + Vector2(-60, 50), 19.0, p.color, p.accent, true, i)
 
 
 static func secret(ci: CanvasItem, c: Vector2, id: StringName, found: bool, t: float, i: int) -> void:

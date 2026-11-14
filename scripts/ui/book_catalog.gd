@@ -7,7 +7,8 @@
 ##   foods      data/foods/*.tres        FoodData
 ##   creatures  data/creatures/*.tres    CreatureData, and data/pets/*.tres (PetData; a pet is met too),
 ##              data/apexes/*.tres (the ring apexes, ApexBeetle) and data/jarlings/*.tres (the Mole)
-##   traits     data/traits/*.tres       TraitData (worm_rules.tres is not one and is skipped)
+##   traits     data/traits/*.tres       TraitData (worm_rules.tres is not one and is skipped); a Star
+##              trait is also found once its planet is eaten whole or a saved worm has it (S-18)
 ##   secrets    data/secrets/*.tres      SecretData
 ##   cutscenes  data/cutscenes/*.json    {"id": ...}, in Story.SCENES order
 ##   planets    data/planets/*.tres      PlanetData (S-18: one page per space planet type); found
@@ -133,6 +134,28 @@ static func found_set(tree: SceneTree = null) -> Dictionary:
 	for id in eaten_planets():
 		if not (out[&"planets"] as Array).has(id):
 			(out[&"planets"] as Array).append(id)
+	for id in earned_stars():
+		if not (out[&"traits"] as Array).has(id):
+			(out[&"traits"] as Array).append(id)
+	return out
+
+
+## Star traits (S-18) this tin has earned, found in the book at once, even in space where no
+## tackle log runs: the Star of every planet type eaten whole, and any Star on a saved worm.
+static func earned_stars() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for pid in eaten_planets():
+		var t := StarTraits.for_planet(pid)
+		if t != null and not out.has(t.id):
+			out.append(t.id)
+	var worms = Save.get_value("worms", {})
+	if worms is Dictionary:
+		for d in worms.values():
+			if not d is Dictionary or not d.get("earned") is Array:
+				continue
+			for id in d["earned"]:
+				if StarTraits.is_star(StringName(id)) and not out.has(StringName(id)):
+					out.append(StringName(id))
 	return out
 
 
