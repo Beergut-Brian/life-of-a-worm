@@ -31,7 +31,7 @@ were written as tests on local `feature/worm-gap-close-6` but are not on dev:
 | 2 | Digging | `scripts/world/polar_world.gd`, `world_destruct.gd`, `loose_fall.gd`, `surface_prop.gd`, `disk_edge.gd`, `scripts/gameplay/crust_burst.gd` | yes | yes | yes | yes | yes |
 | 3 | Eating and growth | `scripts/creatures/gulp.gd`, `scripts/worm/worm_growth.gd`, `food_voice.gd`, `scripts/rings/ring_pickup.gd`, `scripts/worm/juice.gd` | yes | yes | yes | yes (decided) | yes |
 | 4 | Stages and apexes | `scripts/worm/stage_table.gd`, `scripts/planet/apex_beetle.gd`, `apex_call.gd`, `scripts/gameplay/stage_beat.gd`, `stage_why.gd` | yes | yes | yes | yes (decided) | yes |
-| 5 | Traits and the trait wall | `scripts/worm/trait_wall.gd`, `star_traits.gd`, `scripts/traits/*.gd`, `scripts/gameplay/trait_beat.gd`, `trait_why.gd`, `scripts/burrow/burrow.gd` | no (N2) | yes | yes | yes | note |
+| 5 | Traits and the trait wall | `scripts/worm/trait_wall.gd`, `star_traits.gd`, `scripts/traits/*.gd`, `scripts/gameplay/trait_beat.gd`, `trait_why.gd`, `scripts/burrow/burrow.gd` | yes (N2 fixed) | yes | yes | yes | fixed |
 | 6 | Castings and gardens | `scripts/worm/castings_hook.gd`, `scripts/world/castings_trail.gd`, `scripts/rings/castings_sprouts.gd`, `topsoil_dressing.gd` | yes | yes | yes | yes | yes |
 | 7 | Co-op: shared growth and catch-up | `scripts/worm/worm.gd`, `worm_growth.gd`, `scripts/planet/planet_level.gd` | yes | yes (N3 fixed) | yes | yes | fixed |
 | 8 | Creatures and threats | `scripts/creatures/*.gd`, `scripts/gameplay/eaten_beat.gd` | yes | yes | yes | yes (decided) | yes |
@@ -81,6 +81,7 @@ wall is open, the stick does not move the worm (`scripts/worm/worm.gd:436-437`),
 (GAME.md 2026-11-11 slice-burrow-1: "a newly earned trait waiting for a slot opens the wall by
 itself"), so changing it is Gary's or Kaden's call. Options: open it only in the home bed, or let
 any stick push close it.
+**Fixed (worm-gap-close-36, Gary's pick in GAME.md):** the stick lets go. `BurrowWall` (`scripts/burrow/burrow_wall.gd`) reads the stick and d-pad: a firm push up or down (at least 0.6, more up/down than sideways) held 0.25 s shuts the wall (`wall_close`) and wakes the worm, which moves on the next frame. Left / right still picks; B or Y still shut it. `tests/test_wall_lets_go.gd` (4 cases).
 
 **N3 (note): the partner's growth from dug tiles shows no cause.** Each tile one worm eats also
 grows the other (`scripts/worm/worm.gd:231-233`,

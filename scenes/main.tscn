@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/lobby.tscn" id="2_lobby"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="3_pause"]
 [ext_resource type="Script" path="res://scripts/planet/tin_fresh.gd" id="4_fresh"]
+[ext_resource type="Script" path="res://scripts/ui/pause_cover.gd" id="5_cover"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -18,3 +19,6 @@ script = ExtResource("1_main")
 
 [node name="TinFresh" type="Control" parent="UI"]
 script = ExtResource("4_fresh")
+
+[node name="PauseCover" type="Node" parent="UI"]
+script = ExtResource("5_cover")
