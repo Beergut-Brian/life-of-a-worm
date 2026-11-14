@@ -110,4 +110,4 @@ Expect merge conflicts:
 
 - `e72216e` plan: sync content rows for gap-close-41 (none left to move)
 - `84768be` gameplay: outgrown bird and boot become food (L-20, L-21)
-- (this one) report: gap-close-41
+- `41668ba` report: gap-close-41
