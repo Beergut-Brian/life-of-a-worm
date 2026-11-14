@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"thunder_egg"
+eat_cue = "egg_crack"
+flavour = &"stone"
+growth = 3.5
+size_stage = 4
+color = Color(0.5500, 0.4500, 0.4000, 1)
+radius = 10.0
+ring = &"deep_rock"
+regrow_time = 600.0
+plants = &""
+look = 9
+accent = Color(0.6000, 0.9000, 0.9500, 1)

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"old_piano"
+eat_cue = "boing"
+flavour = &"junk"
+growth = 6.0
+size_stage = 6
+color = Color(0.1500, 0.1200, 0.1200, 1)
+radius = 16.0
+ring = &"surface"
+regrow_time = 600.0
+plants = &""
+look = 7
+accent = Color(0.9500, 0.9500, 0.9000, 1)

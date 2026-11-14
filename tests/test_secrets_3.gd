@@ -171,6 +171,11 @@ func test_their_foods_come_last_so_older_tins_keep_their_statics() -> void:
 		for i in life.late_scatter_count:
 			if not life.late_scatter.is_empty():
 				tail.append(String(life.late_scatter[i % life.late_scatter.size()].id))
+	# and the second D105 slice (stages 3 to 7) after those
+	for life in RingsDirector.all_lives():
+		for i in life.later_scatter_count:
+			if not life.later_scatter.is_empty():
+				tail.append(String(life.later_scatter[i % life.later_scatter.size()].id))
 	var got: Array[String] = []
 	for e in statics.slice(statics.size() - tail.size()):
 		got.append(String(e[0]))

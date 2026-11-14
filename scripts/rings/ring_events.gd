@@ -12,6 +12,12 @@ const MAX_FOODS := 24
 ## FALL: px above the landing spot a falling food starts, and how long it takes to land.
 const FALL_FROM := 150.0
 const FALL_TIME := 0.9
+## ROLL: px along the side a rolling food starts, and how long it rolls. TRAIL: px between the foods
+## of a trail and the beat between each one popping up. RISE uses FALL_FROM below, FALL_TIME * 1.4.
+const ROLL_FROM := 220.0
+const ROLL_TIME := 1.1
+const TRAIL_GAP := 26.0
+const TRAIL_STEP := 0.15
 
 var director: RingsDirector
 var events: Array[RingEvent] = []
@@ -81,13 +87,15 @@ func play(e: RingEvent, w: Worm) -> Array[RingPickup]:
 		match e.shape:
 			RingEvent.Shape.RING:
 				at = _in_band(head + Vector2.from_angle(TAU * i / maxf(1.0, e.count)) * e.distance, e.ring)
-			RingEvent.Shape.FALL:
+			RingEvent.Shape.FALL, RingEvent.Shape.ROLL, RingEvent.Shape.RISE:
 				at = _in_band(centre + side * (float(i) - (e.count - 1) * 0.5) * 18.0, e.ring)
+			RingEvent.Shape.TRAIL:
+				at = _in_band(head + side * (e.distance * 0.6 + float(i) * TRAIL_GAP), e.ring)
 			_:
 				at = _in_band(centre + Vector2.from_angle(TAU * i / maxf(1.0, e.count) + _rng.randf() * 0.5) * 22.0, e.ring)
-		out.append(_bring(e, at, up))
+		out.append(_bring(e, at, up, side, i))
 	director._pop_fx(centre, e.fx)
-	if e.shape != RingEvent.Shape.FALL:
+	if e.shape in [RingEvent.Shape.BURST, RingEvent.Shape.RING, RingEvent.Shape.TRAIL]:
 		for p in out:
 			director._pop_fx(p.position, e.fx)
 	Audio.play(e.cue)
@@ -96,7 +104,7 @@ func play(e: RingEvent, w: Worm) -> Array[RingPickup]:
 	return out
 
 
-func _bring(e: RingEvent, at: Vector2, up: Vector2) -> RingPickup:
+func _bring(e: RingEvent, at: Vector2, up: Vector2, side := Vector2.RIGHT, i := 0) -> RingPickup:
 	while foods.size() >= MAX_FOODS:
 		var old: RingPickup = foods.pop_front()
 		if is_instance_valid(old):
@@ -113,6 +121,23 @@ func _bring(e: RingEvent, at: Vector2, up: Vector2) -> RingPickup:
 	if e.shape == RingEvent.Shape.FALL:
 		p.position = at + up * FALL_FROM
 		p.create_tween().tween_property(p, "position", at, FALL_TIME).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	elif e.shape == RingEvent.Shape.RISE:
+		# bobs up from below (from the core side), slowing as it arrives
+		p.position = at - up * FALL_FROM
+		p.create_tween().tween_property(p, "position", at, FALL_TIME * 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	elif e.shape == RingEvent.Shape.ROLL:
+		# rolls in from farther along the side, turning as it comes, and settles on its spot
+		p.position = at + side * ROLL_FROM
+		var t := p.create_tween().set_parallel(true)
+		t.tween_property(p, "position", at, ROLL_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.tween_property(p, "rotation", -signf(side.dot(up.orthogonal())) * TAU, ROLL_TIME)
+	elif e.shape == RingEvent.Shape.TRAIL:
+		# pops up one after another, leading away from the worm
+		p.position = at
+		p.scale = Vector2.ZERO
+		var t := p.create_tween()
+		t.tween_interval(TRAIL_STEP * i)
+		t.tween_property(p, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK)
 	else:
 		p.position = at
 		p.scale = Vector2(0.2, 0.2)

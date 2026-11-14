@@ -117,7 +117,7 @@ func test_the_director_counts_the_sky_and_scatters_it_in_its_band() -> void:
 		secret_foods[sd.food] = true
 	for s in _dir._statics:
 		if (s.food as RingFood).ring == &"sky":
-			if not secret_foods.has(s.food.id):   # the cloud nest's rainbow drops are its own
+			if not secret_foods.has(s.food.id) and not sky.later_scatter.has(s.food):   # the cloud nest's rainbow drops are its own; D105's later foods too
 				in_sky += 1
 			var d := _dir.depth_of(s.node.position)
 			assert_float(d).is_between(sky.inner, sky.outer)

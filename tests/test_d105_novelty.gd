@@ -51,7 +51,7 @@ class NoveltySim:
 		super._step(a)
 		var rings := open_rings(model.stage)
 		if _sense.randf() < 1.0 / (float(MEET_MIN[profile.name]) * 60.0):
-			var here := creatures.filter(func(d: CreatureData) -> bool: return d.ring in rings)
+			var here := creatures.filter(func(d: CreatureData) -> bool: return d.ring in rings and model.stage >= gate_of(d.id))
 			if not here.is_empty():
 				var d: CreatureData = here[_sense.randi() % here.size()]
 				_meet("creature " + String(d.id))
@@ -62,6 +62,14 @@ class NoveltySim:
 			var share := 1.0 if e.ring == rules.stage_info(1).opens_ring else float(PRESENCE[profile.name])
 			if clock >= float(opened_at[e.ring]) + wait / share:
 				_meet("event " + String(e.id))
+
+	## The stage a creature's counter spawns live ones from (PopulationRule.stage_from, D105 3 to 7).
+	static func gate_of(id: StringName) -> int:
+		for life in RingsDirector.all_lives():
+			for r: PopulationRule in life.species:
+				if r.id == id:
+					return r.stage_from
+		return 0
 
 	func _meet(what: String) -> void:
 		if met.has(what):

@@ -29,3 +29,6 @@ extends Resource
 ## Spawn band inside the ring, as fractions of the planet radius (0 = use the whole ring).
 @export var depth_min := 0.0
 @export var depth_max := 0.0
+## D105 (stages 3 to 7): live ones spawn only near a worm of at least this stage (0 = any worm), so a
+## big new creature of an old ring is first met when the worm reaches its stage. Counters still run.
+@export var stage_from := 0

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tulip_bulb"
+eat_cue = "home_seed"
+flavour = &"root"
+growth = 3.0
+size_stage = 3
+color = Color(0.8500, 0.7000, 0.5000, 1)
+radius = 8.0
+ring = &"dirt"
+regrow_time = 300.0
+plants = &"root"
+look = 1
+accent = Color(0.9500, 0.4000, 0.5000, 1)

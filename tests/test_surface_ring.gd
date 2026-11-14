@@ -5,6 +5,7 @@
 ## cause), and nothing on a prop is text.
 extends GdUnitTestSuite
 
+const D105_37 := preload("res://tests/d105_stage37_table.gd")
 const RINGS := preload("res://data/rings/rings.tres")
 const SURFACE_PATH := "res://data/rings/surface_life.tres"
 const CRATE := preload("res://data/props/crate.tres")
@@ -84,7 +85,9 @@ func test_the_surface_ring_loads_from_data() -> void:
 		assert_str(String(sp.ring)).is_equal("surface")
 		assert_bool(ids.has(sp.id)).is_false()
 		ids[sp.id] = true
-		assert_int(sp.live_max).is_equal(0)
+		# D105 stages 3 to 7 gave the grass its first bodies (frog, hedgehog, tortoise, jackrabbit)
+		if not D105_37.CREATURES.has(sp.id):
+			assert_int(sp.live_max).is_equal(0)
 	assert_bool(ids.has(&"apple")).is_true()
 	assert_bool(ids.has(&"lawnmower")).is_true()
 	# Scattered foods sit on the grass, regrow at the ring's rate, and a stage-4 worm can eat them.

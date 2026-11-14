@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"flower_pot"
+eat_cue = "rock_beetle_clack"
+flavour = &"stone"
+growth = 3.0
+size_stage = 3
+color = Color(0.8000, 0.4500, 0.3000, 1)
+radius = 10.0
+ring = &"dirt"
+regrow_time = 400.0
+plants = &""
+look = 7
+accent = Color(0.6000, 0.3000, 0.2000, 1)

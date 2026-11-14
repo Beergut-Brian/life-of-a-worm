@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spring_bubble"
+eat_cue = "boop"
+flavour = &"water"
+growth = 3.0
+size_stage = 4
+color = Color(0.4000, 0.7500, 1.0000, 1)
+radius = 8.0
+ring = &"deep_rock"
+regrow_time = 500.0
+plants = &""
+look = 5
+accent = Color(0.8000, 0.9500, 1.0000, 1)

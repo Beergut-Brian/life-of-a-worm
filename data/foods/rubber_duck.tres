@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rubber_duck"
+eat_cue = "boing"
+flavour = &"junk"
+growth = 3.0
+size_stage = 3
+color = Color(1.0000, 0.8500, 0.2000, 1)
+radius = 9.0
+ring = &"topsoil"
+regrow_time = 400.0
+plants = &""
+look = 0
+accent = Color(1.0000, 0.5500, 0.1500, 1)

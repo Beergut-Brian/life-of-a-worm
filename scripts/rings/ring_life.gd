@@ -11,5 +11,9 @@ extends Resource
 ## older tin keeps its statics in their slots. Same rules as `scatter` otherwise.
 @export var late_scatter: Array[RingFood] = []
 @export var late_scatter_count := 0
+## The second D105 slice's foods (stages 3 to 7): placed after every ring's late_scatter, in the
+## order RingsDirector.all_lives() (tile rings, then the sky, then the surface).
+@export var later_scatter: Array[RingFood] = []
+@export var later_scatter_count := 0
 ## Visible events of this ring (RingEvent): a root pocket bursting, seeds blowing down, a fairy ring.
 @export var events: Array[RingEvent] = []

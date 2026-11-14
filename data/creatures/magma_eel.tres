@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"magma_eel"
+flavour = &"bug"
+growth = 6.0
+size_stage = 6
+color = Color(1.0000, 0.6000, 0.1500, 1)
+radius = 20.8
+behaviour = 5
+ring = &"core"
+telegraph = 1.0
+bark = "lava_blob_blorp"
+windup_cue = ""
+speed = 30.0
+notice = 140.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0000, 0.9000, 0.5000, 1)
+bounce = 0.0

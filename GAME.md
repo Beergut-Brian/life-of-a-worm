@@ -128,6 +128,16 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-14 (worm-d105-content-s12-1): Ring events happen beside a worm in their ring, never on it: a root pocket bursting (carrot tips), a marble bag spilling, an egg clutch (dirt, stage 1); seeds blowing down through the grass (cherry pits, seen falling), dew dripping, and a fairy ring of mushrooms round the worm after rain (topsoil, stage 2). Each plays an existing cue and puff; nothing moves the worm. Their foods are not saved (at most 24 about).
 - 2026-11-14 (worm-d105-content-s12-1): The cherry pit plants a root garden like the plain seed, but the Mole still gives plain seeds for root things (`SwapShop.seed_for` puts the plain seed first among equal-size seeds).
 - 2026-11-14 (worm-d105-content-s12-1): New finds join the existing trophy families: shinies (marble, button, old spoon, lost coin, glass bead, crayon), stones (snail shell, clay lump, chalk bit), snacks (carrot tip, potato, wild berry, cherry pit, clover leaf, walnut). Bonuses and caps unchanged.
+- 2026-11-14 (worm-d105-content-s37-1): Stages 3 and 6 open no ring, so their new things live in the rings a worm already has: size-3 finds in the dirt and topsoil (a bonk at stage 2), size-6 finds in every ring down to a time capsule in the dirt (a bonk at stage 5, a "come back bigger" payoff), and their creatures and events show up only beside a worm of that stage.
+- 2026-11-14 (worm-d105-content-s37-1): A new creature in an older ring spawns only near a worm of its stage (`PopulationRule.stage_from`); its counter still runs, and if the only worm near it shrinks below that stage, it goes away. Old creatures are unchanged (stage_from 0).
+- 2026-11-14 (worm-d105-content-s37-1): Four new threats, one a stage from 3 to 5: the earwig and the toad (stage 3, size 4), the gem beetle (stage 4, size 5), the fire beetle (stage 5, size 6). Round, slow, a 1.2 to 1.4 s wind-up with the beetles' cues, each costs one segment like every bite, each hunts one new creature, and each is food a stage later. Stage 6 gets none (a size-7 creature would never become food in the disk).
+- 2026-11-14 (worm-d105-content-s37-1): The grass gets its first creature bodies: a frog and a hedgehog (stage 5), a tortoise and a jackrabbit (stage 6, only near a stage-6 worm). The lawnmower stays a counter.
+- 2026-11-14 (worm-d105-content-s37-1): Ring events gain three shapes: TRAIL (foods pop up one after another in a line leading off), ROLL (they roll in from the side, turning), RISE (they bob up from below). The sky and the surface have events now too. Stage-6 events come sooner (60 to 180 planet s) because a stage-6 worm splits its time over every ring.
+- 2026-11-14 (worm-d105-content-s37-1): Stage 7 gets "space sights" (`SpaceSights`, a child of the space stage; data `data/rings/space_sights.tres`): 25 kinds of small bodies that drift, streak, trail or ring round the worms and are eaten by the stage's own bigger-eats-smaller rule. Some wait for 1 to 5 themed planets to be eaten; the rogue moon is the one sight too big to eat and bumps the worm like a big planet. Nothing in `scripts/space/` changed and nothing they bring is saved.
+- 2026-11-14 (worm-d105-content-s37-1): The glow seed (core) plants a crystal garden and the tulip bulb (dirt) a root garden; the Mole still gives plain seeds (both are bigger than the plain seed, so `SwapShop.seed_for` never picks them).
+- 2026-11-14 (worm-d105-content-s37-1): New finds join trophy families by flavour: junk, crystal, water and cloud finds are shinies; stone finds are stones; root finds are snacks. Bonuses and caps unchanged.
+- 2026-11-14 (worm-d105-content-s37-1): The sky's new foods and events count from stage 5 (the sky's own `edible_from`), the surface's from stage 5 (the crust stage in `data/stages.tres`).
+- 2026-11-14 (worm-d105-content-s37-1): Looks reuse the code-drawn placeholders by behaviour: trundlers wear the beetle's round shell (earwig, toad, gem beetle, crystal crab, fire beetle, hedgehog, tortoise), wavers the centipede's wave (millipede, cave fish, magma newt, magma eel), hoppers the lava blob's bouncy blob (June bug, grasshopper, cave cricket, frog, jackrabbit), the slug the grub's blobs. Radii follow size like the older creatures (size 3: 14.5 px, 4: 16.5, 5: 18.8, 6: 20.8) so K-01 holds. No new art (the Art Director holds Worm's art).
 
 ## D105 content (stages 1 and 2)
 
@@ -173,6 +183,173 @@ Events (6, `RingEvent` rows in `RingLife.events`, played by `RingEvents`):
 Kid rule (something new at least every 15 minutes in stages 1 and 2): worst gap 4.0 min over seeds
 1 to 5, kid and adult, with these things in; 5.0 min counting only the older things in the same
 runs. See
+`handoff/content.md`.
+
+## D105 content (stages 3 to 7)
+
+Kaden's Docket answer D105 b (2026-11-13), second slice: stages 3 to 7. 140 new things (stage 3: 29,
+stage 4: 26, stage 5: 33, stage 6: 27, stage 7: 25): 51 foods, 17 creatures, 47 ring events and 25
+space sights. No pacing number changed; no image or sound file added (code-drawn looks and existing
+cues). Proof: `tests/test_d105_stage37.gd` (each exists, opens at its stage, and is met in play;
+the list is `tests/d105_stage37_table.gd`) and `tests/test_d105_novelty37.gd` (the kid rule).
+
+How a thing opens: a food at its ring's stage or its size, whichever is later (data/foods,
+`RingLife.later_scatter`); a creature at its ring's stage or its counter's `stage_from` (data/creatures,
+scenes/creatures, a counter in its ring's life file); an event at its `stage_from` (`RingLife.events`,
+played by `RingEvents`); a space sight from the chomp on, after its `after_planets` (`SpaceSights`).
+
+Stage 3:
+- Food `turnip`: stage 3, dirt, root, size 3; a fat purple turnip. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `toy_car`: stage 3, dirt, junk, size 3; a lost little red toy car. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `flower_pot`: stage 3, dirt, stone, size 3; a buried clay flower pot. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `big_bone`: stage 3, dirt, stone, size 3; an old bone a dog buried. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `flint_chip`: stage 3, dirt, stone, size 3; a sharp-looking (but harmless) grey flint chip. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `tulip_bulb`: stage 3, dirt, root, size 3; a tulip bulb that plants a root garden. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `tin_can`: stage 3, topsoil, junk, size 3; a dented tin can. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `garden_glove`: stage 3, topsoil, junk, size 3; the gardener's lost green glove. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `rubber_duck`: stage 3, topsoil, junk, size 3; a yellow rubber duck. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `pine_cone`: stage 3, topsoil, root, size 3; a pine cone. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `pickle`: stage 3, topsoil, water, size 3; a picnic pickle. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `sunflower_head`: stage 3, topsoil, root, size 3; a fallen sunflower head. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Creature `earwig`: stage 3, dirt, size 4; a size-4 threat at stage 3 (1.2 s wind-up), hunts june bugs. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `millipede`: stage 3, dirt, size 3; a wavy millipede, food at 3. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `june_bug`: stage 3, dirt, size 3; a hopping June bug, food at 3. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `slug`: stage 3, topsoil, size 3; a slow orange slug that never notices a worm. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `grasshopper`: stage 3, topsoil, size 3; a hopping grasshopper, food at 3. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `toad`: stage 3, topsoil, size 4; a round sleepy toad, a size-4 threat at stage 3 (1.4 s wind-up), hunts slugs. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Event `turnip_heave`: stage 3, dirt, burst; a turnip patch heaves out of the wall. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `toy_box`: stage 3, dirt, burst; a buried toy box pops open: toy cars. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `old_dig`: stage 3, dirt, ring; an old dig: bones in a ring round the worm. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `flint_vein`: stage 3, dirt, trail; a vein of flint chips pops up in a line. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `pot_tumble`: stage 3, dirt, roll; flower pots roll in from the side. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `duck_wash`: stage 3, topsoil, fall, rain only; rubber ducks wash down in the rain. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `glove_drop`: stage 3, topsoil, fall; the gardener drops a glove through the grass. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `cone_drop`: stage 3, topsoil, fall; pine cones drop through the grass. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `can_roll`: stage 3, topsoil, roll; tin cans roll in from the side. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `sunflower_ring`: stage 3, topsoil, ring; sunflower heads spring up round the worm. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `pickle_trail`: stage 3, topsoil, trail; a trail of picnic pickles leads off. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+
+Stage 4:
+- Food `coal_lump`: stage 4, deep_rock, stone, size 4; a lump of coal. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `thunder_egg`: stage 4, deep_rock, stone, size 4; a round rock with crystals inside. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `ammonite`: stage 4, deep_rock, stone, size 4; a big curled ammonite fossil. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `pick_head`: stage 4, deep_rock, junk, size 4; an old miner's pick head. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `cave_pearl`: stage 4, deep_rock, water, size 4; a cave pearl from a drip pool. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `glow_cap`: stage 4, deep_rock, root, size 4; a glowing blue cave mushroom. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `salt_crystal`: stage 4, deep_rock, crystal, size 4; a pink salt crystal. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `spring_bubble`: stage 4, deep_rock, water, size 4; a warm bubble from an underground spring. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `miner_lamp`: stage 4, deep_rock, junk, size 4; a lost miner's lamp. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `cart_wheel`: stage 4, deep_rock, junk, size 4; a mine cart wheel. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `rail_spike`: stage 4, deep_rock, junk, size 4; an old rail spike. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `moss_ball`: stage 4, deep_rock, root, size 4; a soft ball of cave moss. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Creature `cave_cricket`: stage 4, deep_rock, size 3; a hopping cave cricket. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `gem_beetle`: stage 4, deep_rock, size 5; a size-5 threat at stage 4 (1.3 s wind-up), hunts cave crickets. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `cave_fish`: stage 4, deep_rock, size 3; a pale wavy cave fish. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `crystal_crab`: stage 4, deep_rock, size 4; a crab with a crystal on its back that never notices a worm. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Event `coal_seam`: stage 4, deep_rock, burst; a coal seam cracks open. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `thunder_crack`: stage 4, deep_rock, burst; thunder eggs crack out of the rock. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `pearl_drip`: stage 4, deep_rock, fall; cave pearls drip from the roof. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `spring_bubbles`: stage 4, deep_rock, rise; warm spring bubbles rise from below. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `cart_roll`: stage 4, deep_rock, roll; a lost mine cart's wheels roll by. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `glow_ring`: stage 4, deep_rock, ring; glowing cave mushrooms ring the worm. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `fossil_trail`: stage 4, deep_rock, trail; a line of ammonites leads off. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `rail_line`: stage 4, deep_rock, trail; an old rail line of spikes. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `lamp_drop`: stage 4, deep_rock, fall; a miner's lamp drops down a shaft. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `salt_heave`: stage 4, deep_rock, rise; salt crystals push up from below. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+
+Stage 5:
+- Food `fire_opal`: stage 5, core, crystal, size 5; a fire opal. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `lava_rock`: stage 5, core, stone, size 5; a glowing lava rock. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `glow_seed`: stage 5, core, crystal, size 5; a glow seed that plants a crystal garden. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `magma_bubble`: stage 5, core, crystal, size 5; a bubble of warm magma. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `iron_ball`: stage 5, core, stone, size 5; a heavy iron ball from the core. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `pumpkin`: stage 5, surface, root, size 5; a big orange pumpkin. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `corn_cob`: stage 5, surface, root, size 5; a corn cob. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `watermelon`: stage 5, surface, water, size 5; a striped watermelon. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `newspaper`: stage 5, surface, junk, size 5; a rolled-up newspaper. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `garden_gnome`: stage 5, surface, junk, size 5; a garden gnome with a red hat. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `bird_house`: stage 5, surface, junk, size 5; a fallen bird house. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `kite`: stage 5, sky, junk, size 5; a kite with a bow tail. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `soap_bubble`: stage 5, sky, water, size 5; a big soap bubble. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `dandelion_puff`: stage 5, sky, cloud, size 5; a dandelion puff. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `snowflake`: stage 5, sky, cloud, size 5; a big snowflake. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Creature `magma_newt`: stage 5, core, size 4; a wavy orange newt. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `fire_beetle`: stage 5, core, size 6; a size-6 threat at stage 5 (1.4 s wind-up), hunts newts, food at 6. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `frog`: stage 5, surface, size 4; a hopping frog on the grass. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `hedgehog`: stage 5, surface, size 5; a round hedgehog that trundles off. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Event `magma_burst`: stage 5, core, burst; magma bursts out with fire opals. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `ember_rise`: stage 5, core, rise; magma bubbles rise from below. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `crystal_sprout`: stage 5, core, ring; glow seeds sprout in a ring round the worm. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `lava_roll`: stage 5, core, roll; lava rocks roll in. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `pumpkin_roll`: stage 5, surface, roll; pumpkins roll down the hill. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `harvest_heap`: stage 5, surface, burst; a harvest heap of corn tips over. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `paper_blow`: stage 5, surface, trail; newspapers blow past in a line. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `melon_drop`: stage 5, surface, fall; a watermelon falls off a picnic table. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `gnome_ring`: stage 5, surface, ring; garden gnomes stand in a ring round the worm. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `bird_house_fall`: stage 5, surface, fall; a bird house falls out of a tree (the bird tweets, unhurt). `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `kite_string`: stage 5, sky, trail; a string of kites flies past. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `bubble_rise`: stage 5, sky, rise; soap bubbles float up. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `snow_fall`: stage 5, sky, fall, rain only; big snowflakes fall in the rain up high. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `dandelion_drift`: stage 5, sky, roll; dandelion puffs drift in. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+
+Stage 6:
+- Food `hay_bale`: stage 6, surface, root, size 6; a round hay bale. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `bathtub`: stage 6, surface, junk, size 6; an old bathtub. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `rusty_anchor`: stage 6, surface, junk, size 6; a rusty anchor. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `old_piano`: stage 6, surface, junk, size 6; an old piano. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `hot_air_balloon`: stage 6, sky, junk, size 6; a hot air balloon. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `rain_cloud`: stage 6, sky, water, size 6; a dark rain cloud. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `blimp`: stage 6, sky, junk, size 6; a blimp. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `star_chip`: stage 6, sky, crystal, size 6; a chip off a falling star. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `magma_gem`: stage 6, core, crystal, size 6; a huge magma gem. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `dino_skull`: stage 6, deep_rock, stone, size 6; a giant dinosaur skull. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `time_capsule`: stage 6, dirt, junk, size 6; a buried time capsule. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Food `old_wheelbarrow`: stage 6, topsoil, junk, size 6; an old wheelbarrow. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Creature `old_tortoise`: stage 6, surface, size 6; a huge slow tortoise, only near a stage-6 worm. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `magma_eel`: stage 6, core, size 6; a long wavy magma eel, only near a stage-6 worm. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Creature `jackrabbit`: stage 6, surface, size 6; a big hopping jackrabbit, only near a stage-6 worm. `test_new_creatures_wait_for_their_stage_then_spawn_near_a_worm`
+- Event `cloud_bank`: stage 6, sky, ring; rain clouds bank up round the worm. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `balloon_race`: stage 6, sky, trail; hot air balloons race past in a line. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `blimp_pass`: stage 6, sky, roll; a blimp drifts in. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `star_fall`: stage 6, sky, fall; star chips fall from a shooting star. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `hay_roll`: stage 6, surface, roll; hay bales roll down the field. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `yard_sale`: stage 6, surface, burst; a yard sale pile topples: bathtubs. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `anchor_drop`: stage 6, surface, fall; a rusty anchor drops by the dock. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `piano_tumble`: stage 6, surface, roll; an old piano rolls in on its little wheels. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `magma_geyser`: stage 6, core, rise; a magma geyser pushes up huge gems. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `big_dig`: stage 6, deep_rock, burst; a giant skull breaks out of the rock. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `capsule_rise`: stage 6, dirt, rise; a time capsule bobs up as the dirt crumbles. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+- Event `barrow_tip`: stage 6, topsoil, roll; an old wheelbarrow rolls in and tips. `test_events_wait_for_their_stage_then_happen_beside_a_worm_in_their_ring`
+
+Stage 7:
+- Space sight `asteroid_drift`: stage 7, swarm, size 4; a loose clump of grey asteroids drifts by. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `meteor_shower`: stage 7, streak, size 3; a meteor shower streaks past. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `stardust_ring`: stage 7, ring, size 2; a ring of stardust round the worms. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `satellite`: stage 7, swarm, size 5; an old satellite tumbles by. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `ice_chunks`: stage 7, swarm, size 4; chunks of ice drift by. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `moonlets`: stage 7, ring, size 3; tiny moonlets circle the worms. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `rocket_bits`: stage 7, trail, size 3; bits of an old toy rocket in single file. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `nebula_puffs`: stage 7, swarm, size 2; pink nebula puffs. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `space_jelly`: stage 7, swarm, size 3; wobbly space jellies float by. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `gold_asteroid`: stage 7, swarm, size 6, after 1 planets; a rare gold asteroid (after the first planet). `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `star_seeds`: stage 7, trail, size 2, after 1 planets; a trail of glowing star seeds. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `comet_crumbs`: stage 7, streak, size 2, after 1 planets; crumbs off a comet's tail streak past. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `lost_telescope`: stage 7, swarm, size 4, after 1 planets; a lost telescope floats by. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `space_sock`: stage 7, swarm, size 2, after 1 planets; a single striped sock, lost in space. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `lost_lunchbox`: stage 7, swarm, size 3, after 1 planets; somebody's lunchbox drifts by. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `rogue_moon`: stage 7, swarm, size 8, after 2 planets; a rogue moon too big to eat: it bumps (dodge it). `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `crystal_shards`: stage 7, streak, size 4, after 2 planets; crystal shards streak past. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `space_cloud`: stage 7, swarm, size 6, after 2 planets; one huge soft space cloud, a big meal. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `glass_planets`: stage 7, swarm, size 3, after 2 planets; little glass planets like marbles. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `cosmic_bubbles`: stage 7, ring, size 2, after 2 planets; bubbles circle the worms. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `ring_rocks`: stage 7, ring, size 4, after 3 planets; a planet's ring of rocks round the worms. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `dust_bunnies`: stage 7, swarm, size 1, after 3 planets; fluffy space dust bunnies. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `star_noodle`: stage 7, trail, size 2, after 4 planets; a long noodle of star stuff. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `sun_sparks`: stage 7, streak, size 2, after 5 planets; sparks off the sun streak past (once the sun comes). `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+- Space sight `last_light`: stage 7, ring, size 3, after 5 planets; a ring of last light round the worms before the sun. `test_the_space_stage_brings_sights_round_the_worms_as_planets_are_eaten`
+
+Kid rule (something new at least every 15 minutes in stages 3 to 7): worst gap 4.0 min over seeds 1
+to 5, kid and adult, with these things in (8.5 min counting only older things in the same runs). See
 `handoff/content.md`.
 
 ---

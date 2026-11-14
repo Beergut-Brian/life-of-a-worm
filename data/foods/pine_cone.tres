@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"pine_cone"
+eat_cue = "world_munch"
+flavour = &"root"
+growth = 3.5
+size_stage = 3
+color = Color(0.5500, 0.3500, 0.2000, 1)
+radius = 9.0
+ring = &"topsoil"
+regrow_time = 300.0
+plants = &""
+look = 1
+accent = Color(0.7500, 0.5500, 0.3000, 1)

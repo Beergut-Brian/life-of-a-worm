@@ -15,6 +15,13 @@
 [ext_resource type="Resource" path="res://data/foods/walnut.tres" id="d6"]
 [ext_resource type="Resource" path="res://data/foods/crayon.tres" id="d7"]
 [ext_resource type="Resource" path="res://data/foods/mushroom.tres" id="d8"]
+[ext_resource type="Resource" path="res://data/foods/tin_can.tres" id="s37_tin_can"]
+[ext_resource type="Resource" path="res://data/foods/garden_glove.tres" id="s37_garden_glove"]
+[ext_resource type="Resource" path="res://data/foods/rubber_duck.tres" id="s37_rubber_duck"]
+[ext_resource type="Resource" path="res://data/foods/pine_cone.tres" id="s37_pine_cone"]
+[ext_resource type="Resource" path="res://data/foods/pickle.tres" id="s37_pickle"]
+[ext_resource type="Resource" path="res://data/foods/sunflower_head.tres" id="s37_sunflower_head"]
+[ext_resource type="Resource" path="res://data/foods/old_wheelbarrow.tres" id="s37_old_wheelbarrow"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -194,12 +201,179 @@ distance = 64.0
 cue = "boop"
 fx = &"yum"
 
+[sub_resource type="Resource" id="s37c_slug"]
+script = ExtResource("2")
+id = &"slug"
+ring = &"topsoil"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/slug.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 3
+
+[sub_resource type="Resource" id="s37c_grasshopper"]
+script = ExtResource("2")
+id = &"grasshopper"
+ring = &"topsoil"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/grasshopper.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 3
+
+[sub_resource type="Resource" id="s37c_toad"]
+script = ExtResource("2")
+id = &"toad"
+ring = &"topsoil"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({&"slug": 0.02})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/toad.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 3
+
+[sub_resource type="Resource" id="s37e_duck_wash"]
+script = ExtResource("ev")
+id = &"duck_wash"
+ring = &"topsoil"
+stage_from = 3
+first_after = 60.0
+every = 300.0
+after_rain = true
+food = ExtResource("s37_rubber_duck")
+count = 3
+shape = 1
+distance = 72.0
+cue = "boing"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_glove_drop"]
+script = ExtResource("ev")
+id = &"glove_drop"
+ring = &"topsoil"
+stage_from = 3
+first_after = 200.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_garden_glove")
+count = 1
+shape = 1
+distance = 72.0
+cue = "drop"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_cone_drop"]
+script = ExtResource("ev")
+id = &"cone_drop"
+ring = &"topsoil"
+stage_from = 3
+first_after = 280.0
+every = 360.0
+after_rain = false
+food = ExtResource("s37_pine_cone")
+count = 4
+shape = 1
+distance = 72.0
+cue = "world_munch"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_can_roll"]
+script = ExtResource("ev")
+id = &"can_roll"
+ring = &"topsoil"
+stage_from = 3
+first_after = 360.0
+every = 400.0
+after_rain = false
+food = ExtResource("s37_tin_can")
+count = 3
+shape = 4
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_sunflower_ring"]
+script = ExtResource("ev")
+id = &"sunflower_ring"
+ring = &"topsoil"
+stage_from = 3
+first_after = 440.0
+every = 440.0
+after_rain = false
+food = ExtResource("s37_sunflower_head")
+count = 6
+shape = 2
+distance = 80.0
+cue = "world_sprout"
+fx = &"plant"
+
+[sub_resource type="Resource" id="s37e_pickle_trail"]
+script = ExtResource("ev")
+id = &"pickle_trail"
+ring = &"topsoil"
+stage_from = 3
+first_after = 520.0
+every = 460.0
+after_rain = false
+food = ExtResource("s37_pickle")
+count = 5
+shape = 3
+distance = 60.0
+cue = "boop"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_barrow_tip"]
+script = ExtResource("ev")
+id = &"barrow_tip"
+ring = &"topsoil"
+stage_from = 6
+first_after = 90.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_old_wheelbarrow")
+count = 1
+shape = 4
+distance = 72.0
+cue = "drop"
+fx = &"leaf"
+
 [resource]
 script = ExtResource("1")
 ring = &"topsoil"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("d105a"), SubResource("d105b"), SubResource("d105c"), SubResource("d105d")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("d105a"), SubResource("d105b"), SubResource("d105c"), SubResource("d105d"), SubResource("s37c_slug"), SubResource("s37c_grasshopper"), SubResource("s37c_toad")])
 scatter = Array[ExtResource("3")]([ExtResource("f0"), ExtResource("f1")])
 scatter_count = 4
 late_scatter = Array[ExtResource("3")]([ExtResource("d0"), ExtResource("d1"), ExtResource("d2"), ExtResource("d3"), ExtResource("d4"), ExtResource("d5"), ExtResource("d6"), ExtResource("d7")])
 late_scatter_count = 16
-events = Array[ExtResource("ev")]([SubResource("e0"), SubResource("e1"), SubResource("e2")])
+events = Array[ExtResource("ev")]([SubResource("e0"), SubResource("e1"), SubResource("e2"), SubResource("s37e_duck_wash"), SubResource("s37e_glove_drop"), SubResource("s37e_cone_drop"), SubResource("s37e_can_roll"), SubResource("s37e_sunflower_ring"), SubResource("s37e_pickle_trail"), SubResource("s37e_barrow_tip")])
+later_scatter = Array[ExtResource("3")]([ExtResource("s37_tin_can"), ExtResource("s37_garden_glove"), ExtResource("s37_rubber_duck"), ExtResource("s37_pine_cone"), ExtResource("s37_pickle"), ExtResource("s37_sunflower_head"), ExtResource("s37_old_wheelbarrow")])
+later_scatter_count = 14

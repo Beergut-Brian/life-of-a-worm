@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fire_opal"
+eat_cue = "jar_clink"
+flavour = &"crystal"
+growth = 5.0
+size_stage = 5
+color = Color(1.0000, 0.5000, 0.2000, 1)
+radius = 10.0
+ring = &"core"
+regrow_time = 900.0
+plants = &""
+look = 8
+accent = Color(1.0000, 0.8500, 0.4000, 1)

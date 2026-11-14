@@ -6,6 +6,15 @@
 [ext_resource type="Resource" path="res://data/foods/cloud_puff.tres" id="f0"]
 [ext_resource type="Resource" path="res://data/foods/toy_plane.tres" id="f1"]
 [ext_resource type="Resource" path="res://data/foods/sky_balloon.tres" id="f2"]
+[ext_resource type="Script" path="res://scripts/rings/ring_event.gd" id="s37ev"]
+[ext_resource type="Resource" path="res://data/foods/kite.tres" id="s37_kite"]
+[ext_resource type="Resource" path="res://data/foods/soap_bubble.tres" id="s37_soap_bubble"]
+[ext_resource type="Resource" path="res://data/foods/dandelion_puff.tres" id="s37_dandelion_puff"]
+[ext_resource type="Resource" path="res://data/foods/snowflake.tres" id="s37_snowflake"]
+[ext_resource type="Resource" path="res://data/foods/hot_air_balloon.tres" id="s37_hot_air_balloon"]
+[ext_resource type="Resource" path="res://data/foods/rain_cloud.tres" id="s37_rain_cloud"]
+[ext_resource type="Resource" path="res://data/foods/blimp.tres" id="s37_blimp"]
+[ext_resource type="Resource" path="res://data/foods/star_chip.tres" id="s37_star_chip"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -64,6 +73,126 @@ live = "res://data/foods/sky_balloon.tres"
 depth_min = 0.0
 depth_max = 0.0
 
+[sub_resource type="Resource" id="s37e_kite_string"]
+script = ExtResource("s37ev")
+id = &"kite_string"
+ring = &"sky"
+stage_from = 5
+first_after = 120.0
+every = 320.0
+after_rain = false
+food = ExtResource("s37_kite")
+count = 5
+shape = 3
+distance = 60.0
+cue = "wiggle"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_bubble_rise"]
+script = ExtResource("s37ev")
+id = &"bubble_rise"
+ring = &"sky"
+stage_from = 5
+first_after = 200.0
+every = 360.0
+after_rain = false
+food = ExtResource("s37_soap_bubble")
+count = 6
+shape = 5
+distance = 72.0
+cue = "boop"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_snow_fall"]
+script = ExtResource("s37ev")
+id = &"snow_fall"
+ring = &"sky"
+stage_from = 5
+first_after = 60.0
+every = 300.0
+after_rain = true
+food = ExtResource("s37_snowflake")
+count = 6
+shape = 1
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_dandelion_drift"]
+script = ExtResource("s37ev")
+id = &"dandelion_drift"
+ring = &"sky"
+stage_from = 5
+first_after = 280.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_dandelion_puff")
+count = 4
+shape = 4
+distance = 72.0
+cue = "world_sprout"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_cloud_bank"]
+script = ExtResource("s37ev")
+id = &"cloud_bank"
+ring = &"sky"
+stage_from = 6
+first_after = 60.0
+every = 300.0
+after_rain = false
+food = ExtResource("s37_rain_cloud")
+count = 5
+shape = 2
+distance = 90.0
+cue = "boop"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_balloon_race"]
+script = ExtResource("s37ev")
+id = &"balloon_race"
+ring = &"sky"
+stage_from = 6
+first_after = 90.0
+every = 340.0
+after_rain = false
+food = ExtResource("s37_hot_air_balloon")
+count = 4
+shape = 3
+distance = 70.0
+cue = "boing"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_blimp_pass"]
+script = ExtResource("s37ev")
+id = &"blimp_pass"
+ring = &"sky"
+stage_from = 6
+first_after = 120.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_blimp")
+count = 1
+shape = 4
+distance = 80.0
+cue = "boing"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_star_fall"]
+script = ExtResource("s37ev")
+id = &"star_fall"
+ring = &"sky"
+stage_from = 6
+first_after = 150.0
+every = 400.0
+after_rain = false
+food = ExtResource("s37_star_chip")
+count = 5
+shape = 1
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
 [resource]
 script = ExtResource("1")
 ring = &"sky"
@@ -85,3 +214,6 @@ flock_speed = 0.012
 flock_startle = 260.0
 flock_cue = "bird_tweet"
 flock_colors = Array[Color]([Color(1, 0.8235, 0.2471, 1), Color(0.9412, 0.5412, 0.2353, 1), Color(1, 0.4784, 0.851, 1)])
+events = Array[ExtResource("s37ev")]([SubResource("s37e_kite_string"), SubResource("s37e_bubble_rise"), SubResource("s37e_snow_fall"), SubResource("s37e_dandelion_drift"), SubResource("s37e_cloud_bank"), SubResource("s37e_balloon_race"), SubResource("s37e_blimp_pass"), SubResource("s37e_star_fall")])
+later_scatter = Array[ExtResource("3")]([ExtResource("s37_kite"), ExtResource("s37_soap_bubble"), ExtResource("s37_dandelion_puff"), ExtResource("s37_snowflake"), ExtResource("s37_hot_air_balloon"), ExtResource("s37_rain_cloud"), ExtResource("s37_blimp"), ExtResource("s37_star_chip")])
+later_scatter_count = 16
