@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"dandelion_puff"
+eat_cue = "world_sprout"
+flavour = &"cloud"
+growth = 3.0
+size_stage = 5
+color = Color(0.9800, 0.9800, 0.9000, 1)
+radius = 10.0
+ring = &"sky"
+regrow_time = 150.0
+plants = &""
+look = 12
+accent = Color(0.9500, 0.9000, 0.5000, 1)

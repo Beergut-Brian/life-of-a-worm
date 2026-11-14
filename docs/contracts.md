@@ -1534,3 +1534,31 @@ static func RingsDirector.late_food_count() -> int   # statics the late foods ad
 
 Event foods are plain `RingPickup`s in the actors node (group `food`, meta `ring_event`), not saved,
 at most `RingEvents.MAX_FOODS` (24) at once. Nothing an event does moves a worm.
+
+### Stages 3 to 7: later foods, gated creatures, new event shapes, space sights (worm-d105-content-s37-1)
+
+```
+RingLife.later_scatter: Array[RingFood]    # second D105 slice: placed after every late_scatter,
+RingLife.later_scatter_count: int          #   in RingsDirector.all_lives() order (tile rings, sky, surface)
+PopulationRule.stage_from := 0             # live ones spawn only near a worm of at least this stage
+RingEvent.Shape: BURST | FALL | RING | TRAIL | ROLL | RISE   # new: a line popping up in turn,
+                                           #   rolling in from the side, bobbing up from below
+static func RingsDirector.all_lives() -> Array[RingLife]     # LIVES + [SKY, SURFACE]
+RingsDirector.events plays all_lives() events (the sky and the surface too)
+RingsDirector.late_food_count() also counts every later_scatter
+
+class_name SpaceSight      # data/rings/space_sights.tres (SpaceSightSet.sights)
+# id, food: FoodData, count, shape (SWARM | STREAK | RING | TRAIL), first_after, every,
+# after_planets (themed planets eaten first), speed, distance, cue (existing Audio cue)
+
+class_name SpaceSights     # child "SpaceSights" of scenes/levels/space_stage.tscn
+signal happened(id: StringName, at: Vector2)
+var auto := true           # steps itself from _process; tests set false and call step(dt)
+func play(s: SpaceSight) -> Array[SpacePlanet]
+static func all_sights() -> Array[SpaceSight]
+```
+
+A space sight's bodies are `SpaceDrift` smalls of kind `&"sight"` (made with `SpaceDrift._small`),
+so `SpaceStage.resolve_contact` eats them (smaller) or bumps the worm (bigger) like any small; the
+drift forgets them past `forget_at`; at most `SpaceSights.MAX_BODIES` (30); not saved. No file in
+`scripts/space/` changed.

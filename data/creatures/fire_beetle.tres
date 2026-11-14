@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fire_beetle"
+flavour = &"bug"
+growth = 6.0
+size_stage = 6
+color = Color(0.8500, 0.2500, 0.1500, 1)
+radius = 20.8
+behaviour = 2
+ring = &"core"
+telegraph = 1.4
+bark = "rock_beetle_clack"
+windup_cue = "rock_beetle_windup"
+speed = 15.0
+notice = 150.0
+strike = 40.0
+hunts = &"magma_newt"
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0000, 0.7500, 0.2000, 1)
+bounce = 0.0

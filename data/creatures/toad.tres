@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"toad"
+flavour = &"bug"
+growth = 4.5
+size_stage = 4
+color = Color(0.6000, 0.5500, 0.3000, 1)
+radius = 16.5
+behaviour = 2
+ring = &"topsoil"
+telegraph = 1.4
+bark = "boing"
+windup_cue = "beetle_windup"
+speed = 14.0
+notice = 120.0
+strike = 36.0
+hunts = &"slug"
+hat = Color(0, 0, 0, 0)
+accent = Color(0.9000, 0.8500, 0.5000, 1)
+bounce = 0.0

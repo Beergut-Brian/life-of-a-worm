@@ -221,7 +221,7 @@ func setup(p_world: PolarWorld, p_spawn: Vector2, p_seed: int, saved: Dictionary
 	events = RingEvents.new()
 	events.name = "RingEvents"
 	add_child(events)
-	events.setup(self, LIVES, p_seed)
+	events.setup(self, all_lives(), p_seed)
 	cameo_stands = CameoStands.new()
 	cameo_stands.name = "CameoStands"
 	add_child(cameo_stands)
@@ -360,6 +360,12 @@ func _scatter(saved: Array) -> void:
 				break
 			var at := polar(rng.randf_range(-0.12, 0.12), rng.randf_range(band.x + 0.01, band.y - 0.01))
 			placed.append({ "food": life.late_scatter[i % life.late_scatter.size()], "at": at })
+	# D105 stages 3 to 7: every ring's later foods (the sky and the surface too), after those
+	for life in all_lives():
+		for i in life.later_scatter_count:
+			if life.later_scatter.is_empty():
+				break
+			placed.append({ "food": life.later_scatter[i % life.later_scatter.size()], "at": _static_spot(life, rng) })
 	for i in placed.size():
 		var p := add_static(placed[i].food, placed[i].at)
 		# A slot only takes its saved "eaten" if the same food was saved there (a tin from before a
@@ -372,13 +378,34 @@ func _scatter(saved: Array) -> void:
 
 
 ## A hidden place's foods: food_count around the hall, extra_food in its first side room.
-## How many statics the rings' late foods (RingLife.late_scatter, D105) add at the very end.
+## How many statics the rings' late foods (RingLife.late_scatter and later_scatter, D105) add at the
+## very end.
 static func late_food_count() -> int:
 	var n := 0
 	for life in LIVES:
 		if not life.late_scatter.is_empty():
 			n += life.late_scatter_count
+	for life in all_lives():
+		if not life.later_scatter.is_empty():
+			n += life.later_scatter_count
 	return n
+
+
+## Every ring's life: the tile rings (LIVES), then the sky and the surface.
+static func all_lives() -> Array[RingLife]:
+	var out: Array[RingLife] = LIVES.duplicate()
+	out.append(SKY)
+	out.append(SURFACE)
+	return out
+
+
+## A random spot for a static food of this ring (the sky's band, the grass top, or inside the ring).
+func _static_spot(life: RingLife, rng: RandomNumberGenerator) -> Vector2:
+	if life == SURFACE:
+		return polar(rng.randf_range(-SURFACE.scatter_spread, SURFACE.scatter_spread),
+				rng.randf_range(SURFACE.scatter_inner, SURFACE.scatter_outer))
+	var band := ring_band(life.ring)
+	return polar(rng.randf_range(-0.12, 0.12), rng.randf_range(band.x + 0.01, band.y - 0.01))
 
 
 func _place_secret_foods(s: SecretData, placed: Array[Dictionary]) -> void:
@@ -570,11 +597,12 @@ func wanted(rule: PopulationRule) -> int:
 ## Spawns toward / frees down to the wanted numbers: a few per tick, only into live chunks near a
 ## worm, never on top of one; never more than MAX_CREATURES creatures at once.
 func fit_live() -> void:
-	var anchors := _anchors()
+	var all_anchors := _anchors()
 	for rule: PopulationRule in ecology.rules.values():
+		var anchors := all_anchors if rule.stage_from <= 1 else _anchors(rule.stage_from)
 		var have := live_of(rule.id)
-		var want := wanted(rule)
-		if have.size() > want + 1:
+		var want := wanted(rule) if not anchors.is_empty() else 0
+		if have.size() > want + (1 if not anchors.is_empty() else 0):
 			var far := _farthest(have, anchors)
 			if far != null:
 				far.queue_free()
@@ -594,10 +622,12 @@ func fit_live() -> void:
 		live[rule.id] = have
 
 
-func _anchors() -> Array[Vector2]:
+## Head positions of the worms of at least min_stage (PopulationRule.stage_from).
+func _anchors(min_stage := 0) -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	for w in _worms():
-		out.append(world.to_local(w.head_position()))
+		if w.model.stage >= min_stage:
+			out.append(world.to_local(w.head_position()))
 	return out
 
 

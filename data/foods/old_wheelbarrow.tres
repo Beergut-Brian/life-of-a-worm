@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"old_wheelbarrow"
+eat_cue = "jar_clink"
+flavour = &"junk"
+growth = 5.0
+size_stage = 6
+color = Color(0.3000, 0.5500, 0.7500, 1)
+radius = 15.0
+ring = &"topsoil"
+regrow_time = 600.0
+plants = &""
+look = 7
+accent = Color(0.4000, 0.3000, 0.2500, 1)

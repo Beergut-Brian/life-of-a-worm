@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"gem_beetle"
+flavour = &"bug"
+growth = 5.0
+size_stage = 5
+color = Color(0.5500, 0.3000, 0.8500, 1)
+radius = 18.8
+behaviour = 2
+ring = &"deep_rock"
+telegraph = 1.3
+bark = "rock_beetle_clack"
+windup_cue = "rock_beetle_windup"
+speed = 16.0
+notice = 150.0
+strike = 38.0
+hunts = &"cave_cricket"
+hat = Color(0, 0, 0, 0)
+accent = Color(0.4000, 0.9500, 0.9000, 1)
+bounce = 0.0

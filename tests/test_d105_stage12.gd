@@ -167,6 +167,11 @@ func test_older_tins_keep_their_static_slots() -> void:
 	var dirt := _life(&"dirt")
 	var top := _life(&"topsoil")
 	var keep := [dirt.late_scatter_count, top.late_scatter_count]
+	# the second D105 slice (stages 3 to 7) comes after these: leave it out of both runs
+	var later := {}
+	for l in RingsDirector.all_lives():
+		later[l] = l.later_scatter_count
+		l.later_scatter_count = 0
 	dirt.late_scatter_count = 0
 	top.late_scatter_count = 0
 	_planet(&"dirt", 1)
@@ -176,6 +181,8 @@ func test_older_tins_keep_their_static_slots() -> void:
 	top.late_scatter_count = keep[1]
 	_planet(&"dirt", 1)
 	var now: Array = _dir.to_dict().statics
+	for l in later:
+		l.later_scatter_count = later[l]
 	assert_int(now.size()).is_equal(before.size() + keep[0] + keep[1])
 	for i in before.size():
 		assert_str(String(now[i][0])).is_equal(String(before[i][0]))

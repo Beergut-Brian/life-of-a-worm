@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"salt_crystal"
+eat_cue = "jar_clink"
+flavour = &"crystal"
+growth = 3.0
+size_stage = 4
+color = Color(1.0000, 0.7500, 0.8000, 1)
+radius = 8.0
+ring = &"deep_rock"
+regrow_time = 600.0
+plants = &""
+look = 8
+accent = Color(1.0000, 0.9000, 0.9200, 1)

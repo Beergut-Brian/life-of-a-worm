@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"old_tortoise"
+flavour = &"bug"
+growth = 6.0
+size_stage = 6
+color = Color(0.4500, 0.5500, 0.3000, 1)
+radius = 20.8
+behaviour = 2
+ring = &"surface"
+telegraph = 1.0
+bark = "beetle_blink"
+windup_cue = ""
+speed = 6.0
+notice = 0.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(0.7000, 0.6000, 0.3500, 1)
+bounce = 0.0

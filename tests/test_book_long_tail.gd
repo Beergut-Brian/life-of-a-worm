@@ -48,6 +48,8 @@ static func _planet_sources() -> Dictionary:
 			out[f.id] = "%s scatter" % life.ring
 		for f in life.late_scatter:
 			out[f.id] = "%s late scatter" % life.ring
+		for f in life.later_scatter:
+			out[f.id] = "%s later scatter" % life.ring
 		for rule in life.species:
 			if String(rule.live).begins_with("res://data/foods/"):
 				out[(load(rule.live) as FoodData).id] = "%s counter" % life.ring

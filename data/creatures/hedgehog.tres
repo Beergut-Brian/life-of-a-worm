@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hedgehog"
+flavour = &"bug"
+growth = 4.5
+size_stage = 5
+color = Color(0.6000, 0.4500, 0.3000, 1)
+radius = 18.8
+behaviour = 2
+ring = &"surface"
+telegraph = 1.0
+bark = "wiggle"
+windup_cue = ""
+speed = 10.0
+notice = 100.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(0.9000, 0.8000, 0.6500, 1)
+bounce = 0.0

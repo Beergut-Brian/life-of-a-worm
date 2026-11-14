@@ -16,6 +16,17 @@
 [ext_resource type="Resource" path="res://data/props/diner.tres" id="p7"]
 [ext_resource type="Resource" path="res://data/props/court.tres" id="p8"]
 [ext_resource type="Resource" path="res://data/props/dock_shed.tres" id="p9"]
+[ext_resource type="Script" path="res://scripts/rings/ring_event.gd" id="s37ev"]
+[ext_resource type="Resource" path="res://data/foods/pumpkin.tres" id="s37_pumpkin"]
+[ext_resource type="Resource" path="res://data/foods/corn_cob.tres" id="s37_corn_cob"]
+[ext_resource type="Resource" path="res://data/foods/watermelon.tres" id="s37_watermelon"]
+[ext_resource type="Resource" path="res://data/foods/newspaper.tres" id="s37_newspaper"]
+[ext_resource type="Resource" path="res://data/foods/garden_gnome.tres" id="s37_garden_gnome"]
+[ext_resource type="Resource" path="res://data/foods/bird_house.tres" id="s37_bird_house"]
+[ext_resource type="Resource" path="res://data/foods/hay_bale.tres" id="s37_hay_bale"]
+[ext_resource type="Resource" path="res://data/foods/bathtub.tres" id="s37_bathtub"]
+[ext_resource type="Resource" path="res://data/foods/rusty_anchor.tres" id="s37_rusty_anchor"]
+[ext_resource type="Resource" path="res://data/foods/old_piano.tres" id="s37_old_piano"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -65,10 +76,240 @@ script = ExtResource("cameo")
 id = &"surface_east_grass"
 angle = 0.46
 
+[sub_resource type="Resource" id="s37c_frog"]
+script = ExtResource("2")
+id = &"frog"
+ring = &"surface"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/frog.tscn"
+depth_min = 0.989
+depth_max = 0.9995
+stage_from = 5
+
+[sub_resource type="Resource" id="s37c_hedgehog"]
+script = ExtResource("2")
+id = &"hedgehog"
+ring = &"surface"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/hedgehog.tscn"
+depth_min = 0.989
+depth_max = 0.9995
+stage_from = 5
+
+[sub_resource type="Resource" id="s37c_old_tortoise"]
+script = ExtResource("2")
+id = &"old_tortoise"
+ring = &"surface"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/old_tortoise.tscn"
+depth_min = 0.989
+depth_max = 0.9995
+stage_from = 6
+
+[sub_resource type="Resource" id="s37c_jackrabbit"]
+script = ExtResource("2")
+id = &"jackrabbit"
+ring = &"surface"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/jackrabbit.tscn"
+depth_min = 0.989
+depth_max = 0.9995
+stage_from = 6
+
+[sub_resource type="Resource" id="s37e_pumpkin_roll"]
+script = ExtResource("s37ev")
+id = &"pumpkin_roll"
+ring = &"surface"
+stage_from = 5
+first_after = 120.0
+every = 320.0
+after_rain = false
+food = ExtResource("s37_pumpkin")
+count = 2
+shape = 4
+distance = 72.0
+cue = "boing"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_harvest_heap"]
+script = ExtResource("s37ev")
+id = &"harvest_heap"
+ring = &"surface"
+stage_from = 5
+first_after = 200.0
+every = 360.0
+after_rain = false
+food = ExtResource("s37_corn_cob")
+count = 4
+shape = 0
+distance = 72.0
+cue = "world_munch"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_paper_blow"]
+script = ExtResource("s37ev")
+id = &"paper_blow"
+ring = &"surface"
+stage_from = 5
+first_after = 280.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_newspaper")
+count = 5
+shape = 3
+distance = 60.0
+cue = "book_flip"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_melon_drop"]
+script = ExtResource("s37ev")
+id = &"melon_drop"
+ring = &"surface"
+stage_from = 5
+first_after = 360.0
+every = 400.0
+after_rain = false
+food = ExtResource("s37_watermelon")
+count = 1
+shape = 1
+distance = 72.0
+cue = "boing"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_gnome_ring"]
+script = ExtResource("s37ev")
+id = &"gnome_ring"
+ring = &"surface"
+stage_from = 5
+first_after = 440.0
+every = 440.0
+after_rain = false
+food = ExtResource("s37_garden_gnome")
+count = 5
+shape = 2
+distance = 80.0
+cue = "boop"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_bird_house_fall"]
+script = ExtResource("s37ev")
+id = &"bird_house_fall"
+ring = &"surface"
+stage_from = 5
+first_after = 520.0
+every = 460.0
+after_rain = false
+food = ExtResource("s37_bird_house")
+count = 1
+shape = 1
+distance = 72.0
+cue = "bird_tweet"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_hay_roll"]
+script = ExtResource("s37ev")
+id = &"hay_roll"
+ring = &"surface"
+stage_from = 6
+first_after = 90.0
+every = 340.0
+after_rain = false
+food = ExtResource("s37_hay_bale")
+count = 3
+shape = 4
+distance = 72.0
+cue = "world_munch"
+fx = &"leaf"
+
+[sub_resource type="Resource" id="s37e_yard_sale"]
+script = ExtResource("s37ev")
+id = &"yard_sale"
+ring = &"surface"
+stage_from = 6
+first_after = 120.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_bathtub")
+count = 2
+shape = 0
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_anchor_drop"]
+script = ExtResource("s37ev")
+id = &"anchor_drop"
+ring = &"surface"
+stage_from = 6
+first_after = 150.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_rusty_anchor")
+count = 1
+shape = 1
+distance = 72.0
+cue = "bonk"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_piano_tumble"]
+script = ExtResource("s37ev")
+id = &"piano_tumble"
+ring = &"surface"
+stage_from = 6
+first_after = 180.0
+every = 440.0
+after_rain = false
+food = ExtResource("s37_old_piano")
+count = 1
+shape = 4
+distance = 80.0
+cue = "boing"
+fx = &"confetti"
+
 [resource]
 script = ExtResource("1")
 ring = &"surface"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("s37c_frog"), SubResource("s37c_hedgehog"), SubResource("s37c_old_tortoise"), SubResource("s37c_jackrabbit")])
 scatter = Array[ExtResource("3")]([ExtResource("f0")])
 scatter_count = 8
 edible_from = 4
@@ -79,3 +320,6 @@ scatter_outer = 1.008
 scatter_spread = 0.4
 cameos = Array[ExtResource("cameo")]([SubResource("cameo0"), SubResource("cameo1")])
 props = Array[ExtResource("4")]([ExtResource("p0"), ExtResource("p1"), ExtResource("p2"), ExtResource("p3"), ExtResource("p4"), ExtResource("p5"), ExtResource("p6"), ExtResource("p7"), ExtResource("p8"), ExtResource("p9")])
+events = Array[ExtResource("s37ev")]([SubResource("s37e_pumpkin_roll"), SubResource("s37e_harvest_heap"), SubResource("s37e_paper_blow"), SubResource("s37e_melon_drop"), SubResource("s37e_gnome_ring"), SubResource("s37e_bird_house_fall"), SubResource("s37e_hay_roll"), SubResource("s37e_yard_sale"), SubResource("s37e_anchor_drop"), SubResource("s37e_piano_tumble")])
+later_scatter = Array[ExtResource("3")]([ExtResource("s37_pumpkin"), ExtResource("s37_corn_cob"), ExtResource("s37_watermelon"), ExtResource("s37_newspaper"), ExtResource("s37_garden_gnome"), ExtResource("s37_bird_house"), ExtResource("s37_hay_bale"), ExtResource("s37_bathtub"), ExtResource("s37_rusty_anchor"), ExtResource("s37_old_piano")])
+later_scatter_count = 20

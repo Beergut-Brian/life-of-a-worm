@@ -4,6 +4,20 @@
 [ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
 [ext_resource type="Resource" path="res://data/foods/fossil.tres" id="f0"]
+[ext_resource type="Script" path="res://scripts/rings/ring_event.gd" id="s37ev"]
+[ext_resource type="Resource" path="res://data/foods/coal_lump.tres" id="s37_coal_lump"]
+[ext_resource type="Resource" path="res://data/foods/thunder_egg.tres" id="s37_thunder_egg"]
+[ext_resource type="Resource" path="res://data/foods/ammonite.tres" id="s37_ammonite"]
+[ext_resource type="Resource" path="res://data/foods/pick_head.tres" id="s37_pick_head"]
+[ext_resource type="Resource" path="res://data/foods/cave_pearl.tres" id="s37_cave_pearl"]
+[ext_resource type="Resource" path="res://data/foods/glow_cap.tres" id="s37_glow_cap"]
+[ext_resource type="Resource" path="res://data/foods/salt_crystal.tres" id="s37_salt_crystal"]
+[ext_resource type="Resource" path="res://data/foods/spring_bubble.tres" id="s37_spring_bubble"]
+[ext_resource type="Resource" path="res://data/foods/miner_lamp.tres" id="s37_miner_lamp"]
+[ext_resource type="Resource" path="res://data/foods/cart_wheel.tres" id="s37_cart_wheel"]
+[ext_resource type="Resource" path="res://data/foods/rail_spike.tres" id="s37_rail_spike"]
+[ext_resource type="Resource" path="res://data/foods/moss_ball.tres" id="s37_moss_ball"]
+[ext_resource type="Resource" path="res://data/foods/dino_skull.tres" id="s37_dino_skull"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -43,9 +57,257 @@ live = "res://scenes/creatures/rock_beetle.tscn"
 depth_min = 0.0
 depth_max = 0.0
 
+[sub_resource type="Resource" id="s37c_cave_cricket"]
+script = ExtResource("2")
+id = &"cave_cricket"
+ring = &"deep_rock"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/cave_cricket.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 4
+
+[sub_resource type="Resource" id="s37c_gem_beetle"]
+script = ExtResource("2")
+id = &"gem_beetle"
+ring = &"deep_rock"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({&"cave_cricket": 0.02})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/gem_beetle.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 4
+
+[sub_resource type="Resource" id="s37c_cave_fish"]
+script = ExtResource("2")
+id = &"cave_fish"
+ring = &"deep_rock"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/cave_fish.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 4
+
+[sub_resource type="Resource" id="s37c_crystal_crab"]
+script = ExtResource("2")
+id = &"crystal_crab"
+ring = &"deep_rock"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/crystal_crab.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 4
+
+[sub_resource type="Resource" id="s37e_coal_seam"]
+script = ExtResource("s37ev")
+id = &"coal_seam"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 150.0
+every = 320.0
+after_rain = false
+food = ExtResource("s37_coal_lump")
+count = 4
+shape = 0
+distance = 72.0
+cue = "rock_beetle_clack"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_thunder_crack"]
+script = ExtResource("s37ev")
+id = &"thunder_crack"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 230.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_thunder_egg")
+count = 3
+shape = 0
+distance = 72.0
+cue = "egg_crack"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_pearl_drip"]
+script = ExtResource("s37ev")
+id = &"pearl_drip"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 300.0
+every = 360.0
+after_rain = false
+food = ExtResource("s37_cave_pearl")
+count = 5
+shape = 1
+distance = 72.0
+cue = "boop"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_spring_bubbles"]
+script = ExtResource("s37ev")
+id = &"spring_bubbles"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 370.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_spring_bubble")
+count = 5
+shape = 5
+distance = 72.0
+cue = "boop"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_cart_roll"]
+script = ExtResource("s37ev")
+id = &"cart_roll"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 440.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_cart_wheel")
+count = 2
+shape = 4
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_glow_ring"]
+script = ExtResource("s37ev")
+id = &"glow_ring"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 510.0
+every = 440.0
+after_rain = false
+food = ExtResource("s37_glow_cap")
+count = 6
+shape = 2
+distance = 80.0
+cue = "world_sprout"
+fx = &"plant"
+
+[sub_resource type="Resource" id="s37e_fossil_trail"]
+script = ExtResource("s37ev")
+id = &"fossil_trail"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 580.0
+every = 460.0
+after_rain = false
+food = ExtResource("s37_ammonite")
+count = 4
+shape = 3
+distance = 60.0
+cue = "rock_beetle_clack"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_rail_line"]
+script = ExtResource("s37ev")
+id = &"rail_line"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 650.0
+every = 480.0
+after_rain = false
+food = ExtResource("s37_rail_spike")
+count = 6
+shape = 3
+distance = 60.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_lamp_drop"]
+script = ExtResource("s37ev")
+id = &"lamp_drop"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 720.0
+every = 500.0
+after_rain = false
+food = ExtResource("s37_miner_lamp")
+count = 1
+shape = 1
+distance = 72.0
+cue = "jar_clink"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_salt_heave"]
+script = ExtResource("s37ev")
+id = &"salt_heave"
+ring = &"deep_rock"
+stage_from = 4
+first_after = 790.0
+every = 520.0
+after_rain = false
+food = ExtResource("s37_salt_crystal")
+count = 4
+shape = 5
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_big_dig"]
+script = ExtResource("s37ev")
+id = &"big_dig"
+ring = &"deep_rock"
+stage_from = 6
+first_after = 90.0
+every = 400.0
+after_rain = false
+food = ExtResource("s37_dino_skull")
+count = 2
+shape = 0
+distance = 80.0
+cue = "rock_beetle_clack"
+fx = &"confetti"
+
 [resource]
 script = ExtResource("1")
 ring = &"deep_rock"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("s37c_cave_cricket"), SubResource("s37c_gem_beetle"), SubResource("s37c_cave_fish"), SubResource("s37c_crystal_crab")])
 scatter = Array[ExtResource("3")]([ExtResource("f0")])
 scatter_count = 5
+events = Array[ExtResource("s37ev")]([SubResource("s37e_coal_seam"), SubResource("s37e_thunder_crack"), SubResource("s37e_pearl_drip"), SubResource("s37e_spring_bubbles"), SubResource("s37e_cart_roll"), SubResource("s37e_glow_ring"), SubResource("s37e_fossil_trail"), SubResource("s37e_rail_line"), SubResource("s37e_lamp_drop"), SubResource("s37e_salt_heave"), SubResource("s37e_big_dig")])
+later_scatter = Array[ExtResource("3")]([ExtResource("s37_coal_lump"), ExtResource("s37_thunder_egg"), ExtResource("s37_ammonite"), ExtResource("s37_pick_head"), ExtResource("s37_cave_pearl"), ExtResource("s37_glow_cap"), ExtResource("s37_salt_crystal"), ExtResource("s37_spring_bubble"), ExtResource("s37_miner_lamp"), ExtResource("s37_cart_wheel"), ExtResource("s37_rail_spike"), ExtResource("s37_moss_ball"), ExtResource("s37_dino_skull")])
+later_scatter_count = 26

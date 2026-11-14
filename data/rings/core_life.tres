@@ -6,6 +6,13 @@
 [ext_resource type="Resource" path="res://data/foods/core_crystal.tres" id="f0"]
 [ext_resource type="Resource" path="res://data/foods/big_boulder.tres" id="f1"]
 [ext_resource type="Resource" path="res://data/foods/crystal.tres" id="f2"]
+[ext_resource type="Script" path="res://scripts/rings/ring_event.gd" id="s37ev"]
+[ext_resource type="Resource" path="res://data/foods/fire_opal.tres" id="s37_fire_opal"]
+[ext_resource type="Resource" path="res://data/foods/lava_rock.tres" id="s37_lava_rock"]
+[ext_resource type="Resource" path="res://data/foods/glow_seed.tres" id="s37_glow_seed"]
+[ext_resource type="Resource" path="res://data/foods/magma_bubble.tres" id="s37_magma_bubble"]
+[ext_resource type="Resource" path="res://data/foods/iron_ball.tres" id="s37_iron_ball"]
+[ext_resource type="Resource" path="res://data/foods/magma_gem.tres" id="s37_magma_gem"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -45,9 +52,147 @@ live = "res://scenes/creatures/lava_blob.tscn"
 depth_min = 0.03
 depth_max = 0.135
 
+[sub_resource type="Resource" id="s37c_magma_newt"]
+script = ExtResource("2")
+id = &"magma_newt"
+ring = &"core"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/magma_newt.tscn"
+depth_min = 0.03
+depth_max = 0.115
+stage_from = 5
+
+[sub_resource type="Resource" id="s37c_fire_beetle"]
+script = ExtResource("2")
+id = &"fire_beetle"
+ring = &"core"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({&"magma_newt": 0.02})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/fire_beetle.tscn"
+depth_min = 0.03
+depth_max = 0.115
+stage_from = 5
+
+[sub_resource type="Resource" id="s37c_magma_eel"]
+script = ExtResource("2")
+id = &"magma_eel"
+ring = &"core"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/magma_eel.tscn"
+depth_min = 0.03
+depth_max = 0.115
+stage_from = 6
+
+[sub_resource type="Resource" id="s37e_magma_burst"]
+script = ExtResource("s37ev")
+id = &"magma_burst"
+ring = &"core"
+stage_from = 5
+first_after = 150.0
+every = 320.0
+after_rain = false
+food = ExtResource("s37_fire_opal")
+count = 3
+shape = 0
+distance = 72.0
+cue = "lava_blob_blorp"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_ember_rise"]
+script = ExtResource("s37ev")
+id = &"ember_rise"
+ring = &"core"
+stage_from = 5
+first_after = 230.0
+every = 360.0
+after_rain = false
+food = ExtResource("s37_magma_bubble")
+count = 5
+shape = 5
+distance = 72.0
+cue = "lava_blob_swell"
+fx = &"yum"
+
+[sub_resource type="Resource" id="s37e_crystal_sprout"]
+script = ExtResource("s37ev")
+id = &"crystal_sprout"
+ring = &"core"
+stage_from = 5
+first_after = 310.0
+every = 400.0
+after_rain = false
+food = ExtResource("s37_glow_seed")
+count = 6
+shape = 2
+distance = 80.0
+cue = "world_seed"
+fx = &"plant"
+
+[sub_resource type="Resource" id="s37e_lava_roll"]
+script = ExtResource("s37ev")
+id = &"lava_roll"
+ring = &"core"
+stage_from = 5
+first_after = 390.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_lava_rock")
+count = 2
+shape = 4
+distance = 72.0
+cue = "lava_blob_blorp"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_magma_geyser"]
+script = ExtResource("s37ev")
+id = &"magma_geyser"
+ring = &"core"
+stage_from = 6
+first_after = 90.0
+every = 360.0
+after_rain = false
+food = ExtResource("s37_magma_gem")
+count = 3
+shape = 5
+distance = 72.0
+cue = "lava_blob_swell"
+fx = &"confetti"
+
 [resource]
 script = ExtResource("1")
 ring = &"core"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("s37c_magma_newt"), SubResource("s37c_fire_beetle"), SubResource("s37c_magma_eel")])
 scatter = Array[ExtResource("3")]([ExtResource("f0"), ExtResource("f0"), ExtResource("f1"), ExtResource("f2")])
 scatter_count = 8
+events = Array[ExtResource("s37ev")]([SubResource("s37e_magma_burst"), SubResource("s37e_ember_rise"), SubResource("s37e_crystal_sprout"), SubResource("s37e_lava_roll"), SubResource("s37e_magma_geyser")])
+later_scatter = Array[ExtResource("3")]([ExtResource("s37_fire_opal"), ExtResource("s37_lava_rock"), ExtResource("s37_glow_seed"), ExtResource("s37_magma_bubble"), ExtResource("s37_iron_ball"), ExtResource("s37_magma_gem")])
+later_scatter_count = 12

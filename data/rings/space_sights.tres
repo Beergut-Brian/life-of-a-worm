@@ -1,0 +1,559 @@
+[gd_resource type="Resource" script_class="SpaceSightSet" format=3]
+
+[ext_resource type="Script" path="res://scripts/worm/food_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/rings/space_sight.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/rings/space_sight_set.gd" id="3"]
+
+[sub_resource type="Resource" id="f_asteroid_drift"]
+script = ExtResource("1")
+id = &"asteroid_drift"
+flavour = &"star"
+growth = 1.0
+size_stage = 4
+color = Color(0.5500, 0.5000, 0.4800, 1)
+radius = 14.0
+
+[sub_resource type="Resource" id="s_asteroid_drift"]
+script = ExtResource("2")
+id = &"asteroid_drift"
+food = SubResource("f_asteroid_drift")
+count = 5
+shape = 0
+first_after = 40.0
+every = 240.0
+after_planets = 0
+speed = 40.0
+distance = 620.0
+cue = "space_drift"
+
+[sub_resource type="Resource" id="f_meteor_shower"]
+script = ExtResource("1")
+id = &"meteor_shower"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(1.0000, 0.5500, 0.2000, 1)
+radius = 9.0
+
+[sub_resource type="Resource" id="s_meteor_shower"]
+script = ExtResource("2")
+id = &"meteor_shower"
+food = SubResource("f_meteor_shower")
+count = 6
+shape = 1
+first_after = 100.0
+every = 300.0
+after_planets = 0
+speed = 260.0
+distance = 700.0
+cue = "burst"
+
+[sub_resource type="Resource" id="f_stardust_ring"]
+script = ExtResource("1")
+id = &"stardust_ring"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(1.0000, 0.9500, 0.6000, 1)
+radius = 6.0
+
+[sub_resource type="Resource" id="s_stardust_ring"]
+script = ExtResource("2")
+id = &"stardust_ring"
+food = SubResource("f_stardust_ring")
+count = 10
+shape = 2
+first_after = 160.0
+every = 320.0
+after_planets = 0
+speed = 18.0
+distance = 260.0
+cue = "ring_open"
+
+[sub_resource type="Resource" id="f_satellite"]
+script = ExtResource("1")
+id = &"satellite"
+flavour = &"star"
+growth = 1.0
+size_stage = 5
+color = Color(0.8000, 0.8200, 0.8800, 1)
+radius = 20.0
+
+[sub_resource type="Resource" id="s_satellite"]
+script = ExtResource("2")
+id = &"satellite"
+food = SubResource("f_satellite")
+count = 1
+shape = 0
+first_after = 220.0
+every = 420.0
+after_planets = 0
+speed = 30.0
+distance = 640.0
+cue = "boop"
+
+[sub_resource type="Resource" id="f_ice_chunks"]
+script = ExtResource("1")
+id = &"ice_chunks"
+flavour = &"star"
+growth = 1.0
+size_stage = 4
+color = Color(0.7000, 0.9000, 1.0000, 1)
+radius = 12.0
+
+[sub_resource type="Resource" id="s_ice_chunks"]
+script = ExtResource("2")
+id = &"ice_chunks"
+food = SubResource("f_ice_chunks")
+count = 4
+shape = 0
+first_after = 280.0
+every = 360.0
+after_planets = 0
+speed = 35.0
+distance = 620.0
+cue = "jar_clink"
+
+[sub_resource type="Resource" id="f_moonlets"]
+script = ExtResource("1")
+id = &"moonlets"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(0.8500, 0.8400, 0.8000, 1)
+radius = 10.0
+
+[sub_resource type="Resource" id="s_moonlets"]
+script = ExtResource("2")
+id = &"moonlets"
+food = SubResource("f_moonlets")
+count = 6
+shape = 2
+first_after = 340.0
+every = 440.0
+after_planets = 0
+speed = 22.0
+distance = 330.0
+cue = "warp"
+
+[sub_resource type="Resource" id="f_rocket_bits"]
+script = ExtResource("1")
+id = &"rocket_bits"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(0.9000, 0.3000, 0.2500, 1)
+radius = 9.0
+
+[sub_resource type="Resource" id="s_rocket_bits"]
+script = ExtResource("2")
+id = &"rocket_bits"
+food = SubResource("f_rocket_bits")
+count = 5
+shape = 3
+first_after = 400.0
+every = 400.0
+after_planets = 0
+speed = 60.0
+distance = 640.0
+cue = "jar_clink"
+
+[sub_resource type="Resource" id="f_nebula_puffs"]
+script = ExtResource("1")
+id = &"nebula_puffs"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(1.0000, 0.5000, 0.8500, 1)
+radius = 16.0
+
+[sub_resource type="Resource" id="s_nebula_puffs"]
+script = ExtResource("2")
+id = &"nebula_puffs"
+food = SubResource("f_nebula_puffs")
+count = 6
+shape = 0
+first_after = 460.0
+every = 440.0
+after_planets = 0
+speed = 20.0
+distance = 600.0
+cue = "world_sprout"
+
+[sub_resource type="Resource" id="f_space_jelly"]
+script = ExtResource("1")
+id = &"space_jelly"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(0.6000, 0.9500, 0.8500, 1)
+radius = 13.0
+
+[sub_resource type="Resource" id="s_space_jelly"]
+script = ExtResource("2")
+id = &"space_jelly"
+food = SubResource("f_space_jelly")
+count = 3
+shape = 0
+first_after = 520.0
+every = 500.0
+after_planets = 0
+speed = 15.0
+distance = 600.0
+cue = "wiggle"
+
+[sub_resource type="Resource" id="f_gold_asteroid"]
+script = ExtResource("1")
+id = &"gold_asteroid"
+flavour = &"star"
+growth = 1.0
+size_stage = 6
+color = Color(1.0000, 0.8200, 0.2500, 1)
+radius = 26.0
+
+[sub_resource type="Resource" id="s_gold_asteroid"]
+script = ExtResource("2")
+id = &"gold_asteroid"
+food = SubResource("f_gold_asteroid")
+count = 1
+shape = 0
+first_after = 120.0
+every = 600.0
+after_planets = 1
+speed = 28.0
+distance = 660.0
+cue = "secret_found"
+
+[sub_resource type="Resource" id="f_star_seeds"]
+script = ExtResource("1")
+id = &"star_seeds"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(0.7000, 1.0000, 0.6000, 1)
+radius = 6.0
+
+[sub_resource type="Resource" id="s_star_seeds"]
+script = ExtResource("2")
+id = &"star_seeds"
+food = SubResource("f_star_seeds")
+count = 8
+shape = 3
+first_after = 200.0
+every = 480.0
+after_planets = 1
+speed = 50.0
+distance = 640.0
+cue = "world_seed"
+
+[sub_resource type="Resource" id="f_comet_crumbs"]
+script = ExtResource("1")
+id = &"comet_crumbs"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(0.6200, 0.9000, 1.0000, 1)
+radius = 6.0
+
+[sub_resource type="Resource" id="s_comet_crumbs"]
+script = ExtResource("2")
+id = &"comet_crumbs"
+food = SubResource("f_comet_crumbs")
+count = 8
+shape = 1
+first_after = 280.0
+every = 500.0
+after_planets = 1
+speed = 200.0
+distance = 700.0
+cue = "burst"
+
+[sub_resource type="Resource" id="f_lost_telescope"]
+script = ExtResource("1")
+id = &"lost_telescope"
+flavour = &"star"
+growth = 1.0
+size_stage = 4
+color = Color(0.5500, 0.3500, 0.2000, 1)
+radius = 14.0
+
+[sub_resource type="Resource" id="s_lost_telescope"]
+script = ExtResource("2")
+id = &"lost_telescope"
+food = SubResource("f_lost_telescope")
+count = 1
+shape = 0
+first_after = 360.0
+every = 520.0
+after_planets = 1
+speed = 30.0
+distance = 640.0
+cue = "boop"
+
+[sub_resource type="Resource" id="f_space_sock"]
+script = ExtResource("1")
+id = &"space_sock"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(0.9500, 0.3000, 0.4000, 1)
+radius = 9.0
+
+[sub_resource type="Resource" id="s_space_sock"]
+script = ExtResource("2")
+id = &"space_sock"
+food = SubResource("f_space_sock")
+count = 1
+shape = 0
+first_after = 440.0
+every = 540.0
+after_planets = 1
+speed = 26.0
+distance = 620.0
+cue = "boing"
+
+[sub_resource type="Resource" id="f_lost_lunchbox"]
+script = ExtResource("1")
+id = &"lost_lunchbox"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(0.3000, 0.6000, 0.9500, 1)
+radius = 11.0
+
+[sub_resource type="Resource" id="s_lost_lunchbox"]
+script = ExtResource("2")
+id = &"lost_lunchbox"
+food = SubResource("f_lost_lunchbox")
+count = 1
+shape = 0
+first_after = 520.0
+every = 560.0
+after_planets = 1
+speed = 26.0
+distance = 620.0
+cue = "jar_clink"
+
+[sub_resource type="Resource" id="f_rogue_moon"]
+script = ExtResource("1")
+id = &"rogue_moon"
+flavour = &"star"
+growth = 1.0
+size_stage = 8
+color = Color(0.6500, 0.6000, 0.7000, 1)
+radius = 60.0
+
+[sub_resource type="Resource" id="s_rogue_moon"]
+script = ExtResource("2")
+id = &"rogue_moon"
+food = SubResource("f_rogue_moon")
+count = 1
+shape = 0
+first_after = 120.0
+every = 700.0
+after_planets = 2
+speed = 45.0
+distance = 900.0
+cue = "space_bump"
+
+[sub_resource type="Resource" id="f_crystal_shards"]
+script = ExtResource("1")
+id = &"crystal_shards"
+flavour = &"star"
+growth = 1.0
+size_stage = 4
+color = Color(0.4500, 0.9500, 1.0000, 1)
+radius = 10.0
+
+[sub_resource type="Resource" id="s_crystal_shards"]
+script = ExtResource("2")
+id = &"crystal_shards"
+food = SubResource("f_crystal_shards")
+count = 5
+shape = 1
+first_after = 220.0
+every = 560.0
+after_planets = 2
+speed = 220.0
+distance = 700.0
+cue = "jar_clink"
+
+[sub_resource type="Resource" id="f_space_cloud"]
+script = ExtResource("1")
+id = &"space_cloud"
+flavour = &"star"
+growth = 1.0
+size_stage = 6
+color = Color(0.8000, 0.7500, 1.0000, 1)
+radius = 50.0
+
+[sub_resource type="Resource" id="s_space_cloud"]
+script = ExtResource("2")
+id = &"space_cloud"
+food = SubResource("f_space_cloud")
+count = 1
+shape = 0
+first_after = 320.0
+every = 620.0
+after_planets = 2
+speed = 20.0
+distance = 700.0
+cue = "world_sprout"
+
+[sub_resource type="Resource" id="f_glass_planets"]
+script = ExtResource("1")
+id = &"glass_planets"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(0.4000, 0.6000, 1.0000, 1)
+radius = 10.0
+
+[sub_resource type="Resource" id="s_glass_planets"]
+script = ExtResource("2")
+id = &"glass_planets"
+food = SubResource("f_glass_planets")
+count = 5
+shape = 0
+first_after = 420.0
+every = 600.0
+after_planets = 2
+speed = 30.0
+distance = 620.0
+cue = "jar_clink"
+
+[sub_resource type="Resource" id="f_cosmic_bubbles"]
+script = ExtResource("1")
+id = &"cosmic_bubbles"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(0.7500, 0.8500, 1.0000, 1)
+radius = 10.0
+
+[sub_resource type="Resource" id="s_cosmic_bubbles"]
+script = ExtResource("2")
+id = &"cosmic_bubbles"
+food = SubResource("f_cosmic_bubbles")
+count = 8
+shape = 2
+first_after = 520.0
+every = 640.0
+after_planets = 2
+speed = 16.0
+distance = 220.0
+cue = "boop"
+
+[sub_resource type="Resource" id="f_ring_rocks"]
+script = ExtResource("1")
+id = &"ring_rocks"
+flavour = &"star"
+growth = 1.0
+size_stage = 4
+color = Color(0.7000, 0.6000, 0.5000, 1)
+radius = 12.0
+
+[sub_resource type="Resource" id="s_ring_rocks"]
+script = ExtResource("2")
+id = &"ring_rocks"
+food = SubResource("f_ring_rocks")
+count = 12
+shape = 2
+first_after = 120.0
+every = 700.0
+after_planets = 3
+speed = 28.0
+distance = 420.0
+cue = "space_drift"
+
+[sub_resource type="Resource" id="f_dust_bunnies"]
+script = ExtResource("1")
+id = &"dust_bunnies"
+flavour = &"star"
+growth = 1.0
+size_stage = 1
+color = Color(0.7500, 0.7000, 0.6500, 1)
+radius = 6.0
+
+[sub_resource type="Resource" id="s_dust_bunnies"]
+script = ExtResource("2")
+id = &"dust_bunnies"
+food = SubResource("f_dust_bunnies")
+count = 10
+shape = 0
+first_after = 240.0
+every = 640.0
+after_planets = 3
+speed = 30.0
+distance = 600.0
+cue = "wiggle"
+
+[sub_resource type="Resource" id="f_star_noodle"]
+script = ExtResource("1")
+id = &"star_noodle"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(1.0000, 0.9000, 0.5000, 1)
+radius = 7.0
+
+[sub_resource type="Resource" id="s_star_noodle"]
+script = ExtResource("2")
+id = &"star_noodle"
+food = SubResource("f_star_noodle")
+count = 12
+shape = 3
+first_after = 120.0
+every = 640.0
+after_planets = 4
+speed = 35.0
+distance = 640.0
+cue = "wiggle"
+
+[sub_resource type="Resource" id="f_sun_sparks"]
+script = ExtResource("1")
+id = &"sun_sparks"
+flavour = &"star"
+growth = 1.0
+size_stage = 2
+color = Color(1.0000, 0.8000, 0.3000, 1)
+radius = 7.0
+
+[sub_resource type="Resource" id="s_sun_sparks"]
+script = ExtResource("2")
+id = &"sun_sparks"
+food = SubResource("f_sun_sparks")
+count = 7
+shape = 1
+first_after = 60.0
+every = 400.0
+after_planets = 5
+speed = 240.0
+distance = 700.0
+cue = "burst"
+
+[sub_resource type="Resource" id="f_last_light"]
+script = ExtResource("1")
+id = &"last_light"
+flavour = &"star"
+growth = 1.0
+size_stage = 3
+color = Color(1.0000, 0.9500, 0.7000, 1)
+radius = 9.0
+
+[sub_resource type="Resource" id="s_last_light"]
+script = ExtResource("2")
+id = &"last_light"
+food = SubResource("f_last_light")
+count = 12
+shape = 2
+first_after = 180.0
+every = 600.0
+after_planets = 5
+speed = 16.0
+distance = 300.0
+cue = "ring_open"
+
+[resource]
+script = ExtResource("3")
+sights = Array[ExtResource("2")]([SubResource("s_asteroid_drift"), SubResource("s_meteor_shower"), SubResource("s_stardust_ring"), SubResource("s_satellite"), SubResource("s_ice_chunks"), SubResource("s_moonlets"), SubResource("s_rocket_bits"), SubResource("s_nebula_puffs"), SubResource("s_space_jelly"), SubResource("s_gold_asteroid"), SubResource("s_star_seeds"), SubResource("s_comet_crumbs"), SubResource("s_lost_telescope"), SubResource("s_space_sock"), SubResource("s_lost_lunchbox"), SubResource("s_rogue_moon"), SubResource("s_crystal_shards"), SubResource("s_space_cloud"), SubResource("s_glass_planets"), SubResource("s_cosmic_bubbles"), SubResource("s_ring_rocks"), SubResource("s_dust_bunnies"), SubResource("s_star_noodle"), SubResource("s_sun_sparks"), SubResource("s_last_light")])

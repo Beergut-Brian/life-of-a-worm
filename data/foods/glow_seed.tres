@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"glow_seed"
+eat_cue = "home_seed"
+flavour = &"crystal"
+growth = 3.0
+size_stage = 5
+color = Color(0.6000, 0.9500, 1.0000, 1)
+radius = 7.0
+ring = &"core"
+regrow_time = 900.0
+plants = &"crystal"
+look = 1
+accent = Color(0.9000, 1.0000, 1.0000, 1)

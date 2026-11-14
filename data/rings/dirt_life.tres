@@ -13,6 +13,13 @@
 [ext_resource type="Resource" path="res://data/foods/potato.tres" id="d5"]
 [ext_resource type="Resource" path="res://data/foods/old_spoon.tres" id="d6"]
 [ext_resource type="Resource" path="res://data/foods/bug_egg.tres" id="d7"]
+[ext_resource type="Resource" path="res://data/foods/turnip.tres" id="s37_turnip"]
+[ext_resource type="Resource" path="res://data/foods/toy_car.tres" id="s37_toy_car"]
+[ext_resource type="Resource" path="res://data/foods/flower_pot.tres" id="s37_flower_pot"]
+[ext_resource type="Resource" path="res://data/foods/big_bone.tres" id="s37_big_bone"]
+[ext_resource type="Resource" path="res://data/foods/flint_chip.tres" id="s37_flint_chip"]
+[ext_resource type="Resource" path="res://data/foods/tulip_bulb.tres" id="s37_tulip_bulb"]
+[ext_resource type="Resource" path="res://data/foods/time_capsule.tres" id="s37_time_capsule"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -173,12 +180,164 @@ distance = 72.0
 cue = "egg_crack"
 fx = &"yum"
 
+[sub_resource type="Resource" id="s37c_earwig"]
+script = ExtResource("2")
+id = &"earwig"
+ring = &"dirt"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({&"june_bug": 0.02})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/earwig.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 3
+
+[sub_resource type="Resource" id="s37c_millipede"]
+script = ExtResource("2")
+id = &"millipede"
+ring = &"dirt"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/millipede.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 3
+
+[sub_resource type="Resource" id="s37c_june_bug"]
+script = ExtResource("2")
+id = &"june_bug"
+ring = &"dirt"
+start = 10.0
+plant = false
+growth_rate = 0.0
+capacity = 30.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.05
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.3
+live_max = 3
+live = "res://scenes/creatures/june_bug.tscn"
+depth_min = 0.0
+depth_max = 0.0
+stage_from = 3
+
+[sub_resource type="Resource" id="s37e_turnip_heave"]
+script = ExtResource("ev")
+id = &"turnip_heave"
+ring = &"dirt"
+stage_from = 3
+first_after = 160.0
+every = 320.0
+after_rain = false
+food = ExtResource("s37_turnip")
+count = 3
+shape = 0
+distance = 72.0
+cue = "world_sprout"
+fx = &"plant"
+
+[sub_resource type="Resource" id="s37e_toy_box"]
+script = ExtResource("ev")
+id = &"toy_box"
+ring = &"dirt"
+stage_from = 3
+first_after = 240.0
+every = 380.0
+after_rain = false
+food = ExtResource("s37_toy_car")
+count = 4
+shape = 0
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_old_dig"]
+script = ExtResource("ev")
+id = &"old_dig"
+ring = &"dirt"
+stage_from = 3
+first_after = 320.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_big_bone")
+count = 5
+shape = 2
+distance = 80.0
+cue = "rock_beetle_clack"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_flint_vein"]
+script = ExtResource("ev")
+id = &"flint_vein"
+ring = &"dirt"
+stage_from = 3
+first_after = 400.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_flint_chip")
+count = 5
+shape = 3
+distance = 60.0
+cue = "rock_beetle_clack"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_pot_tumble"]
+script = ExtResource("ev")
+id = &"pot_tumble"
+ring = &"dirt"
+stage_from = 3
+first_after = 480.0
+every = 440.0
+after_rain = false
+food = ExtResource("s37_flower_pot")
+count = 2
+shape = 4
+distance = 72.0
+cue = "drop"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="s37e_capsule_rise"]
+script = ExtResource("ev")
+id = &"capsule_rise"
+ring = &"dirt"
+stage_from = 6
+first_after = 90.0
+every = 420.0
+after_rain = false
+food = ExtResource("s37_time_capsule")
+count = 1
+shape = 5
+distance = 72.0
+cue = "jar_clink"
+fx = &"confetti"
+
 [resource]
 script = ExtResource("1")
 ring = &"dirt"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("r3"), SubResource("d105a"), SubResource("d105b")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("r3"), SubResource("d105a"), SubResource("d105b"), SubResource("s37c_earwig"), SubResource("s37c_millipede"), SubResource("s37c_june_bug")])
 scatter = Array[ExtResource("3")]([ExtResource("f0")])
 scatter_count = 6
 late_scatter = Array[ExtResource("3")]([ExtResource("d0"), ExtResource("d1"), ExtResource("d2"), ExtResource("d3"), ExtResource("d4"), ExtResource("d5"), ExtResource("d6")])
 late_scatter_count = 14
-events = Array[ExtResource("ev")]([SubResource("e0"), SubResource("e1"), SubResource("e2")])
+events = Array[ExtResource("ev")]([SubResource("e0"), SubResource("e1"), SubResource("e2"), SubResource("s37e_turnip_heave"), SubResource("s37e_toy_box"), SubResource("s37e_old_dig"), SubResource("s37e_flint_vein"), SubResource("s37e_pot_tumble"), SubResource("s37e_capsule_rise")])
+later_scatter = Array[ExtResource("3")]([ExtResource("s37_turnip"), ExtResource("s37_toy_car"), ExtResource("s37_flower_pot"), ExtResource("s37_big_bone"), ExtResource("s37_flint_chip"), ExtResource("s37_tulip_bulb"), ExtResource("s37_time_capsule")])
+later_scatter_count = 14

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"lava_rock"
+eat_cue = "rock_beetle_clack"
+flavour = &"stone"
+growth = 4.5
+size_stage = 5
+color = Color(0.4500, 0.1500, 0.1200, 1)
+radius = 12.0
+ring = &"core"
+regrow_time = 900.0
+plants = &""
+look = 7
+accent = Color(1.0000, 0.4500, 0.1500, 1)

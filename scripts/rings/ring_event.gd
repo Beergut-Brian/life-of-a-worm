@@ -1,11 +1,12 @@
 ## A visible event of a ring (D105 content, data in RingLife.events): something that happens to a
 ## worm in that ring now and then and shows its cause on screen. A few foods pop out of the ground
 ## beside it (BURST, with a puff where it cracked), drop down from above it (FALL, seen falling), or
-## spring up in a ring round it (RING). Played by RingEvents (a RingsDirector child).
+## spring up in a ring round it (RING), pop up one after another in a line leading off (TRAIL), roll
+## in from the side (ROLL) or bob up from below (RISE). Played by RingEvents (a RingsDirector child).
 class_name RingEvent
 extends Resource
 
-enum Shape { BURST, FALL, RING }
+enum Shape { BURST, FALL, RING, TRAIL, ROLL, RISE }
 
 @export var id: StringName
 ## The ring it happens in (a worm's head must be in that ring's band).

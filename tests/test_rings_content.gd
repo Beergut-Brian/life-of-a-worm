@@ -5,6 +5,7 @@
 extends GdUnitTestSuite
 
 const RINGS := preload("res://data/rings/rings.tres")
+const D105_37 := preload("res://tests/d105_stage37_table.gd")
 const HEAD_R := 8.0   # a stage-1 worm's head; grows Worm.SIZE_STEP per stage (test_creatures_rules)
 
 
@@ -102,7 +103,10 @@ func test_core_life_chain() -> void:
 	for r in l.species:
 		assert_str(String(r.ring)).is_equal("core")
 		ids.append(String(r.id))
-	assert_array(ids).contains_exactly(["core_crystal", "lava_blob"])
+	# the D105 stage 3 to 7 creatures follow the ring's own chain (tests/d105_stage37_table.gd)
+	var own := ids.filter(func(id: String) -> bool: return not D105_37.CREATURES.has(StringName(id)))
+	assert_array(own).contains_exactly(["core_crystal", "lava_blob"])
+	assert_array(ids.slice(0, 2)).contains_exactly(["core_crystal", "lava_blob"])
 	assert_str(l.species[0].live).is_equal("res://data/foods/core_crystal.tres")
 	assert_bool(ResourceLoader.exists(l.species[0].live)).is_true()
 	# The lava blob has a body (deep-rock-1) and spawns live (lava-blob-1).
@@ -154,7 +158,10 @@ func test_deep_rock_life_chain() -> void:
 	for r in l.species:
 		assert_str(String(r.ring)).is_equal("deep_rock")
 		ids.append(String(r.id))
-	assert_array(ids).contains_exactly(["ore_nugget", "rock_beetle"])
+	# the D105 stage 3 to 7 creatures follow the ring's own chain (tests/d105_stage37_table.gd)
+	var own := ids.filter(func(id: String) -> bool: return not D105_37.CREATURES.has(StringName(id)))
+	assert_array(own).contains_exactly(["ore_nugget", "rock_beetle"])
+	assert_array(ids.slice(0, 2)).contains_exactly(["ore_nugget", "rock_beetle"])
 	assert_bool(l.species[1].eats.has(&"ore_nugget")).is_true()
 	assert_str(l.species[0].live).is_equal("res://data/foods/ore_nugget.tres")
 	assert_bool(ResourceLoader.exists(l.species[0].live)).is_true()

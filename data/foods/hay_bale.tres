@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RingFood" format=3]
+
+[ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hay_bale"
+eat_cue = "world_munch"
+flavour = &"root"
+growth = 5.0
+size_stage = 6
+color = Color(0.9500, 0.8000, 0.3500, 1)
+radius = 14.0
+ring = &"surface"
+regrow_time = 400.0
+plants = &""
+look = 4
+accent = Color(0.8000, 0.6000, 0.2000, 1)
