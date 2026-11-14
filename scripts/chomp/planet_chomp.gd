@@ -13,6 +13,9 @@ signal confirm_cancelled()
 signal planet_eaten()
 ## B pressed on the picture: "not yet". The director takes the shot away; nothing changed.
 signal declined()
+## The hold finished but the jar could not be written: no "yes", a bonk, the shot shakes and the
+## ring empties so the kid can hold again. Nothing is chomped, so nothing is lost (kid-check N7).
+signal jar_refused()
 
 enum Phase { IDLE, CONFIRM, JARRING, CHOMP, GONE, FADE, DONE }
 
@@ -245,18 +248,33 @@ func _on_confirm_cancelled() -> void:
 
 func _on_confirmed() -> void:
 	_sfx.stop("confirm_hold")
-	_sfx.play("confirm_yes")
 	var path := jars.snapshot(planet_id()) if jars else ""
 	if path == "":
 		push_warning("PlanetChomp: no jar, no chomp")   # nothing built is ever lost
-		confirm = _fresh_confirm()
+		_refuse()
 		return
+	_sfx.play("confirm_yes")
 	phase = Phase.JARRING
 	_t = 0.0
 	var tw := create_tween()
 	tw.tween_property(_picture, "scale", Vector2.ZERO, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	_jar.call("fly_in", global_position, PLANET_SCALE * TEX_SIZE, JAR_TIME * 0.8)
 	_picture.jarred = true
+
+
+## No jar, no chomp: a bonk, a shake of the shot and a wobble of the picture, then the empty ring
+## asks again. The "yes" cue only ever plays once the jar is safely written.
+func _refuse() -> void:
+	confirm = _fresh_confirm()
+	_sfx.play("bonk")
+	shake = maxf(shake, 14.0)
+	_worm.mouth_open = 0.0
+	_picture.progress = 0.0
+	_picture.holding = false
+	var tw := create_tween()
+	for a in [0.14, -0.12, 0.08, -0.05, 0.0]:
+		tw.tween_property(_picture, "rotation", a, 0.06)
+	jar_refused.emit()
 
 
 func _fresh_confirm() -> HoldConfirm:

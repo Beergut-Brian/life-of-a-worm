@@ -44,7 +44,7 @@ were written as tests on local `feature/worm-gap-close-6` but are not on dev:
 | 15 | Lighting and ambience | `scripts/lighting/*.gd`, `scripts/audio/ring_ambience.gd` | yes | yes | yes | yes | yes |
 | 16 | Saves and bait tins | `scripts/autoload/Save.gd`, `scripts/planet/bait_tins.gd`, autosave in `planet_level.gd` | yes | no (N6) | yes | yes | note |
 | 17 | The dock, story and opening | `scripts/planet/dock.gd`, `scripts/story/*.gd`, `worm_egg.gd`, `worm_podium.gd` | yes | yes | yes | yes | yes |
-| 18 | Planet chomp and jars | `scripts/chomp/*.gd`, `scripts/jars/*.gd` | yes | no (N7) | yes | no (N8) | note |
+| 18 | Planet chomp and jars | `scripts/chomp/*.gd`, `scripts/jars/*.gd` | yes | yes (N7 fixed) | yes | yes (N8 fixed) | yes |
 | 19 | Space | `scripts/space/*.gd` | yes | yes | yes | yes (decided) | yes |
 | 20 | Tackle box and the book | `scripts/tackle/*.gd`, `scripts/ui/book*.gd` | yes | yes | yes | yes | yes |
 | 21 | Players, drop-in, co-op camera | `scripts/autoload/Players.gd`, `solo_marker.gd`, `scripts/planet/far_camera.gd`, `scripts/world/polar_camera.gd`, `scenes/main.gd` | no (N9) | yes | yes | yes (decided) | note |
@@ -134,12 +134,19 @@ tin. `tests/test_save_damaged.gd` (4 cases). Still open: the dock does not draw 
 plays `confirm_yes` before it tries `jars.snapshot()`. If that fails, the ring quietly resets with
 only a `push_warning`. The fix moves the yes cue after the check and plays a bonk or cancel with a
 jar shake on failure. That is a few lines. Owner: Chomp.
+**Fixed (worm-gap-close-43):** `PlanetChomp._on_confirmed` writes the jar first and plays
+`confirm_yes` only once it is written. On a failed write `_refuse()` plays `bonk`, shakes the shot,
+wobbles the picture, empties the ring (the kid can hold again) and emits `jar_refused`; nothing is
+eaten. `tests/test_chomp_sequence.gd::test_a_jar_that_cannot_be_written_bonks_instead_of_saying_yes`.
 
 **N8 (note): a chomped planet cannot be visited again yet.** After the chomp, the tin reopens in
 space (`scripts/chomp/chomp_director.gd:35-36,162`). Nothing in play opens a jar
 (`scripts/jars/jar_open_view.gd` is used only by its demo scene). The jar keeps everything, so
 nothing is deleted, but the kid cannot get back to their burrow and trophies. PLAN-STATUS S-10
 already tracks this (the jar shelf on the dock), so it is a bigger build.
+**Fixed on dev (S-10, jar-reconcile-1, PR #95; noted by worm-gap-close-43):** the jar shelf on the
+dock opens a jar to play in again and puts it back on leaving (`tests/test_jars_shelf.gd`, 7 cases,
+`::test_main_dock_to_jar_and_back_to_the_shelf`).
 
 **N9 (note): a pad that disconnects removes its worm with no sound or picture.** At
 `scripts/planet/planet_level.gd:338-347` (`remove_worm`, called from `scenes/main.gd`), the worm is

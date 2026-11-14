@@ -3,12 +3,13 @@
 ## chunk_radius-2 neighbourhood, a frame never builds more than chunk_budget_per_frame chunks, a
 ## frame that builds never also frees, and the script side of one chunk build stays well inside a
 ## 60 fps frame.
-## Measured (worm-gap-close-15): the polar "5x5" is 19 chunks near the core, 23 at 0.2 depth and 31
-## (31,376 tiles) from 0.35 depth out, because a band edge with more sectors adds chunks. W-23's
-## target is 25 chunks / ~25k tiles, so the worst case is ~25% over; trimming it is a change to
-## DiskShape.neighbourhood (addon) or PolarWorld.chunk_radius. These caps lock today's worst case so
-## it can't grow while that is decided. Loads and frees are counted
-## through the world's chunk_loaded / chunk_freed signals per update_chunks call, never polled.
+## Measured (worm-gap-close-15): the plain DiskShape "5x5" was 19 chunks near the core, 23 at 0.2
+## depth and 31 (31,376 tiles) from 0.35 depth out, because a band edge with more sectors adds
+## chunks. Trimmed (worm-gap-close-43): PolarWorld streams a PolarShape, whose two edge rows reach
+## less far sideways, so the worst case is 25 chunks / ~25k tiles at every depth (W-23's brief),
+## the first chunk ring round the worm is always whole and the stage 1 and 2 views have no hole.
+## The GTX 1060 60 fps run is still outstanding. Loads and frees are counted through the world's
+## chunk_loaded / chunk_freed signals per update_chunks call, never polled.
 extends GdUnitTestSuite
 
 const RINGS := preload("res://data/rings/rings.tres")
@@ -16,9 +17,13 @@ const RINGS := preload("res://data/rings/rings.tres")
 ## A 60 fps frame is 16.7 ms; the software-renderer box measures ~2.3 ms mean (R-a, loaded box).
 ## The ceiling is generous because the producer box is shared and swings 3-10x run to run.
 const CHUNK_MS_MEAN_MAX := 8.0
-## Today's measured worst neighbourhood per worm (see above); W-23's target is 25 / ~25,000.
-const HOOD_CHUNKS_MAX := 31
-const HOOD_TILES_MAX := 32000
+## W-23: 25 live chunks (~25k tiles) per worm.
+const HOOD_CHUNKS_MAX := 25
+const HOOD_TILES_MAX := 26000
+## The worst neighbourhood per chunk ring (band 32, radius 300: ring 0 is the core, ring 9 the
+## crust), measured over every chunk of that ring (worm-gap-close-43). The plain square was
+## [19, 23, 28, 31, 31, 29, 30, 31, 23, 17].
+const WORST_BY_RING: Array[int] = [17, 21, 23, 25, 25, 23, 24, 25, 19, 13]
 
 var _loads := 0
 var _frees := 0
@@ -74,6 +79,7 @@ func test_one_worm_keeps_one_five_by_five_neighbourhood() -> void:
 	var key := w.shape.chunk_of(w.shape.cell_at(e.position))
 	var hood := w.shape.neighbourhood(key, w.chunk_radius)
 	assert_int(w.chunk_radius).is_equal(2)
+	assert_bool(w.shape is PolarShape).is_true()
 	assert_int(w.loaded_chunks().size()).is_equal(hood.size())
 	assert_int(w.loaded_chunks().size()).is_less_equal(HOOD_CHUNKS_MAX)
 	# Thousands of tiles, never the whole ~280k-tile disk.
@@ -156,3 +162,65 @@ func test_a_chunk_build_fits_well_inside_a_frame() -> void:
 	var mean := sum / n
 	print("stream_budget: %d chunk builds, mean %.2f ms (ceiling %.1f)" % [n, mean, CHUNK_MS_MEAN_MAX])
 	assert_float(mean).is_less(CHUNK_MS_MEAN_MAX)
+
+
+func test_the_worst_neighbourhood_at_each_depth_is_locked_and_inside_the_brief() -> void:
+	var w := _world()
+	var disk := w.shape as DiskShape
+	assert_int(disk.rings()).is_equal(WORST_BY_RING.size())
+	var worst_tiles := 0
+	for ring in disk.rings():
+		var worst := 0
+		for s in disk.sectors_in(ring):
+			var hood := disk.neighbourhood(Vector2i(ring, s), w.chunk_radius)
+			worst = maxi(worst, hood.size())
+			var t := 0
+			for k in hood:
+				t += disk.chunk_cells(k).size()
+			worst_tiles = maxi(worst_tiles, t)
+		assert_int(worst).override_failure_message("ring %d streams %d chunks, locked at %d" % [ring, worst, WORST_BY_RING[ring]]).is_equal(WORST_BY_RING[ring])
+		assert_int(worst).is_less_equal(HOOD_CHUNKS_MAX)
+	print("stream_budget: worst trimmed neighbourhood %d tiles" % worst_tiles)
+	assert_int(worst_tiles).is_less_equal(HOOD_TILES_MAX)
+
+
+func test_the_first_chunk_ring_round_the_worm_is_always_whole() -> void:
+	var w := _world()
+	var disk := w.shape as DiskShape
+	var plain := DiskShape.new(disk.radius, disk.band)
+	for ring in disk.rings():
+		for s in disk.sectors_in(ring):
+			var key := Vector2i(ring, s)
+			var hood := disk.neighbourhood(key, w.chunk_radius)
+			for k in plain.neighbourhood(key, 1):
+				assert_bool(hood.has(k)).override_failure_message("%s missing next to %s" % [k, key]).is_true()
+			# And nothing outside the old square streams.
+			var square := plain.neighbourhood(key, w.chunk_radius)
+			for k in hood:
+				assert_bool(square.has(k)).is_true()
+	# Radius 1 is exactly the addon's neighbourhood.
+	var key := disk.chunk_of(disk.cell_at(Vector2(0, -200 * 16)))
+	assert_array(disk.neighbourhood(key, 1)).contains_exactly(plain.neighbourhood(key, 1))
+
+
+## Every ground cell the camera shows at the stage 1 and 2 zooms (camera centred on the worm, up
+## away from the core, 1920x1080) is in that worm's neighbourhood: no hole and no pop-in on screen.
+func test_stage_one_and_two_views_never_show_an_unstreamed_chunk() -> void:
+	var w := _world()
+	var disk := w.shape as DiskShape
+	var rules := WormRules.default_rules()
+	for stage in [1, 2]:
+		var zoom: float = PolarCamera.ZOOMS[rules.stage_info(stage).zoom_index]
+		var half := Vector2(1920, 1080) * 0.5 / zoom / float(disk.cell_size)
+		var holes := 0
+		for di in 20:
+			for ai in 24:
+				var p := Vector2.from_angle(TAU * ai / 24.0 + 0.1) * disk.radius * (0.025 + di * 0.05) * disk.cell_size
+				var hood := disk.neighbourhood(disk.chunk_of(disk.cell_at(p)), w.chunk_radius)
+				var rot := PolarCamera.up_rotation(p)
+				for yi in range(-ceili(half.y), ceili(half.y) + 1, 2):
+					for xi in range(-ceili(half.x), ceili(half.x) + 1, 2):
+						var c := disk.cell_at(p + Vector2(xi, yi).rotated(rot) * disk.cell_size)
+						if disk.contains(c) and not hood.has(disk.chunk_of(c)):
+							holes += 1
+		assert_int(holes).override_failure_message("stage %d view shows %d unstreamed cells" % [stage, holes]).is_equal(0)
