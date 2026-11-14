@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TraitData" format=3]
+; Sweet tooth (X-01, gap-close-38): the one hybrid only a hidden place can give. Sweet is carried
+; by one food in the world, the jam drops in Old Reel's buried picnic basket (topsoil).
+
+[ext_resource type="Script" path="res://scripts/worm/trait_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sweet_tooth"
+requires = {"sweet": 4, "bug": 4}
+add = {}
+mul = {"speed": 1.15, "burst_cooldown": 0.6}
+part_slot = &"back"
+part_priority = 0
+part_spin = 0.0
+part_shape = &"pinwheel"
+cue = "trait_wriggle"
+color = Color(1, 0.537, 0.415, 1)

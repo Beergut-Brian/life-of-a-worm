@@ -1,5 +1,5 @@
 [gd_resource type="Resource" script_class="CreatureData" format=3]
-; Deep-rock apex: slate-blue banded pill bug (4 -> 5). The live apex is ApexBeetle (scripts/planet/apex_beetle.gd); this file is its tackle-box page
+; Deep-rock apex: raspberry banded pill bug (4 -> 5). The live apex is ApexBeetle (scripts/planet/apex_beetle.gd); this file is its tackle-box page
 ; (T-01): id, size, ring and colour match the one PlanetLevel makes (tests/test_book_creatures.gd).
 
 [ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
@@ -10,10 +10,10 @@ id = &"apex_pillbug"
 flavour = &"bug"
 growth = 0.0
 size_stage = 5
-color = Color(0.2902, 0.4078, 0.5647, 1)
+color = Color(0.698, 0.2196, 0.4314, 1)
 radius = 21.0
 behaviour = 2
 ring = &"deep_rock"
 telegraph = 1.0
 hat = Color(0, 0, 0, 0)
-accent = Color(0.8471, 0.9098, 1.0000, 1)
+accent = Color(1, 0.8392, 0.9176, 1)
