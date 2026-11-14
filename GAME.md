@@ -120,6 +120,60 @@ The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wr
 - 2026-11-13 (worm-gap-close-39, Gary's pick): every find belongs to a trophy family, so anything kept on the shelf counts. Stones: pebble, boulders, fossil, ore nugget, brick. Shinies: crystals, amber, geode heart, bottle cap, scrap, droplet, milk drop, rainbow drop, cloud puff, balloons, toy plane. Snacks: seeds, grubs, roots, mushrooms, apple, golden acorn, honeydew, crumbs, jam, party sweet, ship biscuit, bug egg, twig, turf, plank, crate. Before, only 8 of 35 foods counted, so a fossil or a honeydew carried home did nothing. Bonuses and caps are unchanged (still 3 a family).
 - 2026-11-13 (worm-gap-close-39, Gary's pick): the Mole's seeds match what you gave him. A stone thing brings two pebbles (a rock garden) and a bug thing two bug eggs (a bug garden). Anything else brings plain seeds, and so does a thing that is itself a seed, so a swap never copies a seed. His offer bubble shows the seed he will give. The crystal garden's seed is the core crystal, too big for the dirt ring, so crystal things still bring plain seeds.
 - 2026-11-13 (worm-gap-close-41, Gary's pick): "Every creature except a Jarling becomes food eventually" now holds in play for the topsoil bird and the gardener's boot, which used to be never food. A worm that has outgrown the bird (stage 3 and up) is still swooped at when it is near the top and no smaller worm or beetle is about, but the bird cowers, its shadow is half size, and if the worm stays put the bird dives straight into its mouth (the "now I eat YOU" sting and grin the first time; eaten birds come off the topsoil's bird count, so the beetles boom). The boot is only a shadow until it stomps; a worm that has outgrown it (stage 5 and up) can bite it while it is down, 1.2 s after its harmless stomp. Both can be carried home with X like a beetle. The lawnmower stays never food: its contract (`docs/contracts.md`, worm-lawnmower-1) says so, and changing that is a contract PR first. The sky's flocks stay never food (W-07: they startle and fly off).
+- 2026-11-14 (worm-d105-content-s12-1): New stage 1 and 2 foods, creatures and events are data in the rings' own files (`data/rings/dirt_life.tres`, `topsoil_life.tres`): foods in a new `late_scatter` list, placed after every older static so a saved tin keeps its slots; creatures as new counters; events as `RingEvent` rows in a new `events` list. All names are invented and generic.
+- 2026-11-14 (worm-d105-content-s12-1): The new creatures eat only each other (wireworm eats mites, shield bug eats aphids) or nothing, so the old chains (roots, grubs, beetles, centipedes, mushrooms, ants, birds) and their tests keep their numbers.
+- 2026-11-14 (worm-d105-content-s12-1): A potato and an old spoon (dirt) and a walnut and a crayon (topsoil) are size 2: a stage-1 worm bonks them (a "come back bigger" sight in the very first ring), a stage-2 worm eats them.
+- 2026-11-14 (worm-d105-content-s12-1): The shield bug (topsoil, size 3) is the one new threat: it ambles at stage-2 worms with the beetle's 1.2 s wind-up and costs one segment like every bite; it hunts aphids. A round green bug, not pincers, so nothing reads as scary.
+- 2026-11-14 (worm-d105-content-s12-1): The snail wears the beetle's round shell look and never notices a worm (notice 0); the mite, wireworm, aphid and caterpillar wear the grub's three-blob look in their own colours. No new art (Art Director holds Worm's art).
+- 2026-11-14 (worm-d105-content-s12-1): Ring events happen beside a worm in their ring, never on it: a root pocket bursting (carrot tips), a marble bag spilling, an egg clutch (dirt, stage 1); seeds blowing down through the grass (cherry pits, seen falling), dew dripping, and a fairy ring of mushrooms round the worm after rain (topsoil, stage 2). Each plays an existing cue and puff; nothing moves the worm. Their foods are not saved (at most 24 about).
+- 2026-11-14 (worm-d105-content-s12-1): The cherry pit plants a root garden like the plain seed, but the Mole still gives plain seeds for root things (`SwapShop.seed_for` puts the plain seed first among equal-size seeds).
+- 2026-11-14 (worm-d105-content-s12-1): New finds join the existing trophy families: shinies (marble, button, old spoon, lost coin, glass bead, crayon), stones (snail shell, clay lump, chalk bit), snacks (carrot tip, potato, wild berry, cherry pit, clover leaf, walnut). Bonuses and caps unchanged.
+
+## D105 content (stages 1 and 2)
+
+Kaden's Docket answer D105 b (2026-11-13): add new things through each stage first (about 25 to 40
+a stage), then apply the pacing proposal. This is the first slice: the dirt (stage 1) and the
+topsoil (stage 2). 27 new things; no pacing number changed; no image or sound file added (every
+one reuses a code-drawn look and an existing cue). Proof: `tests/test_d105_stage12.gd` (exists,
+its stage, met in play on a real planet) and `tests/test_d105_novelty.gd` (the kid rule).
+
+Foods (15, `data/foods/`, placed by `RingLife.late_scatter`):
+- Carrot tip: stage 1, dirt, root. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`; popped by the root burst.
+- Snail shell: stage 1, dirt, stone (the curled-shell look). `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Marble: stage 1, dirt, junk, a shiny. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`; spilled by the marble bag.
+- Button: stage 1, dirt, junk, a shiny. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Clay lump: stage 1, dirt, stone. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Potato: dirt, size 2: bonked at stage 1, eaten from stage 2. `test_the_big_ones_are_a_bonk_at_stage_one_and_food_at_two`
+- Old spoon: dirt, size 2, junk: bonked at stage 1, eaten from stage 2. `test_the_big_ones_are_a_bonk_at_stage_one_and_food_at_two`
+- Wild berry: stage 2, topsoil, root. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Cherry pit: stage 2, topsoil, a seed that plants a root garden. `test_the_cherry_pit_plants_a_root_garden`; blown down by the seed shower.
+- Clover leaf: stage 2, topsoil, root. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Lost coin: stage 2, topsoil, junk, a shiny. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Glass bead: stage 2, topsoil, junk, a shiny. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Chalk bit: stage 2, topsoil, stone. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Walnut: stage 2, topsoil, size 2 root. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+- Crayon: stage 2, topsoil, size 2 junk. `test_each_new_food_is_placed_in_its_ring_on_a_new_planet`
+
+Creatures (6, `data/creatures/` + `scenes/creatures/`, a counter each in the ring's life file):
+- Mite: stage 1, dirt, tiny red food that scoots off. `test_the_dirt_creatures_spawn_near_a_stage_one_worm`
+- Wireworm: dirt, size 2, too big at stage 1, food at 2; eats mites. `test_the_dirt_creatures_spawn_near_a_stage_one_worm`
+- Aphid: stage 2, topsoil, tiny green food. `test_the_topsoil_creatures_spawn_near_a_stage_two_worm`
+- Caterpillar: stage 2, topsoil, size 2 food. `test_the_topsoil_creatures_spawn_near_a_stage_two_worm`
+- Snail: stage 2, topsoil, slow, never notices a worm, food. `test_the_topsoil_creatures_spawn_near_a_stage_two_worm`
+- Shield bug: stage 2, topsoil, size 3 threat with a 1.2 s wind-up, hunts aphids, food at 3. `test_the_shield_bug_is_a_telegraphed_stage_two_threat_that_eats_aphids`
+
+Events (6, `RingEvent` rows in `RingLife.events`, played by `RingEvents`):
+- Root burst: stage 1, dirt: a root pocket bursts beside the worm, 3 carrot tips pop out. `test_the_dirt_events_happen_beside_a_stage_one_worm`, `test_the_first_one_comes_at_first_after_then_every`
+- Marble spill: stage 1, dirt: a lost bag spills 5 marbles with confetti and a clink. `test_the_dirt_events_happen_beside_a_stage_one_worm`
+- Egg clutch: stage 1, dirt: a clutch of 4 bug eggs cracks out of the wall. `test_the_dirt_events_happen_beside_a_stage_one_worm`
+- Seed shower: stage 2, topsoil: 4 cherry pits fall down through the grass, seen falling. `test_the_topsoil_events_happen_beside_a_stage_two_worm`, `test_falling_foods_are_seen_falling_from_above`
+- Fairy ring: stage 2, topsoil, only in the rain: 6 mushrooms spring up in a ring round the worm. `test_the_fairy_ring_needs_rain_and_rings_the_worm`
+- Dew drip: stage 2, topsoil: 5 dew drops drip down beside the worm. `test_the_topsoil_events_happen_beside_a_stage_two_worm`
+
+Kid rule (something new at least every 15 minutes in stages 1 and 2): worst gap 4.0 min over seeds
+1 to 5, kid and adult, with these things in; 5.0 min counting only the older things in the same
+runs. See
+`handoff/content.md`.
 
 ---
 

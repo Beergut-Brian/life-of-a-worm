@@ -4,6 +4,15 @@
 [ext_resource type="Script" path="res://scripts/rings/population_rule.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/rings/ring_food.gd" id="3"]
 [ext_resource type="Resource" path="res://data/foods/boulder.tres" id="f0"]
+[ext_resource type="Script" path="res://scripts/rings/ring_event.gd" id="ev"]
+[ext_resource type="Resource" path="res://data/foods/carrot_tip.tres" id="d0"]
+[ext_resource type="Resource" path="res://data/foods/snail_shell.tres" id="d1"]
+[ext_resource type="Resource" path="res://data/foods/marble.tres" id="d2"]
+[ext_resource type="Resource" path="res://data/foods/button.tres" id="d3"]
+[ext_resource type="Resource" path="res://data/foods/clay_lump.tres" id="d4"]
+[ext_resource type="Resource" path="res://data/foods/potato.tres" id="d5"]
+[ext_resource type="Resource" path="res://data/foods/old_spoon.tres" id="d6"]
+[ext_resource type="Resource" path="res://data/foods/bug_egg.tres" id="d7"]
 
 [sub_resource type="Resource" id="r0"]
 script = ExtResource("2")
@@ -81,9 +90,95 @@ live = "res://scenes/creatures/centipede.tscn"
 depth_min = 0.55
 depth_max = 0.0
 
+[sub_resource type="Resource" id="d105a"]
+script = ExtResource("2")
+id = &"mite"
+ring = &"dirt"
+start = 20.0
+plant = false
+growth_rate = 0.0
+capacity = 60.0
+death = 0.01
+efficiency = 0.4
+immigration = 0.2
+eats = Dictionary[StringName, float]({})
+half_sat = 10.0
+live_scale = 0.2
+live_max = 6
+live = "res://scenes/creatures/mite.tscn"
+depth_min = 0.55
+depth_max = 0.0
+
+[sub_resource type="Resource" id="d105b"]
+script = ExtResource("2")
+id = &"wireworm"
+ring = &"dirt"
+start = 4.0
+plant = false
+growth_rate = 0.0
+capacity = 12.0
+death = 0.008
+efficiency = 0.4
+immigration = 0.01
+eats = Dictionary[StringName, float]({&"mite": 0.02})
+half_sat = 10.0
+live_scale = 0.5
+live_max = 2
+live = "res://scenes/creatures/wireworm.tscn"
+depth_min = 0.55
+depth_max = 0.0
+
+[sub_resource type="Resource" id="e0"]
+script = ExtResource("ev")
+id = &"root_burst"
+ring = &"dirt"
+stage_from = 1
+first_after = 150.0
+every = 300.0
+after_rain = false
+food = ExtResource("d0")
+count = 3
+shape = 0
+distance = 72.0
+cue = "world_sprout"
+fx = &"plant"
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("ev")
+id = &"marble_spill"
+ring = &"dirt"
+stage_from = 1
+first_after = 300.0
+every = 540.0
+after_rain = false
+food = ExtResource("d2")
+count = 5
+shape = 0
+distance = 80.0
+cue = "jar_clink"
+fx = &"confetti"
+
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("ev")
+id = &"egg_clutch"
+ring = &"dirt"
+stage_from = 1
+first_after = 240.0
+every = 420.0
+after_rain = false
+food = ExtResource("d7")
+count = 4
+shape = 0
+distance = 72.0
+cue = "egg_crack"
+fx = &"yum"
+
 [resource]
 script = ExtResource("1")
 ring = &"dirt"
-species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("r3")])
+species = Array[ExtResource("2")]([SubResource("r0"), SubResource("r1"), SubResource("r2"), SubResource("r3"), SubResource("d105a"), SubResource("d105b")])
 scatter = Array[ExtResource("3")]([ExtResource("f0")])
 scatter_count = 6
+late_scatter = Array[ExtResource("3")]([ExtResource("d0"), ExtResource("d1"), ExtResource("d2"), ExtResource("d3"), ExtResource("d4"), ExtResource("d5"), ExtResource("d6")])
+late_scatter_count = 14
+events = Array[ExtResource("ev")]([SubResource("e0"), SubResource("e1"), SubResource("e2")])

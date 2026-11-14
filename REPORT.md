@@ -1,99 +1,88 @@
-# REPORT: worm-jar-reconcile-1 (branch `feature/worm-jar-reconcile-1`)
+# REPORT: worm-d105-content-s12-1 (D105 content, stages 1 and 2)
 
-Reconcile lane for S-10 (planet in a jar on Old Reel's shelf). The shelf was built on the local,
-unmerged `feature/worm-jar-2` (`1798395`), which no longer merged into dev. I ported it onto current
-dev (`e580551`) by hand. `feature/worm-jar-2` was read with `git diff 9be08bb 1798395` only; it was
-not checked out, edited or moved. Not pushed.
+Branch `feature/worm-d105-content-s12-1`, based on origin/dev `4a3d96f` (merge of origin/dev at the
+start: already up to date; origin/dev had not moved at the end). Not pushed.
 
-## Moved rows
+## What changed
+- **Sync (first commit `a972e3b`):** no row could move. Every partial/missing row is art, audio, a
+  GTX 1060 run, pacing (D105) or a milestone tag. Recounted the Totals line and noted on R-08 that
+  its jar piece (S-10) is built on dev since PR #95.
+- **27 new things for stages 1 and 2** (15 foods, 6 creatures, 6 ring events), all data in the
+  files the rings already use, each pinned by `tests/test_d105_stage12.gd` (exists, its stage, met
+  in play on a real PolarWorld with the real RingsDirector). Listed one a line, with stage and test,
+  in GAME.md "D105 content (stages 1 and 2)".
+- Small code to carry the data:
+  - `RingLife.late_scatter` / `late_scatter_count`: a ring's new foods are placed after every older
+    static (after the sky, surface and late secrets), so a saved tin keeps its slots
+    (`::test_older_tins_keep_their_static_slots`, `::test_a_worm_eats_a_new_food_and_a_tin_keeps_it_eaten`).
+  - `RingEvent` (resource) + `RingEvents` (RingsDirector child, stepped from `tick()` on the planet
+    clock): a visible event happens beside a worm of its stage in its ring after `first_after`, then
+    every `every` planet seconds. BURST (foods pop out with a puff), FALL (foods seen falling from
+    above), RING (round the worm). Existing cue and puff; never moves the worm; foods not saved, at
+    most 24. Signal `happened(id, at)`. Contract appended to `docs/contracts.md`.
+  - `SwapShop.seed_for`: the plain seed first among equal-size seeds, so the Mole keeps giving
+    plain seeds for root things now that the cherry pit also plants a root garden.
+- Tests adjusted for the late foods (the sweeps that assumed the late secrets' foods are the very
+  last statics, and the book's "grows somewhere" source list): `test_secret_surface`,
+  `test_secret_balloon`, `test_secrets_3`, `test_book_long_tail`. `RingsDirector.late_food_count()`.
+- New trophy family members (every find in one family): shinies, stones, snacks.
+- **Pacing untouched:** no edit to `data/stages.tres`, `worm_rules.tres` or `data/BALANCE.md`.
 
-| Row | From | To | Proof |
-| --- | --- | --- | --- |
-| S-10 | partial | **built** | `tests/test_jars_shelf.gd` (7 cases), `tests/test_dock_tins.gd::test_the_shelf_spot_sits_right_of_the_tins_and_tin_choices_skip_it`; frames `handoff/frames/jar-shelf-on-dock.png`, `handoff/frames/jar-shelf-open.png` |
+## The new things (27)
+Foods (15): carrot tip, snail shell, marble, button, clay lump, potato (size 2), old spoon (size 2)
+in the dirt (stage 1); wild berry, cherry pit (plants a root garden), clover leaf, lost coin, glass
+bead, chalk bit, walnut (size 2), crayon (size 2) in the topsoil (stage 2).
+Creatures (6): mite, wireworm (dirt); aphid, caterpillar, snail, shield bug (topsoil; the only new
+threat, size 3, 1.2 s wind-up, hunts aphids).
+Ring events (6): root burst, marble spill, egg clutch (dirt, stage 1); seed shower, fairy ring
+(rain only), dew drip (topsoil, stage 2).
 
-I updated the Totals line in the same commit, counting from the status column: **271 rows: 208 built,
-30 partial, 21 missing, 5 superseded, 4 dropped, 3 later.** (The old line still had gap-close-39's
-269 / 205; gap-close-40 had already predicted 271 / 207 after its own merge.)
+Honest notes on likeness: the marble spill and the root burst share the BURST shape (different
+food, cue and puff); the seed shower and dew drip share FALL. The potato/walnut and spoon/crayon
+pairs are the same idea (too big at stage 1) in two rings.
 
-## What was ported (jar-2's own changes, `9be08bb..1798395`)
+## Kid rule: something new at least every 15 minutes (stages 1 and 2)
+`tests/test_d105_novelty.gd`, seeds 1 to 5, kid and adult, signals only: **worst gap 4.0 min**
+(older things only, same runs: 5.0 min). Per-seed table in `handoff/content.md`. Under 15, so no
+extra content was added for the rule. On dev's short pacing a kid meets 12 to 16 of the 27 inside
+stages 1 and 2; all creatures and events are met in at least one seed.
 
-Dev had not touched these since jar-2's base, so jar-2's diff applies to dev's version unchanged:
-- `scripts/jars/jar_shelf.gd` (`JarShelf`, new): Old Reel's shelf. Each player walks a worm along
-  the planks (the stick is the only thing that moves it, no snapping). The jar in reach lifts and
-  shows A. A opens it and B goes back to the dock.
-- `scripts/jars/jars.gd`: `open_id()`, `shelf()`, `open_entry()`, `recover()`, `RETURN_KEY`.
-- `scripts/jars/jar_open_view.gd`: `show_close()` / `closed` (the planet goes back into its jar).
-- `project.godot`: the `Jars` autoload. `planet_chomp.tscn` drops its own `Jars` child.
-  `chomp_director.gd` and `planet_chomp.gd` now prefer a scratch store child named `Jars`, and fall
-  back to the autoload.
-- Tests: `tests/test_jars_shelf.gd` (new), plus jar-2's edits to `test_chomp_sequence.gd` and
-  `test_jars_slots.gd`.
+## Art and sound (no files added)
+Every new thing reuses a code-drawn placeholder look and an existing cue (no image, audio, voice or
+music file). Closest-existing picks to flag for the Art Director:
+- Creatures: mite, wireworm, aphid, caterpillar use the grub's three-blob look in their own colours;
+  the **snail and shield bug use the beetle's round-shell look** (no snail or shield-bug sprite).
+- Foods: snail shell = the fossil's curled-shell look; marble, clay lump, potato, wild berry = blob;
+  button, lost coin, chalk bit, walnut = pebble; old spoon = ore nugget; glass bead = crystal
+  cluster; crayon = crumb; carrot tip, clover leaf = root; cherry pit = seed.
+- Cues: world_sprout, rock_beetle_clack, jar_clink, world_munch, boop, home_seed, creature_munch,
+  world_seed, egg_crack, grub_squeak, beetle_blink, beetle_windup.
 
-Files that both jar-2 and dev changed, merged by hand:
-- `scenes/main.gd`: jar-2's shelf and jar fields, `open_jar` / `leave_jar`, `Jars.recover()` at
-  boot (not under `--demo`) and `--preview-shelf`. Dev's `open_tin` (OpeningHook, Y-01) and its
-  pause hold are kept as they are. The two sides did not touch the same lines.
-- `scripts/planet/dock.gd`: **dev's tin pictures are kept as they are** (P-05 / C-22: the open tin
-  with peeking worms, the stage pips, the twinkle on a new tin). I added jar-2's shelf to them:
-  `signal shelf_requested`, `const SHELF := BaitTins.COUNT`, the stick wraps over `COUNT + 1`,
-  A on the shelf emits `shelf_requested`, `_jar_slots` is read from `/root/Jars` in `refresh()`,
-  and `_draw_shelf_spot` draws the shelf right of the tins. Both sides' doc comments are kept.
-- `docs/contracts.md`: dev's new Mayhem section and jar-2's "Jar follow-ups" section are both kept.
-  I added `Dock.SHELF` and `Dock.tin_x` to the jar section.
-- `PLAN-STATUS.md`: dev's S-10 row is kept, with the move and a reconcile note added.
+## Skipped
+- `git branch -r --no-merged origin/dev`: only `origin/feature/art-rings-1` and
+  `origin/feature/art-worms-1` (art, held; ignored per brief). No unmerged `origin/feature/worm-*`
+  or `origin/fix/*` branch, so no row was skipped for a remote branch.
+- Local unpushed branches still ahead of dev (stale, 13 to 35 h old): `feature/stages-1`,
+  `worm-ambience-1`, `worm-big-planet-1`, `worm-gap-close-2/4/6/8/42`, `worm-jar-2`,
+  `worm-kid-checks-1`, `worm-star-traits-1`. None builds D105 content; none touches the files this
+  lane edits except the shared docs every lane edits (GAME.md: stages-1, star-traits-1;
+  PLAN-STATUS.md: most; docs/contracts.md: ambience-1, big-planet-1, jar-2, star-traits-1). Expect
+  only append conflicts there. Nothing in stages 3 to 7 and no pacing work was done (later lanes).
 
-## Kept from dev, and the shelf adjusted (brief point 3)
-
-- **TinFresh vs the shelf spot.** Dev's `TinFresh` (start-fresh-1, K-11) draws Continue / New
-  world / Restore under the focused tin at a hard-coded `x = 0.25 + 0.25 * i`. It reads
-  `dock.focus` as a tin index. jar-2 moves the tins to `0.18 + 0.2 * i` to make room for the shelf,
-  so the choices would have drawn under the wrong tin. Also, focus 3 (the shelf) would have been
-  read as a fourth tin, `tin4`. I kept dev's rule (choices sit under the focused played tin) and
-  changed how the shelf fits it:
-  - `Dock.tin_x(i, width)` is now the one place that sets a tin's x (and the shelf's, 0.82).
-  - `TinFresh._draw_choices` uses `Dock.tin_x`.
-  - `TinFresh.tin()` returns -1 while the shelf spot is lit, so the shelf never offers New world
-    or Restore.
-
-  The new test `test_dock_tins.gd::test_the_shelf_spot_sits_right_of_the_tins_and_tin_choices_skip_it`
-  pins this.
-- Every other dev rule passed with the shelf in place: `test_dock_tins`, `test_fresh_start`,
-  `test_bait_tin_rail`, `test_next_tin_trip`, `test_pause_cover`, `test_lobby`. Nothing else
-  needed adjusting.
-- The shelf, the jars and the shelf worms are still jar-2's code-drawn placeholders. I added no
-  image or audio files. jar-2's tests have no test doubles, so they needed no `Fake` prefixes.
+## Moved row IDs
+- Added: **D105-1** (built). No existing row changed status. Totals line recounted (274 rows: 211
+  built, 30 partial, 21 missing, 5 superseded, 4 dropped, 3 later). R-08: note only.
 
 ## Tests
+Full suite from a clean import (`rm -rf .godot`, `--import`), gdUnit `--continue`, run twice:
+**955 test cases, 0 failures, 0 errors** both times (dev base `4a3d96f`: 933). No "ObjectDB leaked"
+line (the new suite drains the event cues in `after()`). Logs: `.scratch/run5.txt`, `.scratch/run6.txt`.
 
-- Clean import (`rm -rf .godot`, `--import`), then the full suite.
-  - **Run 2: 923 test cases, 0 failures, 0 errors.**
-  - **Run 3: 923 test cases, 0 failures, 0 errors.**
-- Run 1 had 11 failures in 3 suites that share `user://` bait-tin files:
-  - `test_greybox_planet::test_each_tin_round_trips_on_its_own`
-  - `test_chomp_planet::test_the_jar_is_the_real_tin_and_plays_again_with_stage6_off`
-  - `test_bait_tin_rail::test_tin_1_keeps_its_own_planet`
-
-  Run 1 counted 916 cases only because gdUnit stops a suite at its first failure. The same three
-  suites passed alone (21/21) right after, and run 2 passed in full with no code change in
-  between. This is the known shared-`user://` tin flake: other lanes on this box use the same
-  project user dir.
-- Shelf pieces on dev:
-  - `test_jars_shelf` 7/7
-  - `test_jars_slots` 6/6
-  - `test_chomp_sequence` 4/4
-  - `test_dock_tins` 5/5 (1 new)
-
-## Frames
-
-- `handoff/frames/jar-shelf-on-dock.png`: the tin dock with dev's tin pictures. Tins 1 and 3 are
-  played and open with worms peeking out and pips; tin 2 is new, with the lid on and a twinkle.
-  The shelf spot is lit right of the tins, with jars for tins 1 and 3 and an empty place for tin 2.
-- `handoff/frames/jar-shelf-open.png`: the shelf itself. It shows two jarred planets with their tin
-  lids, the empty dashed place, and P1's green worm on the planks.
-- Driver: `.scratch/jar_reconcile_shot.tscn -- --mode=dock|shelf`. It uses a throwaway profile
-  and jar dir, run through `godot-render ... -- --shots=1.5`.
-
-## Not done / notes
-
-- `tests/test_burrow_chambers.gd.uid` and `assets/characters/**` PNGs show as untracked after a
-  clean import. They are by-products and not committed.
+## Frames (looked at)
+- `handoff/frames/d105_dirt/t001.0s.png`: a stage-1 worm in a dug pocket; the marble spill (blue
+  marbles + confetti) and root burst (carrot tips) beside it, the wireworm (big yellow grub, too big
+  to eat yet), a mite (red) and a snail shell. `t002.2s.png` the same a second later.
+- `handoff/frames/d105_topsoil/t002.2s.png`: a stage-2 worm in the topsoil; the fairy ring of
+  mushrooms round it, the seed shower's cherry pits landed in a line, caterpillar, snail, shield
+  bug, aphid, wild berries, a crayon. (The topsoil apex stag beetle wandered into the staged pocket.)
+- Driver: `.scratch/d105_shot.tscn -- --mode=dirt|topsoil` (throwaway profile under `.scratch/`).

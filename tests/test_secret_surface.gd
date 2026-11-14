@@ -173,7 +173,7 @@ func test_an_older_tin_keeps_its_statics_and_gets_the_stump() -> void:
 	var statics: Array = _dir.to_dict().statics
 	var n := RingsDirector.secret(ID).food_count
 	# hidden places added after the stump put their foods after its acorns
-	var after := 0
+	var after := RingsDirector.late_food_count()   # D105 ring foods come last of all
 	for id in RingsDirector.LATE_SECRETS.slice(RingsDirector.LATE_SECRETS.find(ID) + 1):
 		after += RingsDirector.secret(id).food_count
 	for e in statics.slice(statics.size() - after - n, statics.size() - after):

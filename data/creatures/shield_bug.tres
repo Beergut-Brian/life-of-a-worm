@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shield_bug"
+flavour = &"bug"
+growth = 3.5
+size_stage = 3
+color = Color(0.3500, 0.6200, 0.3000, 1)
+radius = 14.5
+behaviour = 2
+ring = &"topsoil"
+telegraph = 1.2
+bark = "beetle_blink"
+windup_cue = "beetle_windup"
+speed = 20.0
+notice = 130.0
+strike = 32.0
+hunts = &"aphid"
+hat = Color(0, 0, 0, 0)
+accent = Color(0.8000, 0.9500, 0.5500, 1)

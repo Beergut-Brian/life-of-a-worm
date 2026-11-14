@@ -1510,3 +1510,27 @@ bait tin = trait picture over the worm). `Story.SCENES` gains `new_tin` (9 scene
 draws a small bait tin on the heirloom's sketch. `Save.dir` (default `user://saves`) lets tests write
 under `res://.scratch/`. The new tin has no `"planet"`, so `BaitTins.summary` reads it as empty and
 the dock shows "New planet".
+
+### Ring events and late foods (worm-d105-content-s12-1)
+
+```
+class_name RingLife            # data/rings/<ring>_life.tres, two new lists
+@export var late_scatter: Array[RingFood]   # placed after every other static (older tins keep slots)
+@export var late_scatter_count: int
+@export var events: Array[RingEvent]
+
+class_name RingEvent           # one visible event of a ring (data only)
+# id, ring, stage_from, first_after, every, after_rain, food: RingFood, count,
+# shape (BURST | FALL | RING), distance, cue (existing Audio cue), fx (RingsDirector puff kind)
+
+class_name RingEvents          # child "RingEvents" of RingsDirector, stepped from tick()
+signal happened(id: StringName, at: Vector2)   # at = world-local centre, beside the worm
+func play(e: RingEvent, w: Worm) -> Array[RingPickup]
+static func all_events(lives: Array) -> Array[RingEvent]
+
+RingsDirector.events: RingEvents
+static func RingsDirector.late_food_count() -> int   # statics the late foods add at the end
+```
+
+Event foods are plain `RingPickup`s in the actors node (group `food`, meta `ring_event`), not saved,
+at most `RingEvents.MAX_FOODS` (24) at once. Nothing an event does moves a worm.

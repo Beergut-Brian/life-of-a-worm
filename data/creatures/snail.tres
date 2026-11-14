@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureData" format=3]
+
+[ext_resource type="Script" path="res://scripts/creatures/creature_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"snail"
+flavour = &"bug"
+growth = 2.0
+size_stage = 2
+color = Color(0.8600, 0.6400, 0.4400, 1)
+radius = 12.5
+behaviour = 2
+ring = &"topsoil"
+telegraph = 1.0
+bark = "beetle_blink"
+windup_cue = ""
+speed = 6.0
+notice = 0.0
+strike = 0.0
+hunts = &""
+hat = Color(0, 0, 0, 0)
+accent = Color(1.0000, 0.8800, 0.7000, 1)
