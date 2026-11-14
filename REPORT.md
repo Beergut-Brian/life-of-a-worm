@@ -1,92 +1,99 @@
-# REPORT: worm-gap-close-40 (branch `feature/worm-gap-close-40`)
+# REPORT: worm-jar-reconcile-1 (branch `feature/worm-jar-reconcile-1`)
 
-Gap-close lane, fifth fill. World content only: code logic and data, no image or audio files.
-Not pushed. Two new rows built, both green in the full suite on a clean import.
+Reconcile lane for S-10 (planet in a jar on Old Reel's shelf). The shelf was built on the local,
+unmerged `feature/worm-jar-2` (`1798395`), which no longer merged into dev. I ported it onto current
+dev (`e580551`) by hand. `feature/worm-jar-2` was read with `git diff 9be08bb 1798395` only; it was
+not checked out, edited or moved. Not pushed.
 
 ## Moved rows
 
 | Row | From | To | Proof |
 | --- | --- | --- | --- |
-| T-05 (new) | not in the plan | **built** | `tests/test_book_things.gd` (7 cases); frames `handoff/frames/gc40-t05-book-things.png`, `gc40-t05-tackle-box-things.png` |
-| W-35 (new) | not in the plan | **built** | `tests/test_loose_rocks.gd` (4 cases); frames `handoff/frames/gc40-w35-boulder-rests-falls-lands.png`, `gc40-w35-boulder-falling-full.png` |
-| T-01 | built | built (note) | points at T-05 |
-| W-10 | built | built (note) | points at W-35 |
-| P-21 | partial | partial (sync note) | same blocker as Y-13: Reel's revised bible is on the unmerged `openjar-characters` branch `feature/jarling-bobber` |
+| S-10 | partial | **built** | `tests/test_jars_shelf.gd` (7 cases), `tests/test_dock_tins.gd::test_the_shelf_spot_sits_right_of_the_tins_and_tin_choices_skip_it`; frames `handoff/frames/jar-shelf-on-dock.png`, `handoff/frames/jar-shelf-open.png` |
 
-Counted from the status column on this branch: 269 rows: 205 built, 31 partial, 21 missing,
-5 superseded, 4 dropped, 3 later (dev itself counts 267 rows, 203 built; its Totals line saying 264
-is stale). **I did not edit the Totals line in PLAN-STATUS.md**: gap-close-39 rewrites that line, and
-editing it here would conflict. After both merge it should read 271 rows, 207 built, 31 partial.
+I updated the Totals line in the same commit, counting from the status column: **271 rows: 208 built,
+30 partial, 21 missing, 5 superseded, 4 dropped, 3 later.** (The old line still had gap-close-39's
+269 / 205; gap-close-40 had already predicted 271 / 207 after its own merge.)
 
-## What changed
+## What was ported (jar-2's own changes, `9be08bb..1798395`)
 
-1. **Sync (first commit `0ee1b54`).** I rechecked every food, creature, hazard, book, swap shop,
-   secret and castings row on dev. All are already built. No partial or missing row was left that
-   this lane could move: what is open is art, voice, pacing, hardware runs or unmerged branches.
-   So both builds below come from an audit of what the plan asks for against what the game does,
-   and each is a new row (the way gap-close-39 added B-09 and X-10).
-2. **T-05, the surface things have a page (Gary's pick, in GAME.md's decisions).** Eating a house or
-   a cow left no mark in the book: the book listed foods, creatures, traits, secrets, cutscenes and
-   planets, and the 11 things in `data/props/` are none of those. Now `things` is the seventh tab
-   of the pause-menu book and the sixth tab (and lure peg) of the Y tackle box. Each sketch is the
-   thing as it stands on the planet (its tile footprint and marks, drawn by the new
-   `scripts/ui/prop_sketch.gd`), grey outline until found. It is found when a worm breaks one:
-   the page sound plays once per kind and the Y hint glows. A bonk, or a bite that leaves it
-   standing, finds nothing. The page is saved with the log in the tin. A tin whose things were
-   broken before this page existed gets them on load, silently, from its saved `destruct` state.
-   The full page pins a lure. The tackle box's tabs and lure pegs now share their space, so six fit.
-3. **W-35, rocks of every size fall (Gary's pick, in GAME.md's decisions).** The plan says loose
-   things fall toward the core, but only pebbles and apples did; a boulder hung in mid-air when a
-   worm ate the dirt under it. Now the boulder, ore nugget, fossil and big boulder are loose too
-   (`WorldDestruct.loose_foods`). Each rests where it lies and drops down the tunnel eaten under it,
-   landing once with the existing thud, squash and dust. A big one landing within 420 px of a worm
-   also nudges the camera (it honours the screen-shake setting). It never hurts and never blocks.
-   Nothing moves when a planet is first built; a test checks every scattered rock on the full-size
-   planet.
+Dev had not touched these since jar-2's base, so jar-2's diff applies to dev's version unchanged:
+- `scripts/jars/jar_shelf.gd` (`JarShelf`, new): Old Reel's shelf. Each player walks a worm along
+  the planks (the stick is the only thing that moves it, no snapping). The jar in reach lifts and
+  shows A. A opens it and B goes back to the dock.
+- `scripts/jars/jars.gd`: `open_id()`, `shelf()`, `open_entry()`, `recover()`, `RETURN_KEY`.
+- `scripts/jars/jar_open_view.gd`: `show_close()` / `closed` (the planet goes back into its jar).
+- `project.godot`: the `Jars` autoload. `planet_chomp.tscn` drops its own `Jars` child.
+  `chomp_director.gd` and `planet_chomp.gd` now prefer a scratch store child named `Jars`, and fall
+  back to the autoload.
+- Tests: `tests/test_jars_shelf.gd` (new), plus jar-2's edits to `test_chomp_sequence.gd` and
+  `test_jars_slots.gd`.
 
-`docs/contracts.md` has the new page, the prop group and the longer loose list.
+Files that both jar-2 and dev changed, merged by hand:
+- `scenes/main.gd`: jar-2's shelf and jar fields, `open_jar` / `leave_jar`, `Jars.recover()` at
+  boot (not under `--demo`) and `--preview-shelf`. Dev's `open_tin` (OpeningHook, Y-01) and its
+  pause hold are kept as they are. The two sides did not touch the same lines.
+- `scripts/planet/dock.gd`: **dev's tin pictures are kept as they are** (P-05 / C-22: the open tin
+  with peeking worms, the stage pips, the twinkle on a new tin). I added jar-2's shelf to them:
+  `signal shelf_requested`, `const SHELF := BaitTins.COUNT`, the stick wraps over `COUNT + 1`,
+  A on the shelf emits `shelf_requested`, `_jar_slots` is read from `/root/Jars` in `refresh()`,
+  and `_draw_shelf_spot` draws the shelf right of the tins. Both sides' doc comments are kept.
+- `docs/contracts.md`: dev's new Mayhem section and jar-2's "Jar follow-ups" section are both kept.
+  I added `Dock.SHELF` and `Dock.tin_x` to the jar section.
+- `PLAN-STATUS.md`: dev's S-10 row is kept, with the move and a reconcile note added.
 
-## Frames (real renders, looked at)
+## Kept from dev, and the shelf adjusted (brief point 3)
 
-- `handoff/frames/gc40-t05-book-things.png`: the pause book on the things tab, 7 of 11 found. Found
-  ones are the planet pictures; unfound ones are grey outlines; the tab row shows 7 green slots.
-- `handoff/frames/gc40-t05-tackle-box-things.png`: the Y tackle box on the things page. Six tabs
-  and six pegs fit the tin and the lid.
-- `handoff/frames/gc40-w35-boulder-rests-falls-lands.png`: three crops from `planet.tscn`: the
-  boulder resting on a plug of dirt, falling after the plug is eaten, and landed on the floor
-  beside the worm.
+- **TinFresh vs the shelf spot.** Dev's `TinFresh` (start-fresh-1, K-11) draws Continue / New
+  world / Restore under the focused tin at a hard-coded `x = 0.25 + 0.25 * i`. It reads
+  `dock.focus` as a tin index. jar-2 moves the tins to `0.18 + 0.2 * i` to make room for the shelf,
+  so the choices would have drawn under the wrong tin. Also, focus 3 (the shelf) would have been
+  read as a fourth tin, `tin4`. I kept dev's rule (choices sit under the focused played tin) and
+  changed how the shelf fits it:
+  - `Dock.tin_x(i, width)` is now the one place that sets a tin's x (and the shelf's, 0.82).
+  - `TinFresh._draw_choices` uses `Dock.tin_x`.
+  - `TinFresh.tin()` returns -1 while the shelf spot is lit, so the shelf never offers New world
+    or Restore.
 
-One thing I saw in the frames and left alone: the cow's sketch is a dark brown block with spots. It
-matches the cow on the planet (its placeholder tile row is dark), so it is an art question.
-
-## Skipped
-
-| Row or idea | Why | Owner |
-| --- | --- | --- |
-| B-09 every find has a trophy family | being built | `feature/worm-gap-close-39` |
-| X-10 the Mole's seeds match the swap | being built | `feature/worm-gap-close-39` |
-| B-05, X-07, S-18, A-04, A-13, K-08 notes | gap-close-39 edits these rows; I left them alone | `feature/worm-gap-close-39` |
-| Gardens for water, junk and cloud flavours (G-03 has only root, stone, bug, crystal) | needs new garden tile rows in the Lantern atlas (art), and a new seed food would change gap-close-39's `SwapShop.seed_for` results | Art, then a content lane |
-| Surface food chain links (L-01) | `data/rings/surface_life.tres` is changed on unmerged local `feature/worm-gap-close-6` | that branch |
-| S-10 jar shelf, S-12 dock rail | unmerged local `feature/worm-jar-2` | that branch |
-| S-01, S-18 meal, S-19, W-24 | pacing (D105, off-limits here) | Gary |
-| W-09, W-23, R-01 | disk size call and GTX 1060 runs | Gary, hardware |
-| A-*, U-*, P-18 to P-25, Y-01, Y-09, Y-10 | art, sound, voice, roster | Art Director, Audio |
-| Y-13, Y-14, P-21 | Reel's and Bobber's bibles on unmerged `openjar-characters` `feature/jarling-bobber` | characters lane |
-
-Files gap-close-39 changes that I did not touch: `scripts/swap_shop/swap_shop.gd`,
-`data/trophies/*.tres`, `tests/test_sweet_tooth.gd`. We both edit `GAME.md` and `PLAN-STATUS.md`
-(different lines); `git merge-tree` of the two branches is clean apart from this `REPORT.md`, which
-both lanes rewrite (keep either). I did not run the suite on the two branches merged together.
+  The new test `test_dock_tins.gd::test_the_shelf_spot_sits_right_of_the_tins_and_tin_choices_skip_it`
+  pins this.
+- Every other dev rule passed with the shelf in place: `test_dock_tins`, `test_fresh_start`,
+  `test_bait_tin_rail`, `test_next_tin_trip`, `test_pause_cover`, `test_lobby`. Nothing else
+  needed adjusting.
+- The shelf, the jars and the shelf worms are still jar-2's code-drawn placeholders. I added no
+  image or audio files. jar-2's tests have no test doubles, so they needed no `Fake` prefixes.
 
 ## Tests
 
-- Full suite, clean import (`rm -rf .godot`, `--import`), run twice: **905 test cases, 0 errors,
-  0 failures** both times (dev had 894; 11 new).
-- New: `tests/test_book_things.gd` (7), `tests/test_loose_rocks.gd` (4).
+- Clean import (`rm -rf .godot`, `--import`), then the full suite.
+  - **Run 2: 923 test cases, 0 failures, 0 errors.**
+  - **Run 3: 923 test cases, 0 failures, 0 errors.**
+- Run 1 had 11 failures in 3 suites that share `user://` bait-tin files:
+  - `test_greybox_planet::test_each_tin_round_trips_on_its_own`
+  - `test_chomp_planet::test_the_jar_is_the_real_tin_and_plays_again_with_stage6_off`
+  - `test_bait_tin_rail::test_tin_1_keeps_its_own_planet`
 
-## Commits
+  Run 1 counted 916 cases only because gdUnit stops a suite at its first failure. The same three
+  suites passed alone (21/21) right after, and run 2 passed in full with no code change in
+  between. This is the known shared-`user://` tin flake: other lanes on this box use the same
+  project user dir.
+- Shelf pieces on dev:
+  - `test_jars_shelf` 7/7
+  - `test_jars_slots` 6/6
+  - `test_chomp_sequence` 4/4
+  - `test_dock_tins` 5/5 (1 new)
 
-- `0ee1b54` plan: sync content rows for gap-close-40 (none left to move)
-- `f22994e` content: things page in the book; rocks of every size fall
-- this report
+## Frames
+
+- `handoff/frames/jar-shelf-on-dock.png`: the tin dock with dev's tin pictures. Tins 1 and 3 are
+  played and open with worms peeking out and pips; tin 2 is new, with the lid on and a twinkle.
+  The shelf spot is lit right of the tins, with jars for tins 1 and 3 and an empty place for tin 2.
+- `handoff/frames/jar-shelf-open.png`: the shelf itself. It shows two jarred planets with their tin
+  lids, the empty dashed place, and P1's green worm on the planks.
+- Driver: `.scratch/jar_reconcile_shot.tscn -- --mode=dock|shelf`. It uses a throwaway profile
+  and jar dir, run through `godot-render ... -- --shots=1.5`.
+
+## Not done / notes
+
+- `tests/test_burrow_chambers.gd.uid` and `assets/characters/**` PNGs show as untracked after a
+  clean import. They are by-products and not committed.

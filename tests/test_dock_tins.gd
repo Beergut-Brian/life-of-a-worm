@@ -88,3 +88,33 @@ func test_the_dock_draws_every_kind_of_tin() -> void:
 	assert_bool(Dock.picture(d._summaries[2]).open).is_true()
 	layer.queue_free()
 	await get_tree().process_frame
+
+
+## worm-jar-reconcile-1: the jar shelf spot (Dock.SHELF) sits right of the three tin pictures, the
+## stick wraps over it, and the tin's Continue / New world choices (TinFresh) are never offered on it.
+func test_the_shelf_spot_sits_right_of_the_tins_and_tin_choices_skip_it() -> void:
+	_write(2, { "0": { "segments": _segs(5, ["root"]), "stage": 2 } }, 2)
+	var w := 1920.0
+	for i in BaitTins.COUNT:
+		assert_float(Dock.tin_x(i, w)).is_less(Dock.tin_x(Dock.SHELF, w))
+		if i > 0:
+			assert_float(Dock.tin_x(i, w) - Dock.tin_x(i - 1, w)).is_greater(200.0)   # tins never overlap
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	var d := Dock.new()
+	layer.add_child(d)
+	var tf := TinFresh.new()
+	tf.dock = d
+	layer.add_child(tf)
+	d.open()
+	d.focus = 2
+	assert_int(tf.tin()).is_equal(2)
+	assert_bool(tf.can_new(tf.tin())).is_true()
+	d.move(1)
+	assert_int(d.focus).is_equal(Dock.SHELF)
+	assert_int(tf.tin()).is_equal(-1)
+	assert_bool(tf.can_new(tf.tin())).is_false()
+	d.move(1)
+	assert_int(d.focus).is_equal(0)
+	layer.queue_free()
+	await get_tree().process_frame

@@ -1,6 +1,7 @@
 ## Planets in jars: before the stage-6 chomp the tin's save is copied to <dir>/<planet_id>.json, and a
-## jar can be re-entered later as an ordinary planet with stage 6 disabled. Meant to become the autoload
-## `Jars` (requested from Systems); until then a scene instances it as a node named "Jars".
+## jar can be re-entered later as an ordinary planet with stage 6 disabled. The autoload `Jars` is this
+## script (worm-jar-2): the shelf, the chomp and the leave all use that one store. Tests and demos make
+## their own JarStore with a scratch `dir`.
 ## Uses only Save's public API: the copy is the open tin's save file (profile + slot), read after
 ## Save.flush(), minus what belongs to the tin rather than the planet (TIN_ONLY): Old Reel's tackle box
 ## (the found-set) stays with the tin; inside a jar it is lent in on open() and handed back on close(),
@@ -16,7 +17,10 @@ const JAR_PROFILE_PREFIX := "jar_"
 const FOUND_SET := [["tackle"], ["home_slice", "tackle"]]
 ## Save keys that belong to the tin, never to the jar file: the found-set, plus "solo" and "settings"
 ## (session / per install), stripped in case anything ever writes them into a save.
-const TIN_ONLY := FOUND_SET + [["solo"], ["settings"]]
+## "jar_return" is where an open jar goes back to ({profile, slot}), so a jar left open by a quit or a
+## crash can be put back on the next boot (recover()).
+const TIN_ONLY := FOUND_SET + [["solo"], ["settings"], ["jar_return"]]
+const RETURN_KEY := "jar_return"
 
 var dir := "user://jars"
 var _return_profile := ""
@@ -87,6 +91,7 @@ func open(planet_id: StringName) -> bool:
 	for key in planet:
 		Save.set_value(key, planet[key])
 	_put_found_set(lent)
+	Save.set_value(RETURN_KEY, {"profile": _return_profile, "slot": _return_slot})
 	Save.set_value("jar", true)
 	Save.set_value("stage6_disabled", true)
 	Save.flush()
@@ -118,6 +123,81 @@ func close() -> void:
 
 func is_in_jar() -> bool:
 	return _open_id != &""
+
+
+## The jar being played (&"" when none).
+func open_id() -> StringName:
+	return _open_id
+
+
+## The shelf for one profile: one entry per tin slot that has a jar, in tin order:
+## [{ "slot": "tin2", "id": &"p1_tin2_5150" }, ...]. A tin chomps once, so it has at most one jar;
+## if a dir somehow holds two for a slot, the newest file wins. [] = an empty shelf.
+func shelf(slots: PackedStringArray, profile := "") -> Array[Dictionary]:
+	var who := profile if profile != "" else Save.profile
+	var out: Array[Dictionary] = []
+	var ids := list()
+	for s in slots:
+		var prefix := "%s_%s_" % [who, s]
+		var best: StringName = &""
+		var best_t := -1
+		for id in ids:
+			var rest := String(id).substr(prefix.length())
+			if not String(id).begins_with(prefix) or not rest.is_valid_int():
+				continue
+			var mt := FileAccess.get_modified_time(dir.path_join(String(id) + ".json"))
+			if mt > best_t:
+				best_t = mt
+				best = id
+		if best != &"":
+			out.append({"slot": s, "id": best})
+	return out
+
+
+## Open a shelf entry: its tin first (so the tin's found-set comes along and close() returns to it),
+## then the jar. False if there is no such jar.
+func open_entry(entry: Dictionary) -> bool:
+	if not has_jar(entry.get("id", &"")):
+		return false
+	if is_in_jar():
+		close()
+	Save.use_slot(String(entry.get("slot", "")))
+	return open(entry["id"])
+
+
+## Boot: a jar left open (the game quit or crashed inside it) goes back into its jar, its finds go
+## back to the tin it came from, and the jar profile is removed, so nobody is ever stuck in a jar.
+## Only jars on this store's shelf (dir) are touched. Returns how many were put back.
+func recover() -> int:
+	if is_in_jar():
+		return 0
+	var n := 0
+	var here_profile := Save.profile
+	var here_slot := Save.slot
+	for id in list():
+		var jar_path := Save.path_for("", JAR_PROFILE_PREFIX + String(id))
+		if not FileAccess.file_exists(jar_path):
+			continue
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string(jar_path))
+		if parsed is Dictionary:
+			var f := FileAccess.open(dir.path_join(String(id) + ".json"), FileAccess.WRITE)
+			if f != null:
+				f.store_string(JSON.stringify(strip_tin_only(parsed)))
+				f.close()
+			var back = parsed.get(RETURN_KEY, {})
+			var found := found_set_of(parsed)
+			if back is Dictionary and String(back.get("profile", "")) != "" and not found.is_empty():
+				Save.use_profile(String(back["profile"]))
+				Save.use_slot(String(back.get("slot", "")))
+				_put_found_set(found)
+				Save.flush()
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(jar_path))
+		n += 1
+	if n > 0:
+		if Save.profile != here_profile:
+			Save.use_profile(here_profile)
+		Save.use_slot(here_slot)
+	return n
 
 
 ## The jar's planet without opening it (the shelf and the jar-open picture read this). {} if none.

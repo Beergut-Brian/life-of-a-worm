@@ -24,7 +24,7 @@ var level: PlanetLevel
 var state := State.WATCH
 var chomp: PlanetChomp
 var space: SpaceStage
-## Tests point the jar shelf elsewhere ("" = the real user://jars).
+## Tests point the jar shelf elsewhere ("" = the shared `Jars` autoload, user://jars).
 var jar_dir := ""
 var _out := {}                   # player -> seconds outside
 var _disarmed := {}              # player -> true until its head goes back inside after a "not yet"
@@ -97,11 +97,14 @@ func open_shot(w: Worm) -> bool:
 	chomp.source_id = planet_id()
 	chomp.source_colors = ring_colors(tex.get_image())
 	chomp.worm_color = Players.COLOR.get(w.player, Color("3cc24a"))
+	if jar_dir != "":                      # tests: a private store on a scratch shelf
+		var own := JarStore.new()
+		own.name = "Jars"
+		own.dir = jar_dir
+		chomp.add_child(own)
 	_hide_level()
 	level.add_child(chomp)
 	chomp.position = level.world.position
-	if jar_dir != "":
-		chomp.jars.dir = jar_dir
 	chomp.declined.connect(close_shot)
 	(chomp.get_node("Camera") as Camera2D).make_current()
 	state = State.SHOT

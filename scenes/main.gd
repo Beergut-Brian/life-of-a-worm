@@ -4,10 +4,14 @@
 ## Burp, Select never restarts. A pad that joins mid-game hatches its worm from an egg at once.
 ## The open tin saves on pause, back to the lobby and quit (and every 30 s, and on sleep).
 ## --demo: no lobby or dock; the scripted demo plays in its own throwaway tin.
+## Jars (worm-jar-2): the dock's jar shelf (JarShelf) picks a tin's jar, JarOpenView shows the planet
+## going into play, and leaving (Main menu) writes it back, shows it going back into its jar and
+## returns to the shelf. A jar left open by a quit or crash is put back at boot (Jars.recover()).
 extends Node2D
 
 const PLANET := preload("res://scenes/levels/planet.tscn")
 const PODIUM := preload("res://scripts/planet/worm_podium.gd")
+const JAR_VIEW := preload("res://scenes/jars/jar_open.tscn")
 ## The worm names (Docket D90, Kaden, 2026-11-11). Menus, podiums, pause and logs use these.
 const NAMES := { 0: "Gulp", 1: "Burp" }   # = PlanetLevel.WORM_NAMES
 
@@ -20,7 +24,12 @@ static var template_only := false
 
 var level: PlanetLevel
 var dock: Dock
+var shelf: JarShelf
+var jar_view: JarOpenView
 var tin := -1
+## After leaving a jar the round restarts on the shelf, beside this jar (&"" = the tin dock).
+var _back_to_shelf: StringName = &""
+var _jar_layer: CanvasLayer
 ## While paused: level nodes that run through pauses (the tackle box, a cutscene) are held still and
 ## their overlays hidden, so the pause menu is on top and the only thing reading the pad.
 ## node -> process_mode / visible, as they were.
@@ -42,6 +51,21 @@ func _ready() -> void:
 	$UI.add_child(dock)
 	$UI.move_child(dock, lobby.get_index() + 1)
 	dock.chosen.connect(open_tin)
+	shelf = JarShelf.new()
+	shelf.name = "JarShelf"
+	$UI.add_child(shelf)
+	$UI.move_child(shelf, dock.get_index() + 1)
+	dock.shelf_requested.connect(func() -> void: shelf.open(Jars))
+	shelf.back.connect(dock.open)
+	shelf.jar_chosen.connect(open_jar)
+	_jar_layer = CanvasLayer.new()
+	_jar_layer.name = "JarLayer"
+	_jar_layer.layer = 5            # over the lobby and the dock while a jar opens or closes
+	add_child(_jar_layer)
+	if not Game.demo:
+		var back := Jars.recover()
+		if back > 0:
+			print("jars: %d jar(s) left open last time, put back on the shelf" % back)
 	Players.player_joined.connect(_on_player_joined)
 	Players.player_left.connect(_on_player_left)
 	Game.round_started.connect(_on_round_started)
@@ -55,6 +79,12 @@ func _ready() -> void:
 		(func() -> void:
 			Players.join_virtual(Players.P1)
 			Game.start_round()).call_deferred()
+	elif OS.get_cmdline_user_args().has("--preview-shelf"):  # frames of the jar shelf (shots.sh)
+		(func() -> void:
+			Players.join_virtual(Players.P1)
+			Game.start_round()
+			dock.close()
+			shelf.open(Jars)).call_deferred()
 	elif Game.state != Game.State.LOBBY:
 		Game.to_lobby()
 
@@ -118,6 +148,9 @@ func _on_round_started(_round: int) -> void:
 	if Game.demo:
 		BaitTins.open_demo()
 		_open_level()
+	elif _back_to_shelf != &"":
+		shelf.open(Jars, _back_to_shelf)
+		_back_to_shelf = &""
 	else:
 		dock.open()
 
@@ -130,6 +163,36 @@ func open_tin(i: int) -> void:
 	_open_level()
 	if fresh and not template_only:
 		OpeningHook.start(level)   # Y-01: a new planet starts on Old Reel's opening
+
+
+## The shelf picked a jar: its tin first (the tin's tackle box comes along and the leave returns to
+## it), then the jar-open view; the planet level opens once the view has gone into the glass.
+func open_jar(entry: Dictionary) -> void:
+	tin = JarShelf.spot_of(String(entry.slot))
+	Save.use_slot(String(entry.slot))
+	_free_jar_view()
+	jar_view = JAR_VIEW.instantiate()
+	jar_view.process_mode = Node.PROCESS_MODE_ALWAYS
+	_jar_layer.add_child(jar_view)
+	jar_view.entered.connect(_on_jar_entered, CONNECT_ONE_SHOT)
+	if not jar_view.show_jar(Jars, entry.id):
+		_free_jar_view()
+		Save.use_slot("")
+		shelf.open(Jars)
+
+
+func _on_jar_entered(id: StringName) -> void:
+	_free_jar_view()
+	if not Jars.is_in_jar() or Game.state == Game.State.LOBBY:
+		return
+	_open_level()
+	print("jar: %s open" % id)
+
+
+func _free_jar_view() -> void:
+	if jar_view != null:
+		jar_view.queue_free()
+		jar_view = null
 
 
 func _open_level() -> void:
@@ -150,14 +213,41 @@ func _on_worm_spawned(w: Worm) -> void:
 
 func close_level() -> void:
 	dock.close()
-	if level == null:
-		return
-	level.save_now()
-	level.queue_free()
-	arena.remove_child(level)
-	level = null
+	shelf.close()
+	_free_jar_view()
+	if level != null:
+		level.save_now()
+		level.queue_free()
+		arena.remove_child(level)
+		level = null
 	tin = -1
+	if Jars.is_in_jar():
+		leave_jar()
 	Save.use_slot("")
+
+
+## Leaving a jar planet: the played planet goes back into its jar (JarStore.close() writes it and
+## returns to the tin), the view shows it going back in, then the shelf, beside that jar.
+func leave_jar() -> void:
+	var id := Jars.open_id()
+	Jars.close()
+	Save.use_slot("")
+	jar_view = JAR_VIEW.instantiate()
+	jar_view.process_mode = Node.PROCESS_MODE_ALWAYS
+	_jar_layer.add_child(jar_view)
+	if not jar_view.show_close(Jars, id):
+		_free_jar_view()
+		return
+	jar_view.closed.connect(_on_jar_closed, CONNECT_ONE_SHOT)
+	print("jar: %s closed, back on the shelf" % id)
+
+
+func _on_jar_closed(id: StringName) -> void:
+	_free_jar_view()
+	if Game.state != Game.State.LOBBY or Players.active_players().is_empty():
+		return                          # nobody left to walk the shelf: the start screen it is
+	_back_to_shelf = id
+	Game.start_round()
 
 
 func _on_player_joined(player: int, _device: int) -> void:
