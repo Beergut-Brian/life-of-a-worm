@@ -86,7 +86,7 @@ var _colors := PackedColorArray()
 
 func setup_planet(p_rings: RingSet, radius: int, p_seed: int, band := 32) -> void:
 	rings = p_rings
-	_disk = DiskShape.new(radius, band)
+	_disk = PolarShape.new(radius, band)
 	_gen = DiskGenerator.new(rings)
 	var palette := rings.tile_defs()
 	_ids.clear()
@@ -103,7 +103,7 @@ func setup_planet(p_rings: RingSet, radius: int, p_seed: int, band := 32) -> voi
 	for f in rings.garden_tiles:
 		_tile_ring[_ids[rings.garden_tiles[f]]] = -2
 	water_hz = 0.0  # no water on this planet yet; the aquifer prototype turns it on
-	chunk_radius = 2  # 5x5 per tracked node
+	chunk_radius = 2  # a rounded 5x5 per tracked node, <= 25 chunks (PolarShape, W-23)
 	setup(_disk, _gen, palette, p_seed)
 	clock = 0.0
 	_times.clear()
