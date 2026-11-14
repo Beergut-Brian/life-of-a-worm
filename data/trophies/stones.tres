@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"stones"
-members = Array[StringName]([&"pebble", &"boulder", &"big_boulder"])
+members = Array[StringName]([&"pebble", &"boulder", &"big_boulder", &"fossil", &"ore_nugget", &"brick"])
 per_trophy = {"wiggle_hop": 4.0}
 cap = 3
 color = Color(0.553, 0.6, 0.682, 1)

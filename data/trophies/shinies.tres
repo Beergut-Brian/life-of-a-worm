@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"shinies"
-members = Array[StringName]([&"crystal", &"bottle_cap", &"droplet"])
+members = Array[StringName]([&"crystal", &"bottle_cap", &"droplet", &"amber", &"geode_heart", &"core_crystal", &"scrap", &"balloon_tie", &"sky_balloon", &"toy_plane", &"rainbow_drop", &"cloud_puff", &"milk_drop"])
 per_trophy = {"pull_radius": 10.0, "pull_speed": 12.0}
 cap = 3
 color = Color(1, 0.86, 0.3, 1)

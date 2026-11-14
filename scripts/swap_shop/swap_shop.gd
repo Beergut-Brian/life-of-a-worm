@@ -2,7 +2,9 @@
 ## threat, drawn with a soft friend outline. When a worm comes near he pops out of the wall,
 ## startled, squints and apologises (bark + a sheepish bubble), then shows his offer as a
 ## PictoBubble: [the thing you carry] -> [seed][seed]. Carry something (hold X) up to him and press
-## A: he keeps it on his shelf and two seeds pop out for you (carry them to castings: gardens). No
+## A: he keeps it on his shelf and two seeds pop out for you (carry them to castings: gardens). The
+## seeds match what you gave when a small seed of that flavour exists (a stone thing brings pebbles
+## for a rock garden, a bug thing bug eggs), else plain seeds (`seed_for`). No
 ## worm about for a while and he goes back into the wall. Everything is saved ("swap_shop").
 class_name SwapShop
 extends Node2D
@@ -18,9 +20,15 @@ const TRADE_PX := 48.0
 const HIDE_AFTER := 4.0
 const NOOK_PX := 34.0
 const SEEDS_PER_TRADE := 2
+## Where the seeds pop out: this far behind him (away from the worm) and apart (px).
+const GIFT_BACK_PX := 14.0
+const GIFT_SIDE_PX := 9.0
 const SHELF := 6
 const FOOD_SCRIPT := preload("res://scripts/arena/arena_food.gd")
 const SEED := preload("res://data/foods/seed.tres")
+const FOODS_DIR := "res://data/foods/"
+
+static var _plantables: Array[RingFood] = []
 
 var world: PolarWorld
 var creature_id := &"mole"
@@ -159,20 +167,44 @@ func trade(w: Worm) -> bool:
 	if kept.size() > SHELF:
 		kept.remove_at(0)
 	trades += 1
+	var got := seed_for(item.data)
 	var toward := (w.head.global_position - global_position).normalized()
+	# They pop out behind him, away from the worm: in front, a worm waiting at the counter swallowed
+	# one the same frame, so the kid saw him give one seed, not two.
 	for i in SEEDS_PER_TRADE:
-		var at := mole_position() + toward.rotated((i - 0.5) * 0.9) * 16.0
-		_give_seed(at, true)
+		var at := mole_position() - toward * GIFT_BACK_PX + toward.orthogonal() * (i - 0.5) * 2.0 * GIFT_SIDE_PX
+		_give_seed(at, true, got)
 	Audio.play("swap")
 	_set_state(State.HAPPY)
 	w._pop(w.look, 1.2)
-	traded.emit(w.player, id, &"seed")
+	traded.emit(w.player, id, got.id)
 	return true
 
 
-func _give_seed(at: Vector2, pop: bool) -> Node2D:
+## What he gives for `gave`: the smallest seed (a food that plants a garden) of the same flavour, if
+## one is no bigger than a plain seed, so a stone thing brings pebbles and a bug thing bug eggs.
+## Anything else, and anything that is itself a seed (so a swap never copies a seed), brings plain
+## seeds. Read from data/foods, so a new seed food needs no code.
+static func seed_for(gave: FoodData) -> FoodData:
+	if gave == null or (gave is RingFood and (gave as RingFood).plants != &""):
+		return SEED
+	if _plantables.is_empty():
+		for f in ResourceLoader.list_directory(FOODS_DIR):
+			if f.ends_with(".tres"):
+				var r := load(FOODS_DIR + f)
+				if r is RingFood and (r as RingFood).plants != &"":
+					_plantables.append(r)
+		_plantables.sort_custom(func(a: RingFood, b: RingFood) -> bool:
+			return a.size_stage < b.size_stage or (a.size_stage == b.size_stage and String(a.id) < String(b.id)))
+	for r in _plantables:
+		if r.plants == gave.flavour and r.size_stage <= SEED.size_stage:
+			return r
+	return SEED
+
+
+func _give_seed(at: Vector2, pop: bool, what: FoodData = SEED) -> Node2D:
 	var f: Node2D = FOOD_SCRIPT.new()
-	f.data = SEED
+	f.data = what
 	f.position = at
 	get_parent().add_child(f)
 	f.home = at
@@ -197,7 +229,7 @@ func to_dict() -> Dictionary:
 	var l := []
 	for f in loose:
 		if is_instance_valid(f):
-			l.append([f.position.x, f.position.y])
+			l.append([f.position.x, f.position.y, String(f.data.id)])
 	return { "kept": kept.map(func(k): return String(k)), "trades": trades, "loose": l, "carved": true }
 
 
@@ -207,7 +239,11 @@ func from_dict(d: Dictionary) -> void:
 		kept.append(StringName(k))
 	trades = int(d.get("trades", 0))
 	for e in d.get("loose", []):
-		_give_seed.call_deferred(Vector2(e[0], e[1]), false)
+		var what: FoodData = SEED
+		if e.size() > 2:   # older tins saved only the spot: those were plain seeds
+			var f := _food(StringName(e[2]))
+			what = f if f else SEED
+		_give_seed.call_deferred(Vector2(e[0], e[1]), false, what)
 
 
 # --- look -----------------------------------------------------------------------------------------
@@ -257,10 +293,12 @@ func _draw() -> void:
 			PictoBubble.draw(self, tip, [&"heart", &"face_happy"], 1.0, 0.6)
 		State.OPEN:
 			var give := &"star"
+			var got := &"food:seed"
 			for w in Worm.all():
 				if w.carrying != null and is_instance_valid(w.carrying) and not w.carrying.has_method("pet_id") and w.carrying.data.id != &"seed":
 					give = StringName("food:" + String(w.carrying.data.id))
-			PictoBubble.draw(self, tip, [give, &"swap_arrow", &"food:seed", &"food:seed"], 1.0, 0.6)
+					got = StringName("food:" + String(seed_for(w.carrying.data).id))
+			PictoBubble.draw(self, tip, [give, &"swap_arrow", got, got], 1.0, 0.6)
 			if not ready_for.is_empty():
 				var a := 0.4 + 0.6 * absf(sin(_t * 5.0))
 				UiStyle.draw_glyph(self, tip + Vector2(0, -28), 12.0, "a", a)
