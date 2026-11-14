@@ -709,7 +709,19 @@ func bird_target() -> Worm:
 	return null
 
 
-## Sends one bird at a reachable worm, else at a beetle near the top (birds eat beetles); else none.
+## A worm near the top that has outgrown the bird (L-17): the bird still swoops at it, cowering,
+## and gets swallowed if the worm stays put. Only when no smaller worm or beetle is about.
+func bird_meal_target() -> Worm:
+	var bird_stage := (load("res://data/creatures/bird.tres") as CreatureData).size_stage
+	for w in _worms():
+		var p := world.to_local(w.head_position())
+		if p.length() >= topsoil_top() - BIRD_REACH * 16.0 and w.model.stage >= bird_stage:
+			return w
+	return null
+
+
+## Sends one bird at a reachable worm, else at a beetle near the top (birds eat beetles), else at a
+## worm that outgrew birds (it may eat it); else none. An eaten bird comes off the bird counter.
 func send_bird() -> Bird:
 	if ecology.count(&"bird") < 0.3 or not get_tree().get_nodes_in_group(&"birds").is_empty():
 		return null
@@ -722,6 +734,10 @@ func send_bird() -> Bird:
 			if b.position.length() >= topsoil_top() - (BIRD_REACH + 8.0) * 16.0:
 				at = b.position
 				break
+	if at == Vector2.INF:
+		var big := bird_meal_target()
+		if big:
+			at = world.to_local(big.head_position())
 	if at == Vector2.INF or creature_count() >= MAX_CREATURES:
 		return null
 	var bird: Bird = BIRD.instantiate()
@@ -729,6 +745,9 @@ func send_bird() -> Bird:
 	bird.species = &"bird"
 	bird.ate_worm.connect(_on_ate_worm)
 	bird.ate_creature.connect(func(prey: Creature) -> void: prey.set_meta("hunted", true))
+	bird.taken.connect(func(b: Creature) -> void:
+		if b is Bird and (b as Bird).eaten:
+			ecology.kill(&"bird", 1.0))
 	actors.add_child(bird)
 	bird.aim(at, up_at(at), ground_top())
 	return bird
