@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/gameplay/drop_out_puff.gd" id="drop_out_puff"]
 [ext_resource type="Script" path="res://scripts/traits/trait_hello.gd" id="trait_hello"]
 [ext_resource type="Script" path="res://scripts/traits/trait_knacks.gd" id="knacks"]
+[ext_resource type="Script" path="res://scripts/traits/trait_use.gd" id="trait_use"]
 [ext_resource type="Script" path="res://scripts/worm/worm.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/worm/food_voice.gd" id="food_voice"]
 [ext_resource type="Script" path="res://scripts/worm/pull_drag.gd" id="pull_drag"]
@@ -92,6 +93,9 @@ script = ExtResource("eaten_beat")
 
 [node name="TraitHello" type="Node" parent="."]
 script = ExtResource("trait_hello")
+
+[node name="TraitUse" type="Node" parent="."]
+script = ExtResource("trait_use")
 
 [node name="PullDrag" type="Node2D" parent="."]
 script = ExtResource("pull_drag")
