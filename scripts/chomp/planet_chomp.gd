@@ -73,7 +73,10 @@ var _debris_next := 0
 
 
 func _ready() -> void:
+	# A child named "Jars" (tests, ChompDirector's jar_dir, the demo) wins; else the one shared store.
 	jars = get_node_or_null("Jars") as JarStore
+	if jars == null:
+		jars = get_node_or_null(^"/root/Jars") as JarStore
 	demo = "--demo-chomp" in OS.get_cmdline_user_args()
 	if demo:
 		_setup_demo()
@@ -99,7 +102,10 @@ func _setup_demo() -> void:
 	Save.set_value("planet", p.to_save())
 	Save.set_value("stage", 6)
 	Save.flush()
-	jars.dir = "user://jars_demo"   # never put a demo jar on the family's shelf
+	jars = JarStore.new()           # its own store: never put a demo jar on the family's shelf
+	jars.name = "Jars"
+	jars.dir = "user://jars_demo"
+	add_child(jars)
 	jars.clear()
 
 

@@ -1095,6 +1095,54 @@ func step(delta) -> bool                  # false once gone (LIFE 1.3 s); tests 
 The destruct lane's `prop_break` (still no file, grey beep) also plays on the same bite; the
 chunks still fall to the core with their LooseFall.
 
+### Jar follow-ups (worm-jar-2)
+
+`JarStore` (`scripts/jars/jars.gd`) is the autoload **`Jars`** (`project.godot`). The chomp, the jar
+shelf and the leave use that one store; tests, demos and `ChompDirector.jar_dir` add their own
+`JarStore` child named `Jars` (scratch `dir`), which `PlanetChomp` prefers over the autoload.
+`planet_chomp.tscn` no longer has a `Jars` child.
+
+```gdscript
+# JarStore additions (Jars)
+const RETURN_KEY := "jar_return"            # in the jar profile: {profile, slot} it goes back to
+# TIN_ONLY now also strips ["jar_return"]
+func open_id() -> StringName                # the open jar (&"" when none)
+func shelf(slots: PackedStringArray, profile := "") -> Array[Dictionary]
+                                            # one {slot, id} per tin slot with a jar, in slot order
+                                            # (ids "<profile>_<slot>_<seed>"; newest file wins); [] = empty
+func open_entry(entry: Dictionary) -> bool  # Save.use_slot(entry.slot), then open(entry.id)
+func recover() -> int                       # boot: jar profiles left open (quit/crash) go back into their
+                                            # jar, their found-set back to the tin; returns how many
+
+# JarShelf (scripts/jars/jar_shelf.gd): Control, Old Reel's shelf; main.gd hosts it under $UI
+signal jar_chosen(entry: Dictionary)        # A with a jar in reach
+signal back()                               # B: the tin dock again
+func open(jars: JarStore = null, at_id := &"") -> void   # at_id: worms start beside that jar
+func walk(p: int, axis: float, delta: float) -> void      # the only thing that moves a shelf worm
+func press_a(p: int) -> bool
+var focus: Dictionary                       # player -> spot index (-1 none), REACH px either side
+
+# Dock (scripts/planet/dock.gd)
+signal shelf_requested()                    # A on the shelf spot (focus == Dock.SHELF, right of the tins)
+const SHELF := BaitTins.COUNT                # focus index of the shelf spot (move wraps over COUNT + 1)
+static func tin_x(i: int, width: float) -> float  # centre x of tin i (0.18 + 0.2 i) or the shelf (0.82);
+                                            # TinFresh draws its choices there, and tin() is -1 on the shelf
+
+# JarOpenView additions
+signal closed(planet_id: StringName)
+func show_close(store: JarStore, id: StringName) -> bool  # the leave: planet fills the screen, pulls
+                                            # back into its jar (OUT_END 1.25 s), lid on (1.3 s), closed (1.9 s)
+```
+
+- Flow in `scenes/main.gd`: dock → shelf → `open_jar(entry)` (tin slot first) → `JarOpenView` →
+  `entered` → the planet level (Save is the jar profile). `Game.back_to_lobby` inside a jar →
+  `close_level()` saves the level, `leave_jar()` → `Jars.close()` → `show_close` → `closed` →
+  `Game.start_round()` with the shelf open beside that jar (the start screen if no player is joined).
+- Quitting inside a jar does not close it (other quit handlers would write jar data into the tin);
+  `main.gd` calls `Jars.recover()` at boot instead (not under `--demo`).
+- `--preview-shelf` (main.tscn) opens the shelf for frames; `--jar-close-demo` (jar_open.tscn) plays the leave.
+
+
 ### Juice (worm-juice-1)
 
 `feature/worm-juice-1` (PLAN-STATUS A-14). `scripts/worm/juice.gd`, class `WormJuice` (static

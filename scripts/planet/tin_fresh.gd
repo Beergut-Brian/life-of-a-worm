@@ -59,9 +59,9 @@ func hook_settings(panel: SettingsPanel) -> void:
 	panel.restore_asked.connect(func(p: int) -> void: open(Ask.RESTORE_NEWEST, p))
 
 
-## The tin the dock has in focus, -1 when the dock is not up.
+## The tin the dock has in focus, -1 when the dock is not up or the jar shelf spot is lit.
 func tin() -> int:
-	return dock.focus if dock != null and dock.visible else -1
+	return dock.focus if dock != null and dock.visible and dock.focus < Dock.SHELF else -1
 
 
 ## A played tin. Reads the dock's own summaries (filled when it opens or refreshes), so a big tin
@@ -278,8 +278,8 @@ func _draw_choices(v: Vector2) -> void:
 	var i := tin()
 	if i < 0:
 		return
-	# The dock's tins sit at x = 0.25, 0.5, 0.75 of the screen; the choices go under the focused one.
-	var cx := v.x * (0.25 + 0.25 * i)
+	# The choices go under the focused tin (Dock.tin_x; the jar shelf sits right of the tins).
+	var cx := Dock.tin_x(i, v.x)
 	var y := v.y * 0.62 + 190
 	var lines: Array = []
 	if can_new(i):

@@ -26,6 +26,7 @@ Save="*res://scripts/autoload/Save.gd"
 Audio="*res://scripts/autoload/Audio.gd"
 Debug="*res://scripts/autoload/Debug.gd"
 Roster="*res://scripts/autoload/Roster.gd"
+Jars="*res://scripts/jars/jars.gd"
 
 [display]
 

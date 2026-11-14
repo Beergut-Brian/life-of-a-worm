@@ -175,7 +175,10 @@ func _chomp() -> PlanetChomp:
 	var c: PlanetChomp = load(CHOMP).instantiate()
 	c.autostart = false
 	c.auto_space = false
+	var own := JarStore.new()   # a private store on a scratch shelf, never the shared Jars autoload
+	own.name = "Jars"
+	own.dir = DIR
+	c.add_child(own)
 	add_child(c)
 	c.set_process(false)
-	c.jars.dir = DIR
 	return c

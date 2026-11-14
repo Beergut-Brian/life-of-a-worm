@@ -3,11 +3,15 @@
 ## into the glass until the planet fills the screen, and only then JarStore.open() loads it.
 ## No words. A sound on every beat. Nothing is asked of the player and nothing moves the worm.
 ## advance(delta) drives it so tests run it without frames; _process calls it.
-## --jar-open-demo (scenes/jars/jar_open.tscn alone) stages a sandbox jar for frames.
+## Leaving a jar plays it backwards (show_close, worm-jar-2): the planet fills the screen, the view
+## pulls back out of the glass until the planet sits in its jar on the shelf, and the lid drops on.
+## --jar-open-demo (scenes/jars/jar_open.tscn alone) stages a sandbox jar for frames;
+## --jar-close-demo stages the leave.
 class_name JarOpenView
 extends Node2D
 
 signal entered(planet_id: StringName)
+signal closed(planet_id: StringName)
 
 const OUTLINE := Color("2a1a14")
 const WALL := Color("3b2a22")
@@ -18,6 +22,9 @@ const SETTLE := 0.45          # the jar pops onto the shelf
 const LID_AT := 0.8           # the lid pops off
 const DIVE_AT := 1.15         # the view starts diving into the glass
 const ENTER_AT := 2.4         # the planet fills the screen: open the jar
+const OUT_END := 1.25         # closing: the view is back out of the glass, the planet in its jar
+const LID_ON_AT := 1.3        # closing: the lid drops back on
+const CLOSE_END := 1.9        # closing: done, the shelf is next
 const DEMO_PROFILE := "demo_jar_open"
 const DEMO_DIR := "user://jars_demo_open"
 
@@ -30,6 +37,7 @@ var planet_texture: Texture2D
 var planet_color := Color("5fb04a")
 var t := -1.0                 # -1 idle, else seconds since show_jar()
 var opened := false
+var closing := false          # true: the leave (show_close), played out of the glass
 var demo := false
 var _beats := 0
 
@@ -39,6 +47,9 @@ func _ready() -> void:
 	demo = "--jar-open-demo" in OS.get_cmdline_user_args()
 	if demo:
 		_setup_demo()
+	elif "--jar-close-demo" in OS.get_cmdline_user_args():
+		demo = true
+		_setup_demo(true)
 
 
 ## Start the opening for one jar on the shelf. False if there is no such jar.
@@ -56,8 +67,17 @@ func show_jar(store: JarStore, id: StringName) -> bool:
 	planet_texture = stand.texture(192) if p is Dictionary else null
 	t = 0.0
 	opened = false
+	closing = false
 	_beats = 0
 	scale = Vector2.ONE
+	return true
+
+
+## The leave, after JarStore.close() wrote the planet back: out of the glass, lid on, `closed`.
+func show_close(store: JarStore, id: StringName) -> bool:
+	if not show_jar(store, id):
+		return false
+	closing = true
 	return true
 
 
@@ -71,6 +91,9 @@ func advance(delta: float) -> void:
 	if t < 0.0 or opened:
 		return
 	t += delta
+	if closing:
+		_advance_close()
+		return
 	if _beats == 0:
 		_beats = 1
 		Audio.play("jar_clink")          # the jar lands on the shelf
@@ -90,8 +113,23 @@ func advance(delta: float) -> void:
 			get_tree().change_scene_to_file(next_scene)
 
 
+func _advance_close() -> void:
+	if _beats == 0:
+		_beats = 1
+		Audio.play("tunnel")             # back out through the glass
+	if _beats == 1 and t >= LID_ON_AT:
+		_beats = 2
+		Audio.play("jar_clink")          # the lid goes back on, the jar is on the shelf
+	if t >= CLOSE_END:
+		opened = true                    # done (the same guard as the opening)
+		closed.emit(planet_id)
+
+
 ## 0 on the shelf .. 1 the planet fills the screen.
 func dive() -> float:
+	if closing:
+		var o := clampf(t / OUT_END, 0.0, 1.0)
+		return 1.0 - o * o * (3.0 - 2.0 * o)
 	if t < DIVE_AT:
 		return 0.0
 	var k := clampf((t - DIVE_AT) / (ENTER_AT - DIVE_AT), 0.0, 1.0)
@@ -132,6 +170,8 @@ func _draw() -> void:
 	draw_line(Vector2(-40, -40), Vector2(-40, 40), Color(1, 1, 1, 0.6 * glass), 6.0)
 	# lid: on, then off up and away with a spin
 	var lid_k := clampf((t - LID_AT) / 0.5, 0.0, 1.0)
+	if closing:
+		lid_k = 1.0 - clampf((t - (LID_ON_AT - 0.3)) / 0.3, 0.0, 1.0)
 	var lid_c := Vector2(0, -71) + Vector2(140.0 * lid_k, -260.0 * lid_k + 120.0 * lid_k * lid_k)
 	draw_set_transform((lid_c - PLANET_AT) * s, lid_k * 1.6, Vector2.ONE * s)
 	draw_rect(Rect2(-56, -15, 112, 30), Color(OUTLINE, glass))
@@ -155,10 +195,12 @@ func _s() -> float:
 	var half := get_viewport_rect().size / 2.0
 	var zoom := lerpf(1.0, minf(half.x, half.y) * 2.0 * 0.92 / PLANET_PX / SHELF_SCALE, dive())
 	var pop := 1.0 + 0.15 * sin(clampf(t / SETTLE, 0.0, 1.0) * PI) if t < SETTLE else 1.0
+	if closing:                       # the little hop as the lid lands
+		pop = 1.0 + 0.08 * sin(clampf((t - LID_ON_AT) / SETTLE, 0.0, 1.0) * PI) if t >= LID_ON_AT else 1.0
 	return zoom * pop * SHELF_SCALE
 
 
-func _setup_demo() -> void:
+func _setup_demo(leave := false) -> void:
 	Save.use_profile(DEMO_PROFILE)
 	Save.wipe()
 	var p := PlanetStandIn.generate("", 4242, 12)
@@ -170,6 +212,14 @@ func _setup_demo() -> void:
 	store.clear()
 	var id := JarStore.current_planet_id(p.seed_value)
 	store.snapshot(id)
+	if leave:
+		store.open(id)
+		store.close()
+		closed.connect(func(_id):
+			store.clear()
+			Save.wipe())
+		show_close(store, id)
+		return
 	entered.connect(func(_id):
 		store.close()
 		store.clear()

@@ -4,10 +4,15 @@
 ## Each tin also shows what is inside as a picture, for a reader who can't read yet: a played tin
 ## stands open with its worms peeking out (green / red, their diet stripes, longer and fatter with
 ## their stage) and a row of stage pips; an empty tin keeps its lid on with a twinkle.
+## Right of the tins is Old Reel's jar shelf (worm-jar-2): A on it emits shelf_requested (JarShelf).
 class_name Dock
 extends Control
 
 signal chosen(tin: int)
+signal shelf_requested()
+
+## Focus index of the jar shelf, after the tins.
+const SHELF := BaitTins.COUNT
 
 ## Stage pips on a tin (stages 1..7).
 const PIPS := 7
@@ -17,6 +22,7 @@ const SHOW_SEGS := 9
 var focus := 0
 var _t := 0.0
 var _summaries: Array[Dictionary] = []
+var _jar_slots: Array = []      # tin slot names that have a jar on the shelf
 
 
 func _ready() -> void:
@@ -42,11 +48,16 @@ func refresh() -> void:
 	_summaries.clear()
 	for i in BaitTins.COUNT:
 		_summaries.append(BaitTins.summary(i))
+	_jar_slots.clear()
+	var jars := get_node_or_null(^"/root/Jars") as JarStore
+	if jars:
+		for e in jars.shelf(JarShelf.slot_names()):
+			_jar_slots.append(e.slot)
 	queue_redraw()
 
 
 func move(dir: int) -> void:
-	focus = wrapi(focus + dir, 0, BaitTins.COUNT)
+	focus = wrapi(focus + dir, 0, BaitTins.COUNT + 1)
 	UiSound.play("ui_move")
 	queue_redraw()
 
@@ -54,7 +65,16 @@ func move(dir: int) -> void:
 func pick() -> void:
 	UiSound.play("ui_confirm")
 	visible = false
+	if focus == SHELF:
+		shelf_requested.emit()
+		return
 	chosen.emit(focus)
+
+
+## Centre x of tin i on a dock `width` wide (the shelf spot is at SHELF). TinFresh puts its choices
+## under the same x.
+static func tin_x(i: int, width: float) -> float:
+	return width * (0.18 + 0.2 * i) if i < SHELF else width * 0.82
 
 
 ## The picture on a tin from its summary (BaitTins.summary): { open, pips, worms: [{ player, stage,
@@ -110,7 +130,7 @@ func _draw() -> void:
 	draw_rect(Rect2(0, v.y * 0.62 - 14, v.x, 14), Color("6e4527"))                         # rail
 	UiStyle.draw_show(self, Vector2(v.x * 0.5, 120), "PICK A BAIT TIN", 72, UiStyle.CREAM, 1)
 	for i in BaitTins.COUNT:
-		var cx := v.x * (0.25 + 0.25 * i)
+		var cx := tin_x(i, v.x)
 		var base := Vector2(cx, v.y * 0.62 - 14)
 		var on := i == focus
 		var lift := (sin(_t * 4.0) * 6.0 - 16.0) if on else 0.0
@@ -137,7 +157,28 @@ func _draw() -> void:
 		UiStyle.draw_text(self, Vector2(cx, v.y * 0.62 + 110), line, UiStyle.Role.BODY, UiStyle.CREAM if on else Color(UiStyle.CREAM, 0.7), 1)
 		if not s.is_empty():
 			UiStyle.draw_text(self, Vector2(cx, v.y * 0.62 + 160), "%d min played" % s.minutes, UiStyle.Role.HINT, Color(UiStyle.CREAM, 0.7), 1)
+	_draw_shelf_spot(Vector2(tin_x(SHELF, v.x), v.y * 0.62 - 14), focus == SHELF)
 	UiStyle.draw_hint_strip(self, v, "[lr] Pick   [a] Open   [b] Back")
+
+
+## The jar shelf spot: a little shelf with one jar place per tin, filled where the tin has a jar.
+func _draw_shelf_spot(base: Vector2, on: bool) -> void:
+	var lift := (sin(_t * 4.0) * 6.0 - 16.0) if on else 0.0
+	var r := Rect2(base + Vector2(-130, -230 + lift), Vector2(260, 230))
+	if on:
+		draw_rect(r.grow(10), Color(UiStyle.CREAM, 0.9))
+	draw_rect(r, Color("6e4527"))                                                        # shed wall
+	draw_rect(Rect2(r.position + Vector2(10, 150), Vector2(240, 16)), Color("2a1a14"))  # the shelf
+	var lids := [Color("c94a3a"), Color("3a8f5a"), Color("d9a12b")]
+	for i in BaitTins.COUNT:
+		var jr := Rect2(r.position + Vector2(22 + i * 80, 70), Vector2(56, 80))
+		if BaitTins.slot_name(i) in _jar_slots:
+			draw_rect(jr, Color(0.75, 0.9, 1.0, 0.45))
+			draw_circle(jr.get_center() + Vector2(0, 6), 22.0, Color("5fb04a"))
+			draw_rect(jr, Color(0.91, 0.96, 1.0), false, 4.0)
+			draw_rect(Rect2(jr.position + Vector2(-2, -12), Vector2(60, 14)), lids[i])
+		else:
+			draw_rect(jr, Color(1, 1, 1, 0.3), false, 3.0)
 
 
 ## A played tin: the lid tipped back, the dark inside, the worms peeking out of it.
