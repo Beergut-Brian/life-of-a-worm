@@ -52,6 +52,14 @@ func _spawn(player: int) -> Worm:
 	return w
 
 
+## Takes every scattered food out of the "food" group (other systems still hold the nodes, so
+## they are not freed), so a press-answer case never has a pick-up in range
+## (the scatter follows the tin's random seed; a grub beside P2 lights the X glyph).
+func _clear_food() -> void:
+	for f in get_tree().get_nodes_in_group("food"):
+		f.remove_from_group("food")
+
+
 func _frames(n: int) -> void:
 	for i in n:
 		await get_tree().physics_frame
@@ -206,9 +214,14 @@ func test_a_quiet_panel_folds_and_select_opens_it() -> void:
 ## C-26: Select alone, a shoulder or a stick click in play bonks, shakes its glyph over that
 ## player's worm and shakes their panel; A, the partner's pad and solo Select are left alone.
 func test_a_press_that_does_nothing_is_answered() -> void:
-	_spawn(Players.P1)
-	_spawn(Players.P2)
+	_clear_food()
+	var w1 := _spawn(Players.P1)
+	var w2 := _spawn(Players.P2)
 	await _frames(2)
+	# The staged scene proves its claim: nothing to pick up, so no X glyph before any press.
+	assert_array(get_tree().get_nodes_in_group("food")).is_empty()
+	assert_bool(w1.carry_ready or w2.carry_ready).is_false()
+	assert_str(_level._glyphs[Players.P2].shown()).is_equal("")
 	Players._device_of[Players.P1] = 0
 	Players._device_of[Players.P2] = 1
 	var answer: PressAnswer = _level.hud.answer
