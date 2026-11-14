@@ -32,6 +32,7 @@ Kid rules: friendly, never a scare, no pain sounds, no minor stingers; `stage_up
 | `amb_deep_rock` | deep rock ring | humming crystals, slowly beating, rare glassy ping | amb_deep_rock.ogg |
 | `amb_core` | core ring | warm low glow, lazy lava bubbles | amb_core.ogg |
 | `amb_surface` | surface ring | wind in gusts, far-away birds | amb_surface.ogg |
+| `amb_surface` (dock bed) | `DockAmbience` (`scripts/audio/dock_ambience.gd`, child of main.tscn): start screen, tin select and jar shelf; fades out once a planet is open (U-16) | the same open-air wind and far birds; stands in until an `amb_dock` file (one guitar, water, gulls) exists, which `DockAmbience.CUES` then plays first | amb_surface.ogg |
 | **The worm** | | | |
 | `carry` | `worm.gd` X picks something up | bloop up and a wood tick | carry.ogg |
 | `drop` | `worm.gd` X puts it down | bloop down and a soft pat | drop.ogg |
