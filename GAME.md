@@ -729,7 +729,7 @@ On top of the template checklist in `docs/kid-design.md`.
 - [ ] Being eaten costs one segment, never a stage.
 - [ ] Camera rotation is capped; no fast spins.
 - [ ] The smaller worm catches up within a minute via shared growth.
-- [ ] Ordinary eating adds a segment at least every 2 minutes, and something new (a food, a trait, a secret, a page) turns up at least every 15.
+- [ ] Ordinary eating adds a segment at least every 2 minutes, and something new (a food, a trait, a secret, a page, a timed look) turns up at least every 15.
 - [ ] Autosaves continuously; quitting at any moment loses nothing.
 - [ ] Nothing in the dirt is dark or creepy; the deep rings are colourful, not black.
 - [ ] Eating a house, a cow or a car is clearly cartoon mayhem: things squeak and pop, nobody is inside.
