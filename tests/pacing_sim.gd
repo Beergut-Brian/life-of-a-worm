@@ -14,12 +14,16 @@ extends RefCounted
 signal tasted(food_id: StringName)
 ## A food kind was eaten for the first time in this run.
 signal first_taste(food_id: StringName)
+## Kid mode's timed new fired (D108 a): the n-th one of this run.
+signal timed_new(n: int)
 
 const FOODS_DIR := "res://data/foods/"
 const TILE_PX := 16.0
 const MAX_HOURS := 60.0
-const KID := { "name": "kid", "dig": 0.35, "foods_min": 0.6, "apex_min": 8.0, "eaten_min": 9.0 }
+const KID := { "name": "kid", "dig": 0.35, "foods_min": 0.6, "apex_min": 8.0, "eaten_min": 9.0, "kid": true }
 const ADULT := { "name": "adult", "dig": 0.6, "foods_min": 1.5, "apex_min": 4.0, "eaten_min": 0.0 }
+## A kid who plays but never eats (no tunnelling, no food): only the timed new can be new.
+const KID_ZERO_EAT := { "name": "kid zero-eat", "dig": 0.0, "foods_min": 0.0, "apex_min": 8.0, "eaten_min": 0.0, "kid": true }
 
 var profile: Dictionary
 var rules: WormRules
@@ -29,6 +33,16 @@ var rng := RandomNumberGenerator.new()
 var clock := 0.0
 var menu: Array[FoodData] = []
 var _tasted := {}
+## D108 a: the game's timed new is in this run (TimedNew in the game). It fires only for a kid
+## profile ("kid": true), the way the game's adult mode never shows it. Off by default, so the
+## content audits (tests/test_d105_*) keep measuring content alone.
+var timed := false
+## The game's own clock (scripts/gameplay/timed_new_clock.gd): every first taste, trait and stage
+## (its cutscene) resets it; a pause stops it and resume starts it from 0.
+var timed_clock := TimedNewClock.new()
+## Breaks in play: [start_s, length_s] pairs. While paused nothing is played, the clock does not
+## count, and the game's clock restarts from 0 on resume.
+var pauses: Array = []
 
 
 ## One event log: kind -> times in seconds. Kinds: &"eaten" (a segment grew), &"food" (a food was
@@ -39,7 +53,7 @@ class Recorder:
 	## Weak: the sim's signals hold this recorder, so a strong link back would be a reference
 	## cycle that never frees (the suite's "ObjectDB instances leaked" line).
 	var _sim: WeakRef
-	var times := { &"eaten": [], &"food": [], &"new": [], &"trait": [] }
+	var times := { &"eaten": [], &"food": [], &"new": [], &"trait": [], &"timed": [] }
 	var labels: Array[String] = []
 	var stage_at := { 1: 0.0 }
 	var end := 0.0
@@ -53,6 +67,9 @@ class Recorder:
 			_log(&"trait")
 			_new("trait " + String(id)))
 		s.model.stage_changed.connect(_on_stage)
+		s.timed_new.connect(func(_n: int) -> void:
+			_log(&"timed")
+			_new("timed look"))
 
 	func sim() -> PacingSim:
 		return _sim.get_ref() as PacingSim
@@ -134,6 +151,10 @@ func _init(p: Dictionary, seed_value: int, r: WormRules = null) -> void:
 	model = WormGrowth.new(rules)
 	model.apex_gate = true
 	menu = all_foods()
+	# Bound to the clock (not a lambda on self): no reference cycle back to this sim.
+	first_taste.connect(timed_clock.reset.unbind(1))
+	model.trait_earned.connect(timed_clock.reset.unbind(2))
+	model.stage_changed.connect(timed_clock.reset.unbind(2))
 
 
 ## The rings open to a worm at this stage: every ring a stage up to it opened, and the crust ring
@@ -154,13 +175,20 @@ static func ring_of(f: FoodData) -> StringName:
 	return f.ring if f is RingFood else &""
 
 
-## Plays until the worm reaches `until_stage` (or the hour cap) and returns the event log.
-func run(until_stage := 2) -> Recorder:
+## Plays until the worm reaches `until_stage` (or `max_s` seconds, the hour cap by default) and
+## returns the event log.
+func run(until_stage := 2, max_s := MAX_HOURS * 3600.0) -> Recorder:
 	var rec := Recorder.new(self)
 	var apex_wait := -1.0
-	while model.stage < until_stage and clock < MAX_HOURS * 3600.0:
+	var kid_timed := timed and bool(profile.get("kid", false))
+	while model.stage < until_stage and clock < max_s:
 		clock += 1.0
+		if is_paused(clock):
+			timed_clock.step(1.0, false)
+			continue
 		_step(apex_wait)
+		if kid_timed and timed_clock.step(1.0, true):
+			timed_new.emit(timed_clock.fired)
 		if model.size_stage() > model.stage:
 			if apex_wait < 0.0:
 				apex_wait = rng.randf_range(0.5, 1.5) * float(profile.apex_min) * 60.0
@@ -170,6 +198,14 @@ func run(until_stage := 2) -> Recorder:
 				apex_wait = -1.0
 	rec.end = clock
 	return rec
+
+
+## Is second `t` of the run inside one of `pauses`?
+func is_paused(t: float) -> bool:
+	for p in pauses:
+		if t > float(p[0]) and t <= float(p[0]) + float(p[1]):
+			return true
+	return false
 
 
 func _step(_apex_wait: float) -> void:
