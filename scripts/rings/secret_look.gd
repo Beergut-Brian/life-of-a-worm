@@ -22,12 +22,18 @@ const KNOWN: Array[StringName] = [&"ant_city", &"sunken_rowboat", &"fossil_hall"
 const GEMS: Array[Color] = [Color("c46cff"), Color("5fe8ff"), Color("ff7ad9"), Color("ffd23f")]
 
 
+## Named static funcs only, never a lambda: PictoBubble keeps these in a static Dictionary that
+## outlives this script at quit, and a lambda still held there when Godot destroys the script is
+## freed later against the dead script (heap corruption, exit 134 after every test passed).
 static func register() -> void:
-	PictoBubble.register_prefix("secret:", func(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float) -> void:
-		draw(ci, StringName(String(id).trim_prefix("secret:")), c, s, a))
+	PictoBubble.register_prefix("secret:", _secret_pic)
 	PictoBubble.register_prefix("secret_food:", _food_pic)
 	PictoBubble.register(&"secret_box", _box_pic)
 	PictoBubble.register(&"secret_dig", _dig_pic)
+
+
+static func _secret_pic(ci: CanvasItem, id: StringName, c: Vector2, s: float, a: float) -> void:
+	draw(ci, StringName(String(id).trim_prefix("secret:")), c, s, a)
 
 
 static func has(id: StringName) -> bool:
