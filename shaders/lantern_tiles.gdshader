@@ -3,6 +3,10 @@
 // disk), so a bite lightens the ground round it as soon as the overview uploads. Normal maps come
 // from the tile set's CanvasTexture; lights and CanvasModulate do the rest
 // (scripts/lighting/lantern.gd). Never black: the deepest ground keeps 1 - max_dark of its colour.
+// Kid check K-08 (nothing in the dirt is dark): before that, every tile is lifted toward its ring's
+// own colour (RingDef.hue) with a screen blend, `lift` strong (solid ground) or weaker (back walls,
+// so tunnels still read darker than the ground). The texture's detail stays; only its darks rise.
+// LanternTileArt.lift_color is the same sum on the CPU for tests.
 shader_type canvas_item;
 
 uniform sampler2D overview : filter_linear, repeat_disable;
@@ -15,6 +19,10 @@ uniform float near_reach = 3.0;        // tiles
 uniform float far_reach = 7.0;         // tiles
 uniform float max_dark = 0.5;
 uniform vec3 deep_tint : source_color = vec3(0.64, 0.61, 0.74);
+uniform float lift = 0.0;
+uniform int ring_count = 0;
+uniform float ring_outer[8];           // ring outer radius as a share of the disk, core outward
+uniform vec3 ring_hue[8];
 
 varying vec2 world_pos;
 
@@ -29,6 +37,16 @@ float solid_at(vec2 cell) {
 
 void fragment() {
 	vec4 c = COLOR;   // vertex colour x texture
+	if (ring_count > 0 && lift > 0.0) {
+		float f = length(world_pos / cell_size) / max(radius_tiles, 1.0);
+		vec3 hue = ring_hue[ring_count - 1];
+		for (int i = ring_count - 1; i >= 0; i--) {
+			if (f < ring_outer[i]) {
+				hue = ring_hue[i];
+			}
+		}
+		c.rgb = vec3(1.0) - (vec3(1.0) - c.rgb) * (vec3(1.0) - hue * lift);
+	}
 	if (has_overview) {
 		vec2 cell = world_pos / cell_size;
 		float s = 0.0;
