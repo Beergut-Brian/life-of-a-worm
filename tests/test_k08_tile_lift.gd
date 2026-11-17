@@ -170,3 +170,16 @@ func test_back_walls_use_the_wall_material() -> void:
 	var solid := ts.get_source(TileArt.SOLID_SOURCE) as TileSetAtlasSource
 	assert_object(wall.get_tile_data(Vector2i(0, 0), 0).material).is_same(art.wall_material)
 	assert_object(solid.get_tile_data(Vector2i(0, 0), 0).material).is_same(art.material)
+
+
+func test_castings_gardens_stay_out_of_the_dark_in_any_ring() -> void:
+	# gardens grow from castings beside a tunnel in any ring, so they are lifted by that ring's colour
+	var amb := _darkest_ambient(_level().lantern)
+	var rows: Dictionary = LanternTileArt.load_meta().solid_rows
+	for r: RingDef in RINGS.rings:
+		for g: StringName in RINGS.garden_tiles.values():
+			var lifted := LanternTileArt.lift_color(_row_mean(LanternTileArt.SOLID_TEX, int(rows[String(g)])), r.hue,
+					LanternTileArt.SOLID_LIFT)
+			var lit := _mul(lifted, amb[r.id])
+			assert_float(lit.get_luminance()).override_failure_message("%s in %s: %.3f" % [
+					g, r.id, lit.get_luminance()]).is_greater_equal(DEEP_FLOOR)
