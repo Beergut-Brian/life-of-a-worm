@@ -138,3 +138,125 @@ func test_dev_data_first_stage_up_is_reported() -> void:
 		print("pacing first stage-up %s: median %.1f min, range %.1f to %.1f min (Kaden %.0f to %.0f h)" %
 			[p.name, times[2], times[0], times[4], STAGE_MIN_H, STAGE_MAX_H])
 		assert_float(times[0]).is_greater(0.0)
+
+
+## D108 a: kid mode's timed new (scripts/gameplay/timed_new_clock.gd, TimedNew in the game). Its
+## tolerance on the 12-minute paper number, in seconds.
+const TIMED_TOLERANCE_S := 30.0
+const ZERO_EAT_S := 2.0 * 3600.0
+const PAUSE_AT_S := 3000.0
+const PAUSE_S := 1800.0
+
+
+static func timed_sim(p: Dictionary, sd: int) -> PacingSim:
+	var sim := PacingSim.new(p, sd)
+	sim.timed = true
+	return sim
+
+
+## Worst wait between "new" events from `from_s` to `to_s` (both ends count as edges).
+static func worst_between(rec: PacingSim.Recorder, from_s: float, to_s: float) -> float:
+	var last := from_s
+	var worst := 0.0
+	for t in rec.times[&"new"]:
+		if float(t) <= from_s or float(t) > to_s:
+			continue
+		worst = maxf(worst, float(t) - last)
+		last = float(t)
+	return maxf(worst, to_s - last)
+
+
+## 1. Kid driver, stage 1, zero eating for 2 h of play: the timed new alone keeps the worst wait
+## for something new at 12 minutes (+ 0.5 min).
+func test_timed_new_fills_two_hours_of_zero_eating() -> void:
+	for sd in SEEDS:
+		var sim := timed_sim(PacingSim.KID_ZERO_EAT, sd)
+		var rec := sim.run(2, ZERO_EAT_S)
+		var worst := rec.worst(&"new")
+		print("timed new kid zero-eat seed %d: stage %d, %d timed looks, worst new %.1f min" %
+			[sd, sim.model.stage, rec.times[&"timed"].size(), worst / 60.0])
+		assert_int(sim.model.stage).is_equal(1)
+		assert_float(rec.end).is_equal(ZERO_EAT_S)
+		assert_int(rec.times[&"timed"].size()).is_greater_equal(9)
+		assert_float(worst).is_less_equal(TimedNewClock.EVERY_S + TIMED_TOLERANCE_S)
+
+
+## 2. The same driver with a 30-minute pause mid-stage: nothing fires in the pause, no burst on
+## resume, and the first timed new after resume comes no earlier than 12 minutes after it.
+func test_timed_new_has_no_burst_after_a_pause() -> void:
+	var sim := timed_sim(PacingSim.KID_ZERO_EAT, 1)
+	sim.pauses = [[PAUSE_AT_S, PAUSE_S]]
+	var rec := sim.run(2, ZERO_EAT_S)
+	var resume := PAUSE_AT_S + PAUSE_S
+	var after: Array = rec.times[&"timed"].filter(func(t: float) -> bool: return t > PAUSE_AT_S)
+	assert_bool(after.is_empty()).is_false()
+	assert_bool(rec.times[&"timed"].any(func(t: float) -> bool: return t > PAUSE_AT_S and t <= resume)).is_false()
+	print("timed new pause: resume at %.1f min, first timed after it %.1f min later" %
+		[resume / 60.0, (float(after[0]) - resume) / 60.0])
+	assert_float(float(after[0]) - resume).is_greater_equal(TimedNewClock.EVERY_S)
+	for i in range(1, after.size()):
+		assert_float(float(after[i]) - float(after[i - 1])).is_greater_equal(TimedNewClock.EVERY_S)
+	# Before and after the pause the timed new still fills every gap.
+	assert_float(worst_between(rec, 0.0, PAUSE_AT_S)).is_less_equal(TimedNewClock.EVERY_S + TIMED_TOLERANCE_S)
+	assert_float(worst_between(rec, resume, rec.end)).is_less_equal(TimedNewClock.EVERY_S + TIMED_TOLERANCE_S)
+
+
+## 3. Kid driver with the timed new on, stages 1 to 4: worst wait for something new per stage
+## (measured, printed for the report), at most 15 minutes in stages 2 to 4.
+func test_timed_new_keeps_stages_two_to_four_under_fifteen_minutes() -> void:
+	var worst_by_stage := { 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0 }
+	for sd in SEEDS:
+		var rec := timed_sim(PacingSim.KID, sd).run(5)
+		assert_bool(rec.stage_at.has(5)).is_true()
+		var row := []
+		for s in range(1, 5):
+			var w := worst_between(rec, rec.stage_at[s], rec.stage_at[s + 1])
+			worst_by_stage[s] = maxf(worst_by_stage[s], w)
+			row.append("s%d %.1f" % [s, w / 60.0])
+		print("timed new kid seed %d: worst new per stage (min) %s, %d timed looks" %
+			[sd, ", ".join(row), rec.times[&"timed"].size()])
+		for s in range(2, 5):
+			assert_float(worst_between(rec, rec.stage_at[s], rec.stage_at[s + 1])).override_failure_message(
+				"seed %d stage %d" % [sd, s]).is_less_equal(NEW_EVERY_S)
+	print("timed new kid worst over seeds (min): s1 %.1f, s2 %.1f, s3 %.1f, s4 %.1f" %
+		[worst_by_stage[1] / 60.0, worst_by_stage[2] / 60.0, worst_by_stage[3] / 60.0, worst_by_stage[4] / 60.0])
+
+
+## 4. Timed news give zero growth: with them on, every stage-up comes at the same second as without
+## (segments alone drive stage-up; tests/test_balance_stages.gd keeps its own times).
+func test_timed_new_does_not_move_stage_up_times() -> void:
+	for sd in [1, 2, 3]:
+		var plain := PacingSim.new(PacingSim.KID, sd).run(5)
+		var timed := timed_sim(PacingSim.KID, sd).run(5)
+		assert_dict(timed.stage_at).is_equal(plain.stage_at)
+		assert_array(timed.times[&"eaten"]).is_equal(plain.times[&"eaten"])
+		assert_float(plain.worst(&"eaten")).is_less_equal(SEGMENT_EVERY_S)
+
+
+## 5. Adult driver: the timed new never shows (count 0), the same runs as with it off.
+func test_adult_driver_shows_no_timed_news() -> void:
+	for sd in SEEDS:
+		var rec := timed_sim(PacingSim.ADULT, sd).run(3)
+		assert_int(rec.times[&"timed"].size()).is_equal(0)
+		assert_bool(rec.labels.any(func(l: String) -> bool: return l.begins_with("timed look"))).is_false()
+
+
+## What-if (NOT applied): on the 2 to 4 h proposal (data/BALANCE.md "Pacing audit"), where content
+## alone leaves the kid hours without a new thing (worm-pacing-apply-2), the timed new keeps every
+## kid stage 1 to 4 at most 12 minutes (+ 0.5) without something new. Printed for the report.
+func test_timed_new_closes_the_proposal_kid_gap() -> void:
+	var r := PacingSim.rules_with(PROPOSAL_GROWTH, PackedInt32Array(PROPOSAL_THRESHOLDS))
+	for sd in [1, 2]:
+		var sim := PacingSim.new(PacingSim.KID, sd, r)
+		sim.timed = true
+		var rec := sim.run(5)
+		var row := []
+		for s in range(1, 5):
+			if not rec.stage_at.has(s + 1):
+				break
+			var w := worst_between(rec, rec.stage_at[s], rec.stage_at[s + 1])
+			row.append("s%d %.1f" % [s, w / 60.0])
+			assert_float(w).is_less_equal(TimedNewClock.EVERY_S + TIMED_TOLERANCE_S)
+		print("timed new proposal kid seed %d: worst new per stage (min) %s, %d timed looks in %.1f h" %
+			[sd, ", ".join(row), rec.times[&"timed"].size(), rec.end / 3600.0])
+		assert_bool(rec.stage_at.has(5)).is_true()
