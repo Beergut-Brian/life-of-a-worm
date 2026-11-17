@@ -13,12 +13,20 @@ const SOLID_N := preload("res://assets/sprites/tiles/lantern_solid_n.png")
 const WALL_TEX := preload("res://assets/sprites/tiles/lantern_wall.png")
 const WALL_N := preload("res://assets/sprites/tiles/lantern_wall_n.png")
 const SHADER := preload("res://shaders/lantern_tiles.gdshader")
+## Kid check K-08: how far each tile is lifted toward its ring's colour (screen blend, in the shader),
+## solid ground more than back walls so a tunnel still reads darker than the ground round it.
+const SOLID_LIFT := 0.5
+const WALL_LIFT := 0.4
+## The shader's ring arrays hold this many rings.
+const MAX_RINGS := 8
 ## Ring tile name (art/tools/lantern_tiles.py tile_ring) -> back-wall row name.
 const WALL_OF := {&"core": &"core", &"strange": &"core", &"rock": &"rock", &"dirt": &"dirt",
 	&"clay": &"dirt", &"castings": &"dirt", &"topsoil": &"topsoil", &"grass": &"grass"}
 
 var world: TileWorld
 var material: ShaderMaterial
+## Back walls: the same shader, a weaker lift (WALL_LIFT).
+var wall_material: ShaderMaterial
 var variants := 4
 ## Tile id -> atlas row in the solid source (-1: unknown name, drawn with the dirt row).
 var row_of_id := PackedInt32Array()
@@ -39,6 +47,8 @@ func _init(p_world: TileWorld) -> void:
 	variants = int(_meta.get("variants", 4))
 	material = ShaderMaterial.new()
 	material.shader = SHADER
+	wall_material = ShaderMaterial.new()
+	wall_material.shader = SHADER
 
 
 static func load_meta() -> Dictionary:
@@ -82,7 +92,7 @@ func tile_set() -> TileSet:
 		for col in 2 * variants:
 			var at := Vector2i(col, row)
 			wall.create_tile(at)
-			wall.get_tile_data(at, 0).material = material
+			wall.get_tile_data(at, 0).material = wall_material
 	_hook_overview()
 	return ts
 
@@ -113,14 +123,42 @@ func _index_rings(tile_ring: Dictionary, wall_rows: Dictionary) -> void:
 
 
 func _hook_overview() -> void:
-	material.set_shader_parameter(&"cell_size", float(world.shape.cell_size))
 	var tex: Texture2D = world.call(&"planet_texture") if world.has_method(&"planet_texture") else null
-	material.set_shader_parameter(&"has_overview", tex != null and _radius > 0.0)
-	if tex == null or _radius <= 0.0:
-		return
-	material.set_shader_parameter(&"overview", tex)
-	material.set_shader_parameter(&"radius_tiles", _radius)
-	material.set_shader_parameter(&"overview_span", float(tex.get_width() * PolarWorld.OVERVIEW_STEP))
+	for m: ShaderMaterial in [material, wall_material]:
+		m.set_shader_parameter(&"cell_size", float(world.shape.cell_size))
+		m.set_shader_parameter(&"lift", SOLID_LIFT if m == material else WALL_LIFT)
+		_hook_rings(m)
+		m.set_shader_parameter(&"has_overview", tex != null and _radius > 0.0)
+		if tex == null or _radius <= 0.0:
+			continue
+		m.set_shader_parameter(&"overview", tex)
+		m.set_shader_parameter(&"radius_tiles", _radius)
+		m.set_shader_parameter(&"overview_span", float(tex.get_width() * PolarWorld.OVERVIEW_STEP))
+
+
+## The ring bands and colours for the shader's lift (K-08). No rings or no radius: no lift.
+func _hook_rings(m: ShaderMaterial) -> void:
+	var rs = world.get(&"rings")
+	var outer := PackedFloat32Array()
+	var hues := PackedVector3Array()
+	if rs != null and _radius > 0.0:
+		for r: RingDef in rs.rings:
+			if outer.size() >= MAX_RINGS:
+				break
+			outer.append(r.outer)
+			hues.append(Vector3(r.hue.r, r.hue.g, r.hue.b))
+	var n := outer.size()
+	outer.resize(MAX_RINGS)
+	hues.resize(MAX_RINGS)
+	m.set_shader_parameter(&"ring_count", n)
+	m.set_shader_parameter(&"ring_outer", outer)
+	m.set_shader_parameter(&"ring_hue", hues)
+
+
+## The shader's K-08 lift on the CPU (a screen blend toward the ring's hue), for tests and tools.
+static func lift_color(c: Color, hue: Color, amount: float) -> Color:
+	return Color(1.0 - (1.0 - c.r) * (1.0 - hue.r * amount), 1.0 - (1.0 - c.g) * (1.0 - hue.g * amount),
+		1.0 - (1.0 - c.b) * (1.0 - hue.b * amount), c.a)
 
 
 ## Re-reads the overview texture (the world builds it after setup()).
