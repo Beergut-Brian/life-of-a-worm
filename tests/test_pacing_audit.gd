@@ -260,3 +260,40 @@ func test_timed_new_closes_the_proposal_kid_gap() -> void:
 		print("timed new proposal kid seed %d: worst new per stage (min) %s, %d timed looks in %.1f h" %
 			[sd, ", ".join(row), rec.times[&"timed"].size(), rec.end / 3600.0])
 		assert_bool(rec.stage_at.has(5)).is_true()
+
+
+## Worst wait between events of `kind` from `from_s` to `to_s` (both ends count as edges).
+static func worst_kind_between(rec: PacingSim.Recorder, kind: StringName, from_s: float, to_s: float) -> float:
+	var last := from_s
+	var worst := 0.0
+	for t in rec.times[kind]:
+		if float(t) <= from_s or float(t) > to_s:
+			continue
+		worst = maxf(worst, float(t) - last)
+		last = float(t)
+	return maxf(worst, to_s - last)
+
+
+## Kid mode (the kid driver with the timed new on, as the game runs it) keeps both kid rules in
+## every stage 1 to 5, seeds 1 to 5: a segment at least every 2 minutes and something new at least
+## every 15, counted per stage between the stage-up signals (not only over the whole run). Prints
+## the per-stage worst and the adult's chomp time for handoff/pacing.md (worm-pacing-apply-4, D116).
+func test_kid_mode_keeps_both_kid_rules_in_every_stage() -> void:
+	for sd in SEEDS:
+		var rec := timed_sim(PacingSim.KID, sd).run(6)
+		assert_bool(rec.stage_at.has(6)).is_true()
+		var row := []
+		for s in range(1, 6):
+			var a: float = rec.stage_at[s]
+			var b: float = rec.stage_at[s + 1]
+			var seg := worst_kind_between(rec, &"eaten", a, b)
+			var new := worst_kind_between(rec, &"new", a, b)
+			row.append("s%d seg %.0f s new %.1f min" % [s, seg, new / 60.0])
+			assert_float(seg).override_failure_message("seed %d stage %d segment worst %.0f s" % [sd, s, seg]) \
+				.is_less_equal(SEGMENT_EVERY_S)
+			assert_float(new).override_failure_message("seed %d stage %d new worst %.1f min" % [sd, s, new / 60.0]) \
+				.is_less_equal(NEW_EVERY_S)
+		print("pacing kid mode seed %d: chomp %.1f min | %s" % [sd, rec.stage_at[6] / 60.0, "; ".join(row)])
+		var adult := PacingSim.new(PacingSim.ADULT, sd).run(6)
+		print("pacing adult seed %d: chomp %.1f min (Kaden %.0f to %.0f h)" % [sd,
+			adult.stage_at[6] / 60.0, CHOMP_MIN_H, CHOMP_MAX_H])

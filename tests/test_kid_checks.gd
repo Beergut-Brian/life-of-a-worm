@@ -233,6 +233,31 @@ func test_k05_the_smaller_worm_catches_up_within_a_minute_through_shared_growth(
 			big_stage - 1, gap0, gap, int(CATCH_UP_S), gap2, rules.partner_share]).is_less_equal(0)
 
 
+## K-05 on every drop-in the planet can make (PlanetLevel.drop_in hatches the second worm at the
+## partner's stage minus one), not only the stage-3 case above: partners at stages 2 to 6, both worms
+## at the kid profile for a minute. Any retune of growth per segment or the catch-up boost has to
+## pass this on every pair (worm-pacing-apply-4: growth 5.0 with boost 3.0 fails it, 1 to 2 behind).
+func test_k05_every_drop_in_hatchling_catches_up_within_a_minute() -> void:
+	var rules := WormRules.default_rules()
+	var food: FoodData = load("res://data/foods/seed.tres")
+	for big_stage in range(2, rules.max_stage()):
+		var big := _worm(Players.P1, big_stage)
+		var small := _worm(Players.P2, big_stage - 1)
+		var gap0 := big.model.segments.size() - small.model.segments.size()
+		assert_int(gap0).is_greater(0)
+		var added := _play([big, small] as Array[Worm], [true, true] as Array[bool], CATCH_UP_S, food)
+		var gap := big.model.segments.size() - small.model.segments.size()
+		print("k05 drop-in at partner stage %d: start gap %d, after %ds gap %d (big +%d, small +%d)" % [
+			big_stage, gap0, int(CATCH_UP_S), gap, added[0], added[1]])
+		assert_int(gap).override_failure_message(
+			("K-05: a stage-%d hatchling starts %d segments behind its stage-%d partner and is still %d "
+			+ "behind after %d s of kid-pace play (growth per segment %.1f, catch-up boost %.1f).") % [
+				big_stage - 1, gap0, big_stage, gap, int(CATCH_UP_S), rules.growth_per_segment,
+				rules.catch_up_boost]).is_less_equal(0)
+		big.free()
+		small.free()
+
+
 # --- K-08 -----------------------------------------------------------------------------------------
 
 func test_k08_no_dirt_ring_ambient_setting_is_below_the_floor() -> void:
