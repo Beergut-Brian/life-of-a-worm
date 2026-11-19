@@ -1,5 +1,7 @@
 # Life of a Worm
 
+> **PAUSED (Kaden, 2026-11-19): "Life of a worm should just be paused for now."** No lanes start on this game until he un-pauses it. Where it stands on the roadmap and how to resume: `docs/PAUSED.md`.
+
 # Producer notes (Gary, 2026-11-10; these supersede the plan text below)
 
 The plan below is Kaden's brief of 2026-11-09, revised 2026-11-10, kept as he wrote it. Where it disagrees with these notes or with Open Jar's standing rules, these notes win. "Hermes" in the plan means Gary, the producer.
